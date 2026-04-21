@@ -1,0 +1,16 @@
+[      37ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8080/favicon.ico:0
+[   20723ms] [LOG] Killed enemy 0 at 1776549068608 @ :6
+[   47707ms] [LOG] Enemy respawned at (17, 11) with size 2 (death #1) @ http://localhost:8080/game.js:912
+[   49247ms] [LOG] Killed enemy 1, deathTime: 1776549089131 current: 1776549097131 @ :5
+[   49308ms] [LOG] Enemy respawned at (28, 26) with size 2 (death #1) @ http://localhost:8080/game.js:912
+[   57138ms] [LOG] Before checkEnemyRespawns: [Enemy 0: alive=true, deathTime=null, Enemy 1: alive=true, deathTime=null, Enemy 2: alive=true, deathTime=null] @ :2
+[   57138ms] [LOG] After checkEnemyRespawns: [Enemy 0: alive=true, deathCount=1, Enemy 1: alive=true, deathCount=1, Enemy 2: alive=true, deathCount=0] @ :4
+[   65721ms] [LOG] Enemy respawned at (16, 24) with size 2 (death #1) @ http://localhost:8080/game.js:912
+[   65721ms] [LOG] Enemy respawned at (7, 11) with size 2 (death #1) @ http://localhost:8080/game.js:912
+[   65721ms] [LOG] Enemy respawned at (7, 5) with size 2 (death #1) @ http://localhost:8080/game.js:912
+[   75312ms] [LOG] Enemy respawned at (21, 25) with size 3 (death #2) @ http://localhost:8080/game.js:912
+[   75913ms] [LOG] Enemy respawned at (38, 15) with size 3 (death #2) @ http://localhost:8080/game.js:912
+[   83769ms] [LOG] Enemy respawned at (7, 5) with size 3 (death #2) @ http://localhost:8080/game.js:912
+[   96287ms] [LOG] Enemy respawned at (37, 24) with size 2 (death #1) @ http://localhost:8080/game.js:912
+[   96287ms] [LOG] Enemy respawned at (38, 18) with size 2 (death #1) @ http://localhost:8080/game.js:912
+[   96287ms] [LOG] Enemy respawned at (21, 15) with size 2 (death #1) @ http://localhost:8080/game.js:912

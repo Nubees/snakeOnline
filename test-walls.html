@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wall Test</title>
+    <style>
+        body { background: #0f0f0f; color: #00ffff; font-family: monospace; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; background: #1a1a1a; color: #00ffff; border: 2px solid #00ffff; }
+        button:hover { background: #00ffff; color: #0f0f0f; }
+        #status { margin: 20px 0; font-size: 18px; }
+        canvas { border: 2px solid #00ffff; display: block; margin: 20px auto; }
+    </style>
+</head>
+<body>
+    <h1>Wall System Test</h1>
+    <div id="status">Waiting to start...</div>
+    <button onclick="spawnWallsNow()">Spawn Walls Now</button>
+    <button onclick="resetGame()">Reset Game</button>
+    <button onclick="killAllEnemies()">Kill All Enemies</button>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <script src="game.js"></script>
+    <script>
+        function spawnWallsNow() {
+            // Force walls to spawn
+            wallSpawnTime = Date.now();
+            gameStartTime = Date.now() - (7 * 60 * 1000); // Pretend 7 minutes passed
+            spawnWallsIfNeeded();
+            document.getElementById('status').innerHTML = 'Walls spawned! Count: ' + walls.length;
+            console.log('Walls:', walls);
+        }
+
+        function resetGame() {
+            walls = [];
+            wallSpawnTime = null;
+            gameStartTime = Date.now();
+            document.getElementById('status').innerHTML = 'Game reset. Walls will appear in 6 minutes.';
+        }
+
+        function killAllEnemies() {
+            enemies.forEach((e, i) => {
+                e.alive = false;
+                e.deathTime = Date.now() - 8000; // 8 seconds ago
+            });
+            checkEnemyRespawns();
+            document.getElementById('status').innerHTML = 'All enemies killed. Check console for respawn.';
+        }
+
+        // Auto-refresh status
+        setInterval(() => {
+            if (walls.length > 0) {
+                const timeSinceStart = Date.now() - gameStartTime;
+                const minutes = Math.floor(timeSinceStart / 60000);
+                const seconds = Math.floor((timeSinceStart % 60000) / 1000);
+                document.getElementById('status').innerHTML = 
+                    `Game time: ${minutes}:${seconds.toString().padStart(2,'0')} | Walls: ${walls.length}`;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

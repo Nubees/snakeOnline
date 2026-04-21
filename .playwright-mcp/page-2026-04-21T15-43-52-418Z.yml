@@ -1,0 +1,8 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]: "SCORE: 0"
+    - generic [ref=e5]: ♥♥♥
+    - generic [ref=e6]: "HIGH: 0"
+  - generic [ref=e8]:
+    - paragraph [ref=e9]: C to Start | ARROW KEYS to Move | Z/X Speed | P Pause | R Restart | V Toggle Sound Set
+    - paragraph [ref=e10]: 👻 Ghost = Pass through! | 🧲 Magnet = Pulls food! | 💊 POWERPILL = Destroy! | ⏱️ Slow Down = Slows enemies!

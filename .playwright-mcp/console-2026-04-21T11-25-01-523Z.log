@@ -1,0 +1,4 @@
+[     139ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8082/favicon.ico:0
+[    4562ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8082/favicon.ico:0
+[    8564ms] [LOG] First PowerPill scheduled in 60s @ http://localhost:8082/game.js:1372
+[    8564ms] [LOG] Power-up spawned: ghost at (21, 27) @ http://localhost:8082/game.js:1402

@@ -1,0 +1,41 @@
+[     379ms] [LOG] JQMIGRATE: Migrate is installed, version 1.4.1 @ https://www.citroen.co.za/etc/clientlibs/citroen2022/foot.lc-20260416163909-lc.min.js:66
+[     393ms] [LOG] 🚀 whitelabel initialized @ https://www.citroen.co.za/etc.clientlibs/stellantis-whitelabel/clientlibs/Runtime.lc-1775144489077-lc.min.js:0
+[     395ms] [LOG] {brand: citroen, subBrand: , country: south_africa, language: en, env: prod} @ https://www.citroen.co.za/models/basalt-suv.html?utm_publisher=GoogleDV360&utm_content=35418772_443566892_252519805&dclid=CKDryM6n_5MDFRtB9ggd0HkFzw&gad_source=7&gad_campaignid=23704163405&gclid=EAIaIQobChMIlLLayKf_kwMVDawKCR0JCxLhEAEYASAAEgLqpvD_BwE:3742
+[     445ms] [LOG] /etc.clientlibs/stellantis-global/clientlibs/frontend/SingleLegalEntity/resources/js/SingleLegalEntity-remote.2026.402.1152834.0007868992.js loaded! @ https://www.citroen.co.za/etc.clientlibs/stellantis-global/clientlibs/frontend/Runtime.lc-1775143937177-lc.min.js:0
+[    2674ms] [LOG] A5 @ :0
+[    2677ms] [LOG] DY Event DataLayer Properties @ :0
+[    2676ms] ReferenceError: DY is not defined
+    at <anonymous>:1:58
+    at <anonymous>:7:97
+    at https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:760:429
+    at uR (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:762:31)
+    at Md.tR (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:759:92)
+    at Md.<anonymous> (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:308:187)
+    at k.apply (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:237:466)
+    at fb (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:200:719)
+    at eb (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:200:470)
+    at Md.<anonymous> (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:261:473)
+[    2682ms] [LOG] A5 @ :0
+[    2683ms] [LOG] DY Event DataLayer Properties @ :0
+[    2682ms] ReferenceError: DY is not defined
+    at <anonymous>:1:58
+    at <anonymous>:7:99
+    at https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:760:429
+    at uR (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:762:31)
+    at Md.tR (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:759:92)
+    at Md.<anonymous> (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:308:187)
+    at k.apply (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:237:466)
+    at fb (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:200:719)
+    at eb (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:200:470)
+    at Md.<anonymous> (https://www.googletagmanager.com/gtm.js?id=GTM-TFC45Q:261:473)
+[    3297ms] TypeError: Cannot read properties of undefined (reading 'push')
+    at gtag (<anonymous>:1:75)
+    at <anonymous>:1:91
+    at https://www.googletagmanager.com/gtm.js?id=GTM-P58P53B&gtm=4e64h1:739:429
+    at uR (https://www.googletagmanager.com/gtm.js?id=GTM-P58P53B&gtm=4e64h1:741:31)
+    at Md.tR (https://www.googletagmanager.com/gtm.js?id=GTM-P58P53B&gtm=4e64h1:738:92)
+    at Md.<anonymous> (https://www.googletagmanager.com/gtm.js?id=GTM-P58P53B&gtm=4e64h1:273:187)
+    at k.apply (https://www.googletagmanager.com/gtm.js?id=GTM-P58P53B&gtm=4e64h1:202:466)
+    at fb (https://www.googletagmanager.com/gtm.js?id=GTM-P58P53B&gtm=4e64h1:165:719)
+    at eb (https://www.googletagmanager.com/gtm.js?id=GTM-P58P53B&gtm=4e64h1:165:470)
+    at Md.<anonymous> (https://www.googletagmanager.com/gtm.js?id=GTM-P58P53B&gtm=4e64h1:226:473)

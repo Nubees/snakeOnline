@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Snake Arena</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="hud">
+            <div class="score">SCORE: <span id="score">0</span></div>
+            <div class="center-hud">
+                <div class="level-timer" id="levelTimer">LEVEL 1 | 4:00</div>
+                <div class="lives" id="livesContainer">♥♥♥</div>
+            </div>
+            <div class="high-score">HIGH: <span id="highScore">0</span></div>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="controls">
+            <p>C to Start | ARROW KEYS to Move | Z/X Speed | P Pause | R Restart | V Toggle Sound Set | B Boss Battle</p>
+            <p class="powerup-info">👻 Ghost = Pass through! | 🧲 Magnet = Pulls food! | 💊 POWERPILL = Destroy! | ⏱️ Slow Down = Slows enemies!</p>
+        </div>
+        <div id="gameOverScreen" class="overlay hidden">
+            <h1>GAME OVER</h1>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button id="restartBtn">PLAY AGAIN</button>
+        </div>
+        <div id="pauseScreen" class="overlay hidden">
+            <h1>PAUSED</h1>
+            <p>Press P to Resume</p>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>

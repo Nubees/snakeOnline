@@ -1,0 +1,36 @@
+[      74ms] [LOG] MK Announcer voice selected: Microsoft David - English (United States) @ http://localhost:8082/game.js:500
+[      82ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8082/favicon.ico:0
+[   11234ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8082/favicon.ico:0
+[   15201ms] [LOG] First PowerPill scheduled in 60s @ http://localhost:8082/game.js:1752
+[   15202ms] [LOG] Power-up spawned: ghost at (22, 14) @ http://localhost:8082/game.js:1782
+[   22757ms] [LOG] Enemy 0 died: hit another enemy @ http://localhost:8082/game.js:3383
+[   28729ms] [LOG] Power-up collected: ghost, duration: 8000ms @ http://localhost:8082/game.js:1855
+[   29330ms] [LOG] Enemy 0 respawned at (29, 18) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8082/game.js:3063
+[   29330ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8082/game.js:2986
+[   30246ms] [LOG] Power-up spawned: magnet at (35, 19) @ http://localhost:8082/game.js:1782
+[   31879ms] [LOG] Speed decreased: 110ms @ http://localhost:8082/game.js:2258
+[   32071ms] [LOG] Speed decreased: 120ms @ http://localhost:8082/game.js:2258
+[   32391ms] [LOG] Speed decreased: 130ms @ http://localhost:8082/game.js:2258
+[   32583ms] [LOG] Speed decreased: 140ms @ http://localhost:8082/game.js:2258
+[   32767ms] [LOG] Speed decreased: 150ms @ http://localhost:8082/game.js:2258
+[   36752ms] [LOG] Power-up expired: ghost @ http://localhost:8082/game.js:1867
+[   37653ms] [LOG] Power-up collected: magnet, duration: 8000ms @ http://localhost:8082/game.js:1855
+[   45325ms] [LOG] Power-up spawned: slowdown at (33, 15) @ http://localhost:8082/game.js:1782
+[   45775ms] [LOG] Power-up expired: magnet @ http://localhost:8082/game.js:1867
+[   46376ms] [LOG] Combo reset - window expired @ http://localhost:8082/game.js:2039
+[   53298ms] [LOG] Power-up collected: slowdown, duration: 10000ms @ http://localhost:8082/game.js:1855
+[   59770ms] [LOG] Combo reset - window expired @ http://localhost:8082/game.js:2039
+[   60070ms] [LOG] *** FIRST WALL SPAWNING NOW! *** @ http://localhost:8082/game.js:1553
+[   60370ms] [LOG] Power-up spawned: magnet at (25, 7) @ http://localhost:8082/game.js:1782
+[   62789ms] [LOG] Combo reset - window expired @ http://localhost:8082/game.js:2039
+[   63390ms] [LOG] Power-up expired: slowdown @ http://localhost:8082/game.js:1867
+[   64741ms] [LOG] Enemy 1 respawned at (29, 14) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8082/game.js:3063
+[   64741ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8082/game.js:2986
+[   67443ms] [LOG] Combo reset - window expired @ http://localhost:8082/game.js:2039
+[   70445ms] [LOG] Head-on collision! Player length: 6, Enemy 0 length: 2 @ http://localhost:8082/game.js:3278
+[   70445ms] [LOG] Player wins head-on! Enemy 0 destroyed. Player grew by 1! @ http://localhost:8082/game.js:3286
+[   71796ms] [LOG] Enemy 0 respawned at (11, 21) with size 3 (death #2) - SPAWNING (grey for 2 seconds) @ http://localhost:8082/game.js:3063
+[   71796ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8082/game.js:2986
+[   72997ms] [LOG] Enemy 2 died: hit player @ http://localhost:8082/game.js:3371
+[   72998ms] [LOG] MK Announcer: double kill @ http://localhost:8082/game.js:556
+[   73448ms] [LOG] Combo reset - window expired @ http://localhost:8082/game.js:2039

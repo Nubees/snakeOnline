@@ -1,0 +1,184 @@
+[     131ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8080/favicon.ico:0
+[   12386ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8080/favicon.ico:0
+[   16426ms] [LOG] First PowerPill scheduled in 60s @ http://localhost:8080/game.js:1283
+[   16427ms] [LOG] Power-up spawned: ghost at (1, 9) @ http://localhost:8080/game.js:1313
+[   18477ms] [LOG] Power-up collected: ghost, duration: 8000ms @ http://localhost:8080/game.js:1386
+[   26567ms] [LOG] Power-up expired: ghost @ http://localhost:8080/game.js:1398
+[   26567ms] [LOG] Enemy 0 died: hit player @ http://localhost:8080/game.js:2439
+[   29469ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[   30470ms] [LOG] Enemy 0 respawned at (31, 28) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[   30471ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[   31471ms] [LOG] Power-up spawned: slowdown at (38, 20) @ http://localhost:8080/game.js:1313
+[   36058ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[   41746ms] [LOG] Power-up collected: slowdown, duration: 10000ms @ http://localhost:8080/game.js:1386
+[   43247ms] [LOG] Enemy 1 died: hit player @ http://localhost:8080/game.js:2439
+[   44548ms] [LOG] Enemy 1 respawned at (31, 17) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[   44548ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[   46483ms] [LOG] Power-up spawned: magnet at (32, 11) @ http://localhost:8080/game.js:1313
+[   47500ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[   47601ms] [LOG] Enemy 1 died: hit another enemy @ http://localhost:8080/game.js:2449
+[   47601ms] [LOG] Enemy 2 died: hit player @ http://localhost:8080/game.js:2439
+[   51120ms] [LOG] Head-on collision! Player length: 6, Enemy 0 length: 3 @ http://localhost:8080/game.js:2348
+[   51120ms] [LOG] Player wins head-on! Enemy 0 destroyed. Player grew by 1! @ http://localhost:8080/game.js:2356
+[   51621ms] [LOG] Enemy 0 respawned at (20, 2) with size 3 (death #2) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[   51621ms] [LOG] Enemy 1 respawned at (12, 28) with size 3 (death #2) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[   51621ms] [LOG] Enemy 2 respawned at (33, 25) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[   51621ms] [LOG] Respawn wave: 3 snakes respawned @ http://localhost:8080/game.js:2070
+[   51821ms] [LOG] Power-up expired: slowdown @ http://localhost:8080/game.js:1398
+[   57142ms] [LOG] Power-up collected: magnet, duration: 8000ms @ http://localhost:8080/game.js:1386
+[   60044ms] [LOG] Enemy 2 died: hit another enemy @ http://localhost:8080/game.js:2449
+[   60144ms] [LOG] *** FIRST WALL SPAWNING NOW! *** @ http://localhost:8080/game.js:1084
+[   61562ms] [LOG] Power-up spawned: ghost at (32, 22) @ http://localhost:8080/game.js:1313
+[   63897ms] [LOG] Power-up collected: ghost, duration: 8000ms @ http://localhost:8080/game.js:1386
+[   65198ms] [LOG] Power-up expired: magnet @ http://localhost:8080/game.js:1398
+[   65398ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[   65699ms] [LOG] Enemy 0 respawned at (31, 11) with size 4 (death #3) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[   65699ms] [LOG] Enemy 2 respawned at (27, 11) with size 3 (death #2) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[   65699ms] [LOG] Respawn wave: 2 snakes respawned @ http://localhost:8080/game.js:2070
+[   71937ms] [LOG] Power-up expired: ghost @ http://localhost:8080/game.js:1398
+[   73955ms] [LOG] Player hit enemy 2 body. Player died. @ http://localhost:8080/game.js:2383
+[   73955ms] [LOG] Player lost a life! Lives remaining: 2. Respawning... @ http://localhost:8080/game.js:2177
+[   74055ms] [LOG] Player hit enemy 2 body. Player died. @ http://localhost:8080/game.js:2383
+[   74957ms] [LOG] Player respawned! Lives remaining: 2 @ http://localhost:8080/game.js:2276
+[   76457ms] [LOG] *** POWERPILL SPAWNED at (2, 2) *** @ http://localhost:8080/game.js:1291
+[   76457ms] [LOG] Next PowerPill in 60s @ http://localhost:8080/game.js:1294
+[   79076ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8080/game.js:2383
+[   79076ms] [LOG] Player lost a life! Lives remaining: 1. Respawning... @ http://localhost:8080/game.js:2177
+[   79176ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8080/game.js:2383
+[   79276ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8080/game.js:2383
+[   80077ms] [LOG] Player respawned! Lives remaining: 1 @ http://localhost:8080/game.js:2276
+[   83897ms] [LOG] Power-up collected: powerpill, duration: 7000ms @ http://localhost:8080/game.js:1386
+[   83996ms] [LOG] Power-up spawned: slowdown at (34, 18) @ http://localhost:8080/game.js:1313
+[   87299ms] [LOG] POWERPILL DESTRUCTION! Enemy 0 destroyed! @ http://localhost:8080/game.js:1476
+[   88700ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[   90902ms] [LOG] Power-up expired: powerpill @ http://localhost:8080/game.js:1398
+[   94238ms] [LOG] Enemy 0 respawned at (38, 19) with size 5 (death #4) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[   94238ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[   96557ms] [LOG] Power-up collected: slowdown, duration: 10000ms @ http://localhost:8080/game.js:1386
+[   99058ms] [LOG] Power-up spawned: slowdown at (30, 21) @ http://localhost:8080/game.js:1313
+[  100259ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  101260ms] [LOG] Enemy 2 respawned at (1, 7) with size 4 (death #3) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  101260ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[  104079ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  106598ms] [LOG] Power-up expired: slowdown @ http://localhost:8080/game.js:1398
+[  106715ms] [LOG] Enemy 0 died: hit player @ http://localhost:8080/game.js:2439
+[  108316ms] [LOG] Enemy 0 respawned at (26, 27) with size 6 (death #5) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  108316ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[  109917ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  110217ms] [LOG] Head-on collision! Player length: 6, Enemy 2 length: 4 @ http://localhost:8080/game.js:2348
+[  110217ms] [LOG] Player wins head-on! Enemy 2 destroyed. Player grew by 2! @ http://localhost:8080/game.js:2356
+[  111418ms] [LOG] Enemy 0 died: hit another enemy @ http://localhost:8080/game.js:2449
+[  115355ms] [LOG] Enemy 0 respawned at (35, 21) with size 7 (death #6) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  115355ms] [LOG] Enemy 2 respawned at (19, 11) with size 5 (death #4) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  115355ms] [LOG] Respawn wave: 2 snakes respawned @ http://localhost:8080/game.js:2070
+[  115555ms] [LOG] Power-up collected: slowdown, duration: 10000ms @ http://localhost:8080/game.js:1386
+[  115655ms] [LOG] Power-up spawned: magnet at (17, 8) @ http://localhost:8080/game.js:1313
+[  119475ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8080/game.js:2383
+[  119475ms] [LOG] GAME OVER - Screen frozen. Check what killed you! @ http://localhost:8080/game.js:2236
+[  260921ms] [LOG] First PowerPill scheduled in 60s @ http://localhost:8080/game.js:1283
+[  260922ms] [LOG] Power-up spawned: ghost at (24, 3) @ http://localhost:8080/game.js:1313
+[  264024ms] [LOG] Power-up collected: ghost, duration: 8000ms @ http://localhost:8080/game.js:1386
+[  264541ms] [LOG] Enemy 2 died: hit player @ http://localhost:8080/game.js:2439
+[  267343ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  269462ms] [LOG] Enemy 2 respawned at (16, 5) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  269462ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[  272064ms] [LOG] Power-up expired: ghost @ http://localhost:8080/game.js:1398
+[  276000ms] [LOG] Power-up spawned: magnet at (16, 3) @ http://localhost:8080/game.js:1313
+[  276100ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  277702ms] [LOG] Enemy 1 died: hit another enemy @ http://localhost:8080/game.js:2449
+[  279903ms] [LOG] Enemy 0 died: hit another enemy @ http://localhost:8080/game.js:2449
+[  281304ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  282305ms] [LOG] Power-up collected: magnet, duration: 8000ms @ http://localhost:8080/game.js:1386
+[  283506ms] [LOG] Enemy 0 respawned at (3, 20) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  283506ms] [LOG] Enemy 1 respawned at (4, 14) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  283506ms] [LOG] Respawn wave: 2 snakes respawned @ http://localhost:8080/game.js:2070
+[  284507ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  288127ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  289528ms] [LOG] Player hit enemy 2 body. Player died. @ http://localhost:8080/game.js:2383
+[  289528ms] [LOG] Player lost a life! Lives remaining: 2. Respawning... @ http://localhost:8080/game.js:2177
+[  290328ms] [LOG] Power-up expired: magnet @ http://localhost:8080/game.js:1398
+[  290529ms] [LOG] Player respawned! Lives remaining: 2 @ http://localhost:8080/game.js:2276
+[  291029ms] [LOG] Power-up spawned: ghost at (26, 24) @ http://localhost:8080/game.js:1313
+[  292030ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  293131ms] [LOG] Power-up collected: ghost, duration: 8000ms @ http://localhost:8080/game.js:1386
+[  297451ms] [LOG] Ghost mode kill! Enemy 2 destroyed. Player grew by 1! @ http://localhost:8080/game.js:2408
+[  297651ms] [LOG] Enemy 2 respawned at (16, 23) with size 3 (death #2) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  297651ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[  298969ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  301188ms] [LOG] Power-up expired: ghost @ http://localhost:8080/game.js:1398
+[  306091ms] [LOG] Power-up spawned: slowdown at (27, 21) @ http://localhost:8080/game.js:1313
+[  307392ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  310545ms] [LOG] Enemy 2 died: hit another enemy @ http://localhost:8080/game.js:2449
+[  311045ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  311445ms] [LOG] Power-up collected: slowdown, duration: 10000ms @ http://localhost:8080/game.js:1386
+[  311746ms] [LOG] Enemy 2 respawned at (24, 28) with size 4 (death #3) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  311746ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[  315448ms] [LOG] *** FIRST WALL SPAWNING NOW! *** @ http://localhost:8080/game.js:1084
+[  318151ms] [LOG] Head-on collision! Player length: 5, Enemy 0 length: 2 @ http://localhost:8080/game.js:2348
+[  318151ms] [LOG] Player wins head-on! Enemy 0 destroyed. Player grew by 1! @ http://localhost:8080/game.js:2356
+[  318751ms] [LOG] Enemy 0 respawned at (11, 20) with size 3 (death #2) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  318751ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[  320970ms] [LOG] *** POWERPILL SPAWNED at (3, 11) *** @ http://localhost:8080/game.js:1291
+[  320970ms] [LOG] Next PowerPill in 60s @ http://localhost:8080/game.js:1294
+[  321470ms] [LOG] Power-up expired: slowdown @ http://localhost:8080/game.js:1398
+[  324873ms] [LOG] Head-on collision! Player length: 6, Enemy 1 length: 2 @ http://localhost:8080/game.js:2348
+[  324873ms] [LOG] Player wins head-on! Enemy 1 destroyed. Player grew by 1! @ http://localhost:8080/game.js:2356
+[  325773ms] [LOG] Enemy 1 respawned at (15, 25) with size 3 (death #2) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  325774ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[  328976ms] [LOG] Enemy 2 died: hit player @ http://localhost:8080/game.js:2439
+[  329276ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8080/game.js:2383
+[  329276ms] [LOG] Player lost a life! Lives remaining: 1. Respawning... @ http://localhost:8080/game.js:2177
+[  330277ms] [LOG] Player respawned! Lives remaining: 1 @ http://localhost:8080/game.js:2276
+[  332779ms] [LOG] Enemy 2 respawned at (32, 28) with size 5 (death #4) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  332779ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[  337716ms] [LOG] Enemy 0 died: hit another enemy @ http://localhost:8080/game.js:2449
+[  339868ms] [LOG] Enemy 0 respawned at (26, 12) with size 4 (death #3) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  339868ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[  342971ms] [LOG] Power-up collected: powerpill, duration: 7000ms @ http://localhost:8080/game.js:1386
+[  343071ms] [LOG] Power-up spawned: magnet at (8, 3) @ http://localhost:8080/game.js:1313
+[  344789ms] [LOG] Enemy 1 died: hit another enemy @ http://localhost:8080/game.js:2449
+[  344989ms] [LOG] Ghost mode kill! Enemy 0 destroyed. Player grew by 2! @ http://localhost:8080/game.js:2408
+[  346890ms] [LOG] Enemy 0 respawned at (35, 27) with size 5 (death #4) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  346890ms] [LOG] Enemy 1 respawned at (8, 10) with size 4 (death #3) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  346890ms] [LOG] Respawn wave: 2 snakes respawned @ http://localhost:8080/game.js:2070
+[  349993ms] [LOG] Power-up expired: powerpill @ http://localhost:8080/game.js:1398
+[  350693ms] [LOG] Enemy 1 died: hit another enemy @ http://localhost:8080/game.js:2449
+[  351894ms] [LOG] Head-on collision! Player length: 3, Enemy 0 length: 5 @ http://localhost:8080/game.js:2348
+[  351894ms] [LOG] Enemy 0 wins head-on! Player destroyed. @ http://localhost:8080/game.js:2363
+[  351895ms] [LOG] GAME OVER - Screen frozen. Check what killed you! @ http://localhost:8080/game.js:2236
+[  454660ms] [LOG] First PowerPill scheduled in 60s @ http://localhost:8080/game.js:1283
+[  454660ms] [LOG] Power-up spawned: ghost at (3, 5) @ http://localhost:8080/game.js:1313
+[  457279ms] [LOG] Power-up collected: ghost, duration: 8000ms @ http://localhost:8080/game.js:1386
+[  465319ms] [LOG] Power-up expired: ghost @ http://localhost:8080/game.js:1398
+[  469522ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  469739ms] [LOG] Power-up spawned: slowdown at (13, 28) @ http://localhost:8080/game.js:1313
+[  474443ms] [LOG] Power-up collected: slowdown, duration: 10000ms @ http://localhost:8080/game.js:1386
+[  483400ms] [LOG] Player hit enemy 2 body. Player died. @ http://localhost:8080/game.js:2383
+[  483400ms] [LOG] Player lost a life! Lives remaining: 2. Respawning... @ http://localhost:8080/game.js:2177
+[  484401ms] [LOG] Player respawned! Lives remaining: 2 @ http://localhost:8080/game.js:2276
+[  484501ms] [LOG] Power-up expired: slowdown @ http://localhost:8080/game.js:1398
+[  484801ms] [LOG] Power-up spawned: ghost at (34, 28) @ http://localhost:8080/game.js:1313
+[  486219ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  490872ms] [LOG] Power-up collected: ghost, duration: 8000ms @ http://localhost:8080/game.js:1386
+[  498929ms] [LOG] Power-up expired: ghost @ http://localhost:8080/game.js:1398
+[  499846ms] [LOG] Power-up spawned: slowdown at (17, 25) @ http://localhost:8080/game.js:1313
+[  504850ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  509154ms] [LOG] *** FIRST WALL SPAWNING NOW! *** @ http://localhost:8080/game.js:1084
+[  509654ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  510555ms] [LOG] Power-up collected: slowdown, duration: 10000ms @ http://localhost:8080/game.js:1386
+[  514675ms] [LOG] *** POWERPILL SPAWNED at (21, 1) *** @ http://localhost:8080/game.js:1291
+[  514675ms] [LOG] Next PowerPill in 60s @ http://localhost:8080/game.js:1294
+[  518278ms] [LOG] Combo reset - window expired @ http://localhost:8080/game.js:1563
+[  520596ms] [LOG] Power-up expired: slowdown @ http://localhost:8080/game.js:1398
+[  523632ms] [LOG] Power-up collected: powerpill, duration: 7000ms @ http://localhost:8080/game.js:1386
+[  523732ms] [LOG] Power-up spawned: ghost at (7, 28) @ http://localhost:8080/game.js:1313
+[  526751ms] [LOG] Enemy 2 respawned at (15, 21) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  526751ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[  526851ms] [LOG] POWERPILL DESTRUCTION! Wall destroyed! @ http://localhost:8080/game.js:1491
+[  528152ms] [LOG] Enemy 0 died: hit player @ http://localhost:8080/game.js:2439
+[  530688ms] [LOG] Power-up expired: powerpill @ http://localhost:8080/game.js:1398
+[  533790ms] [LOG] Enemy 0 respawned at (21, 3) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  533790ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070
+[  543314ms] [LOG] Enemy 0 died: hit another enemy @ http://localhost:8080/game.js:2449
+[  547818ms] [LOG] Enemy 0 respawned at (5, 27) with size 3 (death #2) - SPAWNING (grey for 2 seconds) @ http://localhost:8080/game.js:2147
+[  547818ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8080/game.js:2070

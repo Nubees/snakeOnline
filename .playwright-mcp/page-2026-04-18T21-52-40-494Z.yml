@@ -1,0 +1,6 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]: "SCORE: 20"
+    - generic [ref=e5]: 2:50
+    - generic [ref=e6]: "HIGH: 70"
+  - paragraph [ref=e9]: ARROW KEYS to Move | P to Pause | R to Restart

@@ -1,0 +1,21 @@
+[     108ms] [LOG] MK Announcer voice selected: Microsoft David - English (United States) @ http://localhost:8081/game.js:500
+[     115ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8081/favicon.ico:0
+[   10841ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8081/favicon.ico:0
+[   14814ms] [LOG] First PowerPill scheduled in 60s @ http://localhost:8081/game.js:1752
+[   14814ms] [LOG] Power-up spawned: magnet at (32, 1) @ http://localhost:8081/game.js:1782
+[   31309ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8081/game.js:3314
+[   31310ms] [LOG] Player lost a life! Lives remaining: 2. Respawning... @ http://localhost:8081/game.js:3093
+[   31409ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8081/game.js:3314
+[   32311ms] [LOG] Player respawned! Lives remaining: 2 @ http://localhost:8081/game.js:3192
+[   32827ms] [LOG] Enemy 1 died: hit another enemy @ http://localhost:8081/game.js:3381
+[   35980ms] [LOG] Enemy 1 respawned at (19, 19) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8081/game.js:3063
+[   35980ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8081/game.js:2986
+[   38699ms] [LOG] Enemy 2 died: hit another enemy @ http://localhost:8081/game.js:3381
+[   42535ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8081/game.js:3314
+[   42535ms] [LOG] Player lost a life! Lives remaining: 1. Respawning... @ http://localhost:8081/game.js:3093
+[   42635ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8081/game.js:3314
+[   42735ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8081/game.js:3314
+[   42835ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8081/game.js:3314
+[   43536ms] [LOG] Player respawned! Lives remaining: 1 @ http://localhost:8081/game.js:3192
+[   43636ms] [LOG] Enemy 2 respawned at (17, 13) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8081/game.js:3063
+[   43636ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8081/game.js:2986

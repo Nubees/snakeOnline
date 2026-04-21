@@ -1,0 +1,85 @@
+[      51ms] [LOG] Using VoiceAnnouncer (SET 1 - Web Speech API voice) @ http://localhost:8088/game.js:1299
+[      72ms] [LOG] VoiceAnnouncer voice selected: Microsoft David - English (United States) @ http://localhost:8088/game.js:623
+[      99ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8088/favicon.ico:0
+[    8873ms] [LOG] Switched to ArenaAnnouncer (SET 2 - Enhanced synthesized sounds) @ http://localhost:8088/game.js:3512
+[    9429ms] [LOG] Switched to VoiceAnnouncer (SET 1 - Web Speech API voice) @ http://localhost:8088/game.js:3517
+[   10429ms] [LOG] Switched to ArenaAnnouncer (SET 2 - Enhanced synthesized sounds) @ http://localhost:8088/game.js:3512
+[   12219ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8088/favicon.ico:0
+[   16252ms] [LOG] First PowerPill scheduled in 60s @ http://localhost:8088/game.js:2481
+[   16253ms] [LOG] Power-up spawned: ghost at (30, 12) @ http://localhost:8088/game.js:2511
+[   19872ms] [LOG] Power-up collected: ghost, duration: 8000ms @ http://localhost:8088/game.js:2584
+[   21877ms] [LOG] Speed decreased: 110ms @ http://localhost:8088/game.js:2995
+[   22109ms] [LOG] Speed decreased: 120ms @ http://localhost:8088/game.js:2995
+[   22301ms] [LOG] Speed decreased: 130ms @ http://localhost:8088/game.js:2995
+[   22469ms] [LOG] Speed decreased: 140ms @ http://localhost:8088/game.js:2995
+[   22653ms] [LOG] Speed decreased: 150ms @ http://localhost:8088/game.js:2995
+[   22813ms] [LOG] Speed decreased: 160ms @ http://localhost:8088/game.js:2995
+[   23005ms] [LOG] Speed decreased: 170ms @ http://localhost:8088/game.js:2995
+[   27978ms] [LOG] Power-up expired: ghost @ http://localhost:8088/game.js:2596
+[   31281ms] [LOG] Power-up spawned: ghost at (6, 17) @ http://localhost:8088/game.js:2511
+[   42106ms] [LOG] Enemy 0 died: hit another enemy @ http://localhost:8088/game.js:4138
+[   44858ms] [LOG] Enemy 0 respawned at (37, 17) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8088/game.js:3818
+[   44859ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8088/game.js:3741
+[   45225ms] [LOG] *** FIRST WALL SPAWNING NOW! *** @ http://localhost:8088/game.js:2282
+[   57518ms] [LOG] Combo reset - window expired @ http://localhost:8088/game.js:2768
+[   57885ms] [LOG] Head-on collision! Player length: 4, Enemy 1 length: 1 @ http://localhost:8088/game.js:4033
+[   57885ms] [LOG] Player wins head-on! Enemy 1 destroyed. Player grew by 0! @ http://localhost:8088/game.js:4041
+[   59170ms] [LOG] Enemy 1 respawned at (12, 4) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8088/game.js:3818
+[   59170ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8088/game.js:3741
+[   65591ms] [LOG] Enemy 0 died: hit player @ http://localhost:8088/game.js:4126
+[   65594ms] [LOG] Enhanced Arena Announcer: DOUBLE KILL! @ http://localhost:8088/game.js:781
+[   66326ms] [LOG] Enemy 0 respawned at (8, 23) with size 3 (death #2) - SPAWNING (grey for 2 seconds) @ http://localhost:8088/game.js:3818
+[   66326ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8088/game.js:3741
+[   68344ms] [LOG] Combo reset - window expired @ http://localhost:8088/game.js:2768
+[   87609ms] [LOG] Enemy 0 died: hit another enemy @ http://localhost:8088/game.js:4138
+[   90361ms] [LOG] *** SPAWNING WALL #2 OF 6 *** @ http://localhost:8088/game.js:2293
+[   90912ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   90912ms] [LOG] Player lost a life! Lives remaining: 2. Respawning... @ http://localhost:8088/game.js:3848
+[   91095ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   91279ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   91462ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   91646ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   91829ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   91913ms] [LOG] Player respawned! Lives remaining: 2 @ http://localhost:8088/game.js:3947
+[   92013ms] [LOG] Enemy 0 respawned at (16, 13) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8088/game.js:3818
+[   92013ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8088/game.js:3741
+[   94214ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   94215ms] [LOG] Player lost a life! Lives remaining: 1. Respawning... @ http://localhost:8088/game.js:3848
+[   94398ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   94581ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   94765ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   94948ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   95132ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   95216ms] [LOG] Player respawned! Lives remaining: 1 @ http://localhost:8088/game.js:3947
+[   97334ms] [LOG] Player died: hit wall 0 at (14,13) @ http://localhost:8088/game.js:2420
+[   97334ms] [LOG] GAME OVER - Screen frozen. Check what killed you! @ http://localhost:8088/game.js:3907
+[  108773ms] [LOG] Switched to VoiceAnnouncer (SET 1 - Web Speech API voice) @ http://localhost:8088/game.js:3517
+[  114581ms] [LOG] First PowerPill scheduled in 60s @ http://localhost:8088/game.js:2481
+[  114581ms] [LOG] Power-up spawned: magnet at (3, 28) @ http://localhost:8088/game.js:2511
+[  119902ms] [LOG] Combo reset - window expired @ http://localhost:8088/game.js:2768
+[  127975ms] [LOG] Combo reset - window expired @ http://localhost:8088/game.js:2768
+[  133663ms] [LOG] Combo reset - window expired @ http://localhost:8088/game.js:2768
+[  141736ms] [LOG] Enemy 0 died: hit player @ http://localhost:8088/game.js:4126
+[  142103ms] [LOG] Combo reset - window expired @ http://localhost:8088/game.js:2768
+[  143204ms] [LOG] Enemy 0 respawned at (30, 23) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8088/game.js:3818
+[  143204ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8088/game.js:3741
+[  146139ms] [LOG] *** FIRST WALL SPAWNING NOW! *** @ http://localhost:8088/game.js:2282
+[  149259ms] [LOG] Enemy 1 died: hit player @ http://localhost:8088/game.js:4126
+[  149259ms] [LOG] VoiceAnnouncer: DOUBLE KILL @ http://localhost:8088/game.js:669
+[  150359ms] [LOG] Enemy 1 respawned at (12, 9) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8088/game.js:3818
+[  150359ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8088/game.js:3741
+[  151093ms] [LOG] Enemy 2 died: hit player @ http://localhost:8088/game.js:4126
+[  151094ms] [LOG] VoiceAnnouncer: TRIPLE KILL @ http://localhost:8088/game.js:669
+[  152011ms] [LOG] Combo reset - window expired @ http://localhost:8088/game.js:2768
+[  157515ms] [LOG] Enemy 0 respawned at (26, 25) with size 3 (death #2) - SPAWNING (grey for 2 seconds) @ http://localhost:8088/game.js:3818
+[  157515ms] [LOG] Enemy 2 respawned at (8, 21) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8088/game.js:3818
+[  157515ms] [LOG] Respawn wave: 2 snakes respawned @ http://localhost:8088/game.js:3741
+[  161552ms] [LOG] Combo reset - window expired @ http://localhost:8088/game.js:2768
+[  163570ms] [LOG] Enemy 0 died: hit player @ http://localhost:8088/game.js:4126
+[  163570ms] [LOG] VoiceAnnouncer: MULTI KILL @ http://localhost:8088/game.js:669
+[  164671ms] [LOG] Enemy 0 respawned at (20, 26) with size 4 (death #3) - SPAWNING (grey for 2 seconds) @ http://localhost:8088/game.js:3818
+[  164671ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8088/game.js:3741
+[  165588ms] [LOG] Combo reset - window expired @ http://localhost:8088/game.js:2768
+[  169625ms] [LOG] Player hit enemy 1 body. Player died. @ http://localhost:8088/game.js:4069
+[  169625ms] [LOG] Player lost a life! Lives remaining: 2. Respawning... @ http://localhost:8088/game.js:3848
+[  170627ms] [LOG] Player respawned! Lives remaining: 2 @ http://localhost:8088/game.js:3947

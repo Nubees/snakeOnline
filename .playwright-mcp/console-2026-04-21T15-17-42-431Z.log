@@ -1,0 +1,3 @@
+[     103ms] [LOG] Using ArenaAnnouncer (Option 1 - Synthesized sounds) @ http://localhost:8086/game.js:1212
+[     104ms] [LOG] MK Announcer voice selected: Microsoft David - English (United States) @ http://localhost:8086/game.js:526
+[     154ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8086/favicon.ico:0

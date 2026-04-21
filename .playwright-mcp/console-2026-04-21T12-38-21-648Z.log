@@ -1,0 +1,6 @@
+[     104ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8080/favicon.ico:0
+[   15085ms] [LOG] ATTRACT MODE STARTED - AI playing demo @ http://localhost:8080/game.js:2022
+[   37145ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8080/favicon.ico:0
+[   45109ms] [LOG] ATTRACT MODE STOPPED - returning to READY screen @ http://localhost:8080/game.js:2032
+[   45209ms] [LOG] ATTRACT MODE STARTED - AI playing demo @ http://localhost:8080/game.js:2022
+[   51029ms] [LOG] ATTRACT MODE STOPPED - returning to READY screen @ http://localhost:8080/game.js:2032

@@ -1,0 +1,430 @@
+:root {
+    /* Color Palette - Neon Arcade Theme */
+    --bg-color: #0f0f0f;
+    --grid-color: rgba(0, 255, 255, 0.08);
+    --grid-glow: rgba(0, 255, 255, 0.3);
+
+    /* Player Snake - Pure Red */
+    --player-color: #ff0000;
+    --player-glow: #ff0000;
+
+    /* Enemy Snake Colors */
+    --enemy-cyan: #00ffff;
+    --enemy-magenta: #ff00ff;
+    --enemy-lime: #39ff14;
+    --enemy-yellow: #ffff00;
+
+    /* Food Colors */
+    --food-color: #ff6600;
+    --food-glow: #ff6600;
+    --bonus-food-color: #ffd700;
+    --bonus-food-glow: #ffd700;
+
+    /* UI Colors */
+    --text-color: #00ffff;
+    --text-glow: rgba(0, 255, 255, 0.5);
+    --button-bg: transparent;
+    --button-border: #00ffff;
+    --button-hover: rgba(0, 255, 255, 0.2);
+
+    /* Typography */
+    --font-primary: 'Courier New', monospace;
+    --font-size-small: 14px;
+    --font-size-normal: 18px;
+    --font-size-large: 32px;
+    --font-size-title: 48px;
+
+    /* Spacing */
+    --spacing-xs: 8px;
+    --spacing-sm: 16px;
+    --spacing-md: 24px;
+    --spacing-lg: 32px;
+
+    /* Canvas */
+    --canvas-width: 800px;
+    --canvas-height: 600px;
+    --canvas-border: 2px;
+    --canvas-glow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-color);
+    font-family: var(--font-primary);
+    color: var(--text-color);
+    overflow: hidden;
+}
+
+/* Animated Grid Background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridPulse 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+
+@keyframes gridPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+}
+
+/* CRT Scanline Effect */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.1) 0px,
+        rgba(0, 0, 0, 0.1) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Game Container - Perfectly Centered */
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--spacing-md);
+}
+
+/* HUD - Heads Up Display */
+.hud {
+    display: flex;
+    justify-content: space-between;
+    width: var(--canvas-width);
+    margin-bottom: var(--spacing-sm);
+    font-size: var(--font-size-normal);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.score, .high-score {
+    text-shadow: 0 0 15px var(--text-glow);
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.score {
+    color: var(--player-color);
+}
+
+.high-score {
+    color: var(--enemy-cyan);
+}
+
+.center-hud {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.level-timer {
+    color: #00ffff;
+    font-size: 22px;
+    font-weight: bold;
+    text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+    letter-spacing: 2px;
+}
+
+.level-timer.warning {
+    color: #ff0000;
+    text-shadow: 0 0 20px rgba(255, 0, 0, 0.9);
+    animation: pulse 0.5s infinite;
+}
+
+.lives {
+    color: #ff0040;
+    font-size: var(--font-size-large);
+    text-shadow: 0 0 15px rgba(255, 0, 64, 0.8);
+    letter-spacing: 3px;
+}
+
+.life-heart.active {
+    color: #ff0040;
+    text-shadow: 0 0 10px rgba(255, 0, 64, 0.8);
+}
+
+.life-heart.lost {
+    color: #444;
+    text-shadow: none;
+}
+
+/* Canvas with Glowing Border */
+#gameCanvas {
+    border: var(--canvas-border) solid var(--grid-glow);
+    border-radius: 4px;
+    box-shadow: var(--canvas-glow), inset 0 0 20px rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.8);
+    max-width: 100%;
+    height: auto;
+}
+
+/* Controls Info */
+.controls {
+    margin-top: var(--spacing-sm);
+    font-size: var(--font-size-small);
+    color: var(--grid-glow);
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+/* Overlay Screens (Game Over, Pause) */
+.overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    padding: var(--spacing-lg);
+    background: rgba(15, 15, 15, 0.95);
+    border: 2px solid var(--grid-glow);
+    border-radius: 8px;
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
+}
+
+/* Game Over Overlay - Positioned at top */
+#gameOverScreen {
+    top: 80px;
+    transform: translateX(-50%);
+    background: rgba(15, 15, 15, 0.98);
+    border-color: #ff0040;
+    box-shadow: 0 0 40px rgba(255, 0, 64, 0.5);
+    z-index: 3000;
+}
+
+#gameOverScreen h1 {
+    color: #ff0040;
+    text-shadow: 0 0 20px rgba(255, 0, 64, 0.8);
+    animation: flicker 3s infinite;
+}
+
+/* Freeze Frame Effect */
+.freeze-frame {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    z-index: 1500;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.freeze-frame.active {
+    opacity: 1;
+}
+
+.overlay h1 {
+    font-size: var(--font-size-title);
+    margin-bottom: var(--spacing-md);
+    text-shadow: 0 0 20px var(--text-glow);
+    animation: flicker 3s infinite;
+}
+
+@keyframes flicker {
+    0%, 100% { opacity: 1; }
+    92% { opacity: 1; }
+    93% { opacity: 0.3; }
+    94% { opacity: 1; }
+    96% { opacity: 0.5; }
+    97% { opacity: 1; }
+}
+
+.overlay p {
+    font-size: var(--font-size-normal);
+    margin-bottom: var(--spacing-md);
+    color: var(--text-color);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Restart Button */
+#restartBtn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-family: var(--font-primary);
+    font-size: var(--font-size-normal);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    background: var(--button-bg);
+    color: var(--text-color);
+    border: 2px solid var(--button-border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 5px var(--text-glow);
+}
+
+#restartBtn:hover {
+    background: var(--button-hover);
+    box-shadow: 0 0 20px var(--text-glow);
+    transform: scale(1.05);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 850px) {
+    :root {
+        --canvas-width: 100%;
+        --canvas-height: auto;
+    }
+
+    .hud {
+        width: 100%;
+        max-width: 600px;
+    }
+
+    #gameCanvas {
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+    }
+}
+
+@media (max-width: 500px) {
+    .overlay h1 {
+        font-size: var(--font-size-large);
+    }
+
+    .hud {
+        font-size: var(--font-size-small);
+    }
+}
+
+/* Countdown Timer - Hidden (using level timer only) */
+.countdown {
+    display: none;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Flash Effect for Size Reset */
+.flash-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+    opacity: 0;
+    z-index: 2000;
+    transition: opacity 0.1s ease;
+}
+
+.flash-overlay.active {
+    opacity: 1;
+}
+
+/* Wall Obstacles - Positioned INSIDE the play area (top portion of canvas) */
+.wall-info {
+    position: absolute;
+    top: 220px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 36px;
+    font-weight: bold;
+    color: #ff0000;
+    text-shadow:
+        3px 3px 0 #000,
+        -3px -3px 0 #000,
+        3px -3px 0 #000,
+        -3px 3px 0 #000,
+        0 0 25px #ff0000,
+        0 0 50px #ff0000;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 100;
+    letter-spacing: 3px;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.wall-info.active {
+    opacity: 1;
+    animation: wallFlash 0.25s infinite;
+}
+    font-weight: bold;
+    color: #ff0000;
+    text-shadow:
+        2px 2px 0 #000,
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        0 0 20px #ff0000,
+        0 0 40px #ff0000;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 100;
+    letter-spacing: 3px;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.wall-info.active {
+    opacity: 1;
+    animation: wallFlash 0.25s infinite;
+}
+
+@keyframes wallFlash {
+    0%, 100% {
+        color: #ff0000;
+        text-shadow:
+            2px 2px 0 #000,
+            -2px -2px 0 #000,
+            2px -2px 0 #000,
+            -2px 2px 0 #000,
+            0 0 20px #ff0000,
+            0 0 40px #ff0000;
+    }
+    50% {
+        color: #ffff00;
+        text-shadow:
+            2px 2px 0 #000,
+            -2px -2px 0 #000,
+            2px -2px 0 #000,
+            -2px 2px 0 #000,
+            0 0 30px #ff0000,
+            0 0 60px #ff0000,
+            0 0 100px #ffff00;
+    }
+}
+
+/* Power-up info text */
+.powerup-info {
+    font-size: 12px;
+    color: #00d4ff;
+    text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
+    margin-top: 5px;
+    letter-spacing: 1px;
+}

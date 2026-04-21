@@ -1,0 +1,18 @@
+[   12423ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8085/favicon.ico:0
+[   16499ms] [LOG] First PowerPill scheduled in 60s @ http://localhost:8085/game.js:1367
+[   16499ms] [LOG] Power-up spawned: ghost at (3, 26) @ http://localhost:8085/game.js:1397
+[   25239ms] [LOG] Combo reset - window expired @ http://localhost:8085/game.js:1647
+[   27741ms] [LOG] Enemy 1 died: hit player @ http://localhost:8085/game.js:2768
+[   29242ms] [LOG] Power-up collected: ghost, duration: 8000ms @ http://localhost:8085/game.js:1470
+[   29843ms] [LOG] Combo reset - window expired @ http://localhost:8085/game.js:1647
+[   30543ms] [LOG] Enemy 1 respawned at (3, 12) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8085/game.js:2473
+[   30543ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8085/game.js:2396
+[   31561ms] [LOG] Power-up spawned: slowdown at (33, 19) @ http://localhost:8085/game.js:1397
+[   33596ms] [LOG] Enemy 2 died: hit player @ http://localhost:8085/game.js:2768
+[   34313ms] [LOG] Combo reset - window expired @ http://localhost:8085/game.js:1647
+[   35514ms] [LOG] Enemy 0 died: hit another enemy @ http://localhost:8085/game.js:2778
+[   35614ms] [LOG] Power-up collected: slowdown, duration: 10000ms @ http://localhost:8085/game.js:1470
+[   37332ms] [LOG] Power-up expired: ghost @ http://localhost:8085/game.js:1482
+[   37632ms] [LOG] Enemy 0 respawned at (20, 9) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8085/game.js:2473
+[   37632ms] [LOG] Enemy 2 respawned at (32, 15) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8085/game.js:2473
+[   37632ms] [LOG] Respawn wave: 2 snakes respawned @ http://localhost:8085/game.js:2396

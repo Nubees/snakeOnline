@@ -1,0 +1,21 @@
+[     158ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8081/favicon.ico:0
+[   19158ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8081/favicon.ico:0
+[   23148ms] [LOG] First PowerPill scheduled in 60s @ http://localhost:8081/game.js:1372
+[   23148ms] [LOG] Power-up spawned: magnet at (6, 8) @ http://localhost:8081/game.js:1402
+[   60128ms] [LOG] *** FIRST WALL SPAWNING NOW! *** @ http://localhost:8081/game.js:1173
+[   62396ms] [LOG] Enemy 0 died: hit another enemy @ http://localhost:8081/game.js:2783
+[   65415ms] [LOG] Enemy 0 respawned at (10, 12) with size 2 (death #1) - SPAWNING (grey for 2 seconds) @ http://localhost:8081/game.js:2478
+[   65415ms] [LOG] Respawn wave: 1 snakes respawned @ http://localhost:8081/game.js:2401
+[   70252ms] [LOG] Player hit enemy 2 body. Player died. @ http://localhost:8081/game.js:2717
+[   70253ms] [LOG] Player lost a life! Lives remaining: 2. Respawning... @ http://localhost:8081/game.js:2508
+[   70352ms] [LOG] Player hit enemy 2 body. Player died. @ http://localhost:8081/game.js:2717
+[   70469ms] [LOG] Player hit enemy 2 body. Player died. @ http://localhost:8081/game.js:2717
+[   71253ms] [LOG] Player respawned! Lives remaining: 2 @ http://localhost:8081/game.js:2607
+[   74889ms] [LOG] Head-on collision! Player length: 1, Enemy 0 length: 2 @ http://localhost:8081/game.js:2682
+[   74889ms] [LOG] Enemy 0 wins head-on! Player destroyed. @ http://localhost:8081/game.js:2697
+[   74889ms] [LOG] Player lost a life! Lives remaining: 1. Respawning... @ http://localhost:8081/game.js:2508
+[   74989ms] [LOG] Player hit enemy 0 body. Player died. @ http://localhost:8081/game.js:2717
+[   75890ms] [LOG] Player respawned! Lives remaining: 1 @ http://localhost:8081/game.js:2607
+[  110225ms] TypeError: Assignment to constant variable.
+    at startNextLevel (http://localhost:8081/game.js:1954:31)
+    at HTMLDocument.handleInput (http://localhost:8081/game.js:1802:13)
