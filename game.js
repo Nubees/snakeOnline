@@ -67,7 +67,9 @@ const SNAKE_NAMES = [
     { name: 'KRAIT', color: '#ffff00', personality: 'HUNTER' },                  // Level 2 - PURE YELLOW (distinct)
     { name: 'ASP', color: '#0066ff', personality: 'UNPREDICTABLE' },               // Level 3 - DEEP BLUE (vs cyan/yellow)
     { name: 'BOA', color: '#ff00ff', personality: 'TANK' },                      // Level 4 - MAGENTA (vs green)
-    { name: 'PYTHON', color: '#ff8800', personality: 'BOSS' }                    // Level 5 - ORANGE (distinct from red/yellow)
+    { name: 'PYTHON', color: '#ff8800', personality: 'BOSS' },                   // Level 5 - ORANGE (distinct from red/yellow)
+    { name: 'VOID SERPENT', color: '#9d00ff', personality: 'PHANTOM' },         // Level 7 - Void hazard survivor
+    { name: 'GRAVITON', color: '#ff00ff', personality: 'COSMIC' }                // Level 8 - Gravity well navigator
 ];
 let snakeKillStreaks = new Map(); // snake -> { kills } (resets on death, not time)
 
@@ -162,7 +164,7 @@ let speechSynthesisReady = false;
 let mkVoice = null; // Selected voice for announcements
 
 // LEVEL SYSTEM
-const MAX_LEVELS = 6;
+const MAX_LEVELS = 8;
 const LEVEL_DURATION_MS = 1 * 60 * 1000; // 1 minute per level (for testing)
 const LEVEL_WARNING_MS = 10000; // 10 seconds warning
 
@@ -173,7 +175,9 @@ const LEVEL_SETTINGS = [
     { level: 3, enemies: 5, powerUpInterval: 11000, foodBonusChance: 0.3, scoreMultiplier: 1.5, name: "ADEPT" },
     { level: 4, enemies: 6, powerUpInterval: 9000, foodBonusChance: 0.35, scoreMultiplier: 2, name: "EXPERT" },
     { level: 5, enemies: 7, powerUpInterval: 7000, foodBonusChance: 0.4, scoreMultiplier: 3, name: "MASTER" },
-    { level: 6, enemies: 7, powerUpInterval: 6000, foodBonusChance: 0.45, scoreMultiplier: 5, name: "GRANDMASTER", bossLevel: true }
+    { level: 6, enemies: 7, powerUpInterval: 6000, foodBonusChance: 0.45, scoreMultiplier: 5, name: "GRANDMASTER", bossLevel: true },
+    { level: 7, enemies: 3, powerUpInterval: 6000, foodBonusChance: 0.5, scoreMultiplier: 6, name: "VOID SURVIVOR", hazardLevel: true },
+    { level: 8, enemies: 4, powerUpInterval: 5500, foodBonusChance: 0.55, scoreMultiplier: 8, name: "GRAVITY WALKER", hazardLevel: true }
 ];
 
 // Level System Variables
@@ -1515,6 +1519,52 @@ const WALL_SHAPES = [
     { w: 4, h: 3 }   // 4x3 large block (new!)
 ];
 
+// ============================================
+// LEVEL 7+ ENVIRONMENTAL HAZARDS - VOID SPACE
+// ============================================
+
+// Drifting Debris System
+let driftingDebris = []; // Array of debris objects
+const DEBRIS_COLORS = ['#7a8b99', '#5a6b79', '#9aabba']; // Metallic grey/steel blue variants
+
+// Debris artwork images
+const DEBRIS_IMAGES = [
+    'assets/debris/debris_01.png',
+    'assets/debris/debris_02.png',
+    'assets/debris/debris_03.png',
+    'assets/debris/debris_04.png',
+    'assets/debris/debris_05.png',
+    'assets/debris/debris_06.png',
+    'assets/debris/debris_07.png'
+];
+let debrisImageCache = {}; // Cache for loaded images
+
+// Near-miss messages for close calls with debris
+const NEAR_MISS_MESSAGES = [
+    { text: 'CLOSE SAVE!', color: '#00ff00' },
+    { text: 'NEAR MISS!', color: '#00ffff' },
+    { text: 'THAT WAS CLOSE!', color: '#ffff00' },
+    { text: 'PHEW!', color: '#00ff00' },
+    { text: 'SKILL DODGE!', color: '#ff00ff' },
+    { text: 'BY A HAIR!', color: '#ff6600' }
+];
+
+let lastNearMissTime = 0; // Prevent spamming near-miss messages
+const DEBRIS_SIZES = [
+    { w: 1, h: 1, speed: 0.15 },  // Small: 1x1, fast
+    { w: 2, h: 1, speed: 0.10 },  // Medium horizontal
+    { w: 1, h: 2, speed: 0.10 },  // Medium vertical
+    { w: 2, h: 2, speed: 0.05 }   // Large: 2x2, slow
+];
+
+// Hazard settings per level
+const HAZARD_SETTINGS = [
+    { level: 7, maxDebris: 3 },   // Level 7: Start with 3 debris
+    { level: 8, maxDebris: 5 },   // Level 8: More debris
+    { level: 9, maxDebris: 7 },   // Level 9: Maximum chaos
+    { level: 10, maxDebris: 9 },  // Level 10+: Even more
+];
+
 // Snake Class
 class Snake {
     constructor(x, y, color, glowColor, isPlayer = false, name = null, isBoss = false) {
@@ -1539,6 +1589,9 @@ class Snake {
         this.bossWidth = isBoss ? 2 : 1; // Boss snakes are 2x width
         this.lastShotTime = 0;
         this.shootCooldown = 2000; // Shoot every 2 seconds
+
+        // Gravity well pull accumulator
+        this.gravityPull = { x: 0, y: 0 };
     }
 
     isInSpawnProtection() {
@@ -1886,21 +1939,41 @@ class Projectile {
         const screenY = this.y * GRID_SIZE + GRID_SIZE / 2;
 
         ctx.save();
-        ctx.globalAlpha = this.life;
-        ctx.fillStyle = this.color;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = this.color;
 
-        // Draw projectile as a glowing orb
+        // Flashing effect - pulse between bright and dim
+        const flashSpeed = Date.now() / 50;
+        const flashIntensity = 0.7 + Math.sin(flashSpeed) * 0.3;
+        const alpha = this.life * flashIntensity;
+
+        ctx.globalAlpha = alpha;
+
+        // Outer glow ring (pulsing)
+        const pulseRadius = this.radius * (1 + Math.sin(flashSpeed * 2) * 0.3);
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 25 * flashIntensity;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, pulseRadius * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Main projectile body
+        ctx.shadowBlur = 15;
         ctx.beginPath();
         ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Inner bright core
+        // Inner bright core (flashing white)
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 10 * flashIntensity;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, this.radius * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Center dot (brightest)
         ctx.fillStyle = '#ffffff';
         ctx.shadowBlur = 5;
         ctx.beginPath();
-        ctx.arc(screenX, screenY, this.radius * 0.5, 0, Math.PI * 2);
+        ctx.arc(screenX, screenY, this.radius * 0.3, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
@@ -2042,6 +2115,7 @@ class Food {
         this.isBonus = false;
         this.pulsePhase = 0;
         this.foodType = 'cherry'; // Current fruit type
+        this.gravityPull = { x: 0, y: 0 }; // Gravity well pull accumulator
         this.respawn();
     }
 
@@ -2079,9 +2153,12 @@ class Food {
         }
 
         // Bonus food chance based on level
-        const settings = LEVEL_SETTINGS[currentLevel - 1];
+        const settings = LEVEL_SETTINGS[currentLevel - 1] || { foodBonusChance: 0.5 };
         this.isBonus = Math.random() < settings.foodBonusChance;
         this.pulsePhase = 0;
+
+        // Reset gravity pull accumulator
+        this.gravityPull = { x: 0, y: 0 };
 
         // Random fruit type for variety
         this.foodType = FOOD_TYPES[Math.floor(Math.random() * FOOD_TYPES.length)];
@@ -2514,6 +2591,37 @@ class EnemyAI {
                 }
             }
 
+            // Level 7+: Avoid drifting debris (70% of the time)
+            if (currentLevel >= 7 && driftingDebris.length > 0) {
+                // Only apply debris avoidance 70% of the time (30% chance to ignore)
+                if (Math.random() < 0.7) {
+                    for (const debris of driftingDebris) {
+                        // Calculate distance to debris center
+                        const debrisCenterX = debris.x + debris.width / 2;
+                        const debrisCenterY = debris.y + debris.height / 2;
+                        const distToDebris = Math.abs(newX - debrisCenterX) + Math.abs(newY - debrisCenterY);
+
+                        // Strong penalty if getting close to debris
+                        if (distToDebris < 4) {
+                            score -= (4 - distToDebris) * 40; // Penalty increases as we get closer
+                        }
+
+                        // Extra penalty for moving directly toward debris path
+                        // Check if debris is moving and we're in its path
+                        if (debris.direction.x !== 0 || debris.direction.y !== 0) {
+                            // Predict debris position in a few frames
+                            const futureDebrisX = debrisCenterX + debris.direction.x * debris.speed * 3;
+                            const futureDebrisY = debrisCenterY + debris.direction.y * debris.speed * 3;
+                            const distToFuture = Math.abs(newX - futureDebrisX) + Math.abs(newY - futureDebrisY);
+
+                            if (distToFuture < 3) {
+                                score -= 60; // Strong penalty for intersecting debris path
+                            }
+                        }
+                    }
+                }
+            }
+
             // BOSS SNAKES: Strongly avoid walls (even if not immediate collision)
             if (this.snake.isBoss) {
                 for (const wall of walls) {
@@ -2671,21 +2779,22 @@ class Particle {
 
 // Floating Text Class for "Yummy!" etc.
 class FloatingText {
-    constructor(x, y, text, color = '#ffffff') {
+    constructor(x, y, text, color = '#ffffff', decay = 0.015, baseScale = 1) {
         this.x = x * GRID_SIZE + GRID_SIZE / 2;
         this.y = y * GRID_SIZE;
         this.text = text;
         this.color = color;
         this.life = 1.0;
-        this.decay = 0.015;
+        this.decay = decay;
         this.vy = -1; // Float upward
         this.scale = 1;
+        this.baseScale = baseScale; // Starting scale multiplier
     }
 
     update() {
         this.y += this.vy;
         this.life -= this.decay;
-        this.scale = 1 + (1 - this.life) * 0.5; // Grow slightly as it fades
+        this.scale = this.baseScale * (1 + (1 - this.life) * 0.3); // Grow slightly as it fades
     }
 
     draw(ctx) {
@@ -2694,7 +2803,7 @@ class FloatingText {
         ctx.fillStyle = this.color;
         ctx.font = `bold ${Math.floor(16 * this.scale)}px 'Courier New', monospace`;
         ctx.textAlign = 'center';
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 15 * this.baseScale;
         ctx.shadowColor = this.color;
         ctx.fillText(this.text, this.x, this.y);
         ctx.restore();
@@ -2812,6 +2921,768 @@ class Wall {
     updateRepositionTime() {
         this.nextRepositionTime = Date.now() + (WALL_REPOSITION_MINUTES * 60 * 1000);
     }
+}
+
+// ============================================
+// DRIFTING DEBRIS CLASS - Level 7+ Hazard
+// ============================================
+
+class DriftingDebris {
+    constructor(x, y, width, height, color, speed, direction, image = null) {
+        this.x = x;              // Float position for smooth movement
+        this.y = y;
+        this.width = width;      // In grid cells
+        this.height = height;
+        this.color = color;
+        this.speed = speed;      // Cells per frame
+        this.direction = direction; // { x, y } - unit vector
+        this.image = image;      // Debris artwork image
+        this.active = true;
+        this.spawnTime = Date.now();
+        this.rotation = 0;       // For visual rotation effect
+        this.rotationSpeed = (Math.random() - 0.5) * 0.1; // Random rotation
+    }
+
+    update() {
+        if (!this.active) return;
+
+        // Move debris
+        this.x += this.direction.x * this.speed;
+        this.y += this.direction.y * this.speed;
+
+        // Update rotation for visual effect
+        this.rotation += this.rotationSpeed;
+
+        // Screen wrapping - debris reappears on opposite side
+        if (this.direction.x > 0 && this.x > COLS + 2) {
+            this.x = -this.width - 1;
+        } else if (this.direction.x < 0 && this.x < -this.width - 1) {
+            this.x = COLS + 2;
+        }
+
+        if (this.direction.y > 0 && this.y > ROWS + 2) {
+            this.y = -this.height - 1;
+        } else if (this.direction.y < 0 && this.y < -this.height - 1) {
+            this.y = ROWS + 2;
+        }
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+
+        const screenX = this.x * GRID_SIZE + (this.width * GRID_SIZE) / 2;
+        const screenY = this.y * GRID_SIZE + (this.height * GRID_SIZE) / 2;
+
+        ctx.save();
+
+        // Translate to center of debris for rotation
+        ctx.translate(screenX, screenY);
+        ctx.rotate(this.rotation);
+
+        // Check if we have an image for this debris
+        if (this.image && this.image.complete && this.image.naturalWidth > 0) {
+            // Draw the debris image
+            const size = Math.max(this.width, this.height) * GRID_SIZE * 1.5; // Slightly larger for visual impact
+            ctx.drawImage(this.image, -size / 2, -size / 2, size, size);
+        } else {
+            // Fallback: Draw debris blocks with color
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = this.color;
+            ctx.fillStyle = this.color;
+
+            // Draw debris blocks centered on rotation point
+            for (let wx = 0; wx < this.width; wx++) {
+                for (let wy = 0; wy < this.height; wy++) {
+                    const offsetX = (wx - this.width / 2 + 0.5) * GRID_SIZE;
+                    const offsetY = (wy - this.height / 2 + 0.5) * GRID_SIZE;
+                    ctx.fillRect(offsetX - GRID_SIZE / 2 + 1, offsetY - GRID_SIZE / 2 + 1, GRID_SIZE - 2, GRID_SIZE - 2);
+                }
+            }
+
+            // Draw jagged edges (visual detail)
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#4a5b69';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            const halfW = (this.width * GRID_SIZE) / 2;
+            const halfH = (this.height * GRID_SIZE) / 2;
+            ctx.moveTo(-halfW + 2, -halfH + 2);
+            ctx.lineTo(halfW - 2, -halfH + 2);
+            ctx.lineTo(halfW - 2, halfH - 2);
+            ctx.lineTo(-halfW + 2, halfH - 2);
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+
+    checkCollision(snake) {
+        if (!this.active || !snake.alive) return false;
+
+        const head = snake.body[0];
+        const headX = head.x;
+        const headY = head.y;
+
+        // Check if head is within debris bounds
+        // Use Math.floor for grid collision
+        const debrisLeft = Math.floor(this.x);
+        const debrisRight = Math.ceil(this.x + this.width);
+        const debrisTop = Math.floor(this.y);
+        const debrisBottom = Math.ceil(this.y + this.height);
+
+        return (
+            headX >= debrisLeft &&
+            headX < debrisRight &&
+            headY >= debrisTop &&
+            headY < debrisBottom
+        );
+    }
+
+    // Get center position for effects
+    getCenter() {
+        return {
+            x: this.x + this.width / 2,
+            y: this.y + this.height / 2
+        };
+    }
+}
+
+// ============================================
+// LEVEL 8: GRAVITY WELL CLASS
+// ============================================
+
+class GravityWell {
+    constructor(x, y) {
+        this.x = x;              // Grid position (center)
+        this.y = y;
+        this.active = true;
+        this.spawnTime = Date.now();
+        this.duration = 8000 + Math.random() * 7000; // 8-15 seconds
+        this.radius = 6;         // Gravity field radius in cells (larger area)
+        this.deadlyRadius = 1.5; // Death radius at center
+        this.rotation = 0;       // For visual rotation
+        this.particles = [];     // Spiral particles
+        this.affectedSnakes = new Map(); // Track pull timers per snake
+
+        // Initialize spiral particles
+        for (let i = 0; i < 20; i++) {
+            this.particles.push({
+                angle: (i / 20) * Math.PI * 2,
+                distance: 15 + Math.random() * 60,
+                speed: 0.03 + Math.random() * 0.03
+            });
+        }
+    }
+
+    update() {
+        if (!this.active) return;
+
+        // Check if expired
+        if (Date.now() - this.spawnTime > this.duration) {
+            this.active = false;
+            return;
+        }
+
+        // Rotate visual faster
+        this.rotation += 0.08;
+
+        // Update spiral particles
+        for (const p of this.particles) {
+            p.angle += p.speed;
+            p.distance -= 0.5; // Spiral inward faster
+            if (p.distance < 8) {
+                p.distance = 75; // Reset to outer edge
+            }
+        }
+
+        // Apply AGGRESSIVE gravity to player (SKIP if in Ghost Mode)
+        if (player.alive && !isGhostMode()) {
+            this.applyAggressiveGravity(player);
+        }
+
+        // Apply AGGRESSIVE gravity to enemies
+        for (const enemy of enemies) {
+            if (enemy.alive) {
+                this.applyAggressiveGravity(enemy);
+            }
+        }
+
+        // Apply gravity to debris
+        for (const debris of driftingDebris) {
+            this.applyGravityToDebris(debris);
+        }
+
+        // Apply gravity to food
+        this.applyGravityToFood();
+    }
+
+    applyAggressiveGravity(snake) {
+        const head = snake.body[0];
+        const dx = this.x - head.x;
+        const dy = this.y - head.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Only affect if within radius and not already at center
+        if (dist >= this.radius || dist < 0.3) return;
+
+        // Get or create pull timer for this snake
+        if (!this.affectedSnakes.has(snake)) {
+            this.affectedSnakes.set(snake, {
+                lastPullTime: 0,
+                warningShown: false
+            });
+        }
+        const snakeState = this.affectedSnakes.get(snake);
+
+        // Show warning when first entering gravity field
+        if (!snakeState.warningShown) {
+            snakeState.warningShown = true;
+            if (snake.isPlayer) {
+                showFloatingText(head.x, head.y - 1, 'GRAVITY FIELD!', '#ff00ff', 0.03);
+            }
+        }
+
+        // Pull frequency increases as distance decreases (closer = pulled more often)
+        // At edge (radius 6): pull every 400ms
+        // At center (dist 0): pull every 100ms
+        const pullInterval = 100 + (dist / this.radius) * 300;
+        const now = Date.now();
+
+        if (now - snakeState.lastPullTime > pullInterval) {
+            snakeState.lastPullTime = now;
+
+            // Determine pull direction (1 cell toward well center)
+            const pullX = Math.sign(dx) || (Math.random() < 0.5 ? 1 : -1);
+            const pullY = Math.sign(dy) || (Math.random() < 0.5 ? 1 : -1);
+
+            // Prioritize the axis with larger distance
+            let moved = false;
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 0.5) {
+                // Pull horizontally
+                snake.body[0].x += pullX;
+                moved = true;
+            } else if (Math.abs(dy) > 0.5) {
+                // Pull vertically
+                snake.body[0].y += pullY;
+                moved = true;
+            } else if (Math.abs(dx) > 0.5) {
+                // Pull horizontally as fallback
+                snake.body[0].x += pullX;
+                moved = true;
+            }
+
+            // Visual feedback when pulled
+            if (moved && snake.isPlayer) {
+                // Flash the snake purple when being pulled
+                createExplosion(head.x, head.y, '#ff00ff', 1);
+            }
+        }
+    }
+
+    applyGravityToDebris(debris) {
+        const centerX = debris.x + debris.width / 2;
+        const centerY = debris.y + debris.height / 2;
+        const dx = this.x - centerX;
+        const dy = this.y - centerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < this.radius && dist > 0.5) {
+            // Debris gets pulled faster (can use float positions)
+            // Stronger pull for more dramatic effect
+            const pullSpeed = 0.12 * (1 + (this.radius - dist) / this.radius);
+            debris.x += (dx / dist) * pullSpeed;
+            debris.y += (dy / dist) * pullSpeed;
+
+            // Accelerate debris rotation when close
+            if (dist < 3) {
+                debris.rotationSpeed += 0.02;
+            }
+        }
+    }
+
+    applyGravityToFood() {
+        if (!food) return;
+
+        const dx = this.x - food.position.x;
+        const dy = this.y - food.position.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Only pull if within radius and not too close
+        if (dist < this.radius && dist > 0.5) {
+            // Food moves on grid but we accumulate fractional pull
+            if (!food.gravityPull) food.gravityPull = { x: 0, y: 0 };
+
+            // Pull strength increases as distance decreases
+            const pullStrength = 0.15 * (1 - dist / this.radius);
+
+            food.gravityPull.x += (dx / dist) * pullStrength;
+            food.gravityPull.y += (dy / dist) * pullStrength;
+
+            // Apply movement when accumulated pull exceeds 0.5
+            let moved = false;
+            if (Math.abs(food.gravityPull.x) >= 0.5) {
+                food.position.x += Math.sign(food.gravityPull.x);
+                food.gravityPull.x -= Math.sign(food.gravityPull.x);
+                moved = true;
+            }
+            if (Math.abs(food.gravityPull.y) >= 0.5) {
+                food.position.y += Math.sign(food.gravityPull.y);
+                food.gravityPull.y -= Math.sign(food.gravityPull.y);
+                moved = true;
+            }
+
+            // Keep food within bounds
+            if (food.position.x < 0) food.position.x = 0;
+            if (food.position.x >= COLS) food.position.x = COLS - 1;
+            if (food.position.y < 0) food.position.y = 0;
+            if (food.position.y >= ROWS) food.position.y = ROWS - 1;
+
+            // Visual effect when food is being pulled
+            if (moved) {
+                // Small purple particles following food
+                if (Math.random() < 0.3) {
+                    createExplosion(food.position.x, food.position.y, '#ff00ff', 1);
+                }
+            }
+        }
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+
+        const screenX = this.x * GRID_SIZE + GRID_SIZE / 2;
+        const screenY = this.y * GRID_SIZE + GRID_SIZE / 2;
+
+        ctx.save();
+
+        // Draw outer gravity field radius (CLEARLY VISIBLE)
+        const fieldRadius = this.radius * GRID_SIZE;
+
+        // Draw the 12x12 grid area that is affected (radius 6 = 12x12 blocks)
+        const gridSize = this.radius * 2 * GRID_SIZE;
+        ctx.strokeStyle = 'rgba(255, 0, 255, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(
+            screenX - gridSize / 2,
+            screenY - gridSize / 2,
+            gridSize,
+            gridSize
+        );
+
+        // Pulsing gravity field ring
+        const pulse = 1 + Math.sin(this.rotation * 2) * 0.1;
+        const ringRadius = fieldRadius * pulse;
+
+        ctx.strokeStyle = 'rgba(255, 0, 255, 0.5)';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([15, 10]);
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Inner gravity well area (stronger pull zone)
+        const innerRadius = (this.radius * 0.6) * GRID_SIZE;
+        const innerGradient = ctx.createRadialGradient(
+            screenX, screenY, 0,
+            screenX, screenY, innerRadius
+        );
+        innerGradient.addColorStop(0, 'rgba(128, 0, 255, 0.5)');
+        innerGradient.addColorStop(0.5, 'rgba(128, 0, 255, 0.2)');
+        innerGradient.addColorStop(1, 'rgba(128, 0, 255, 0)');
+        ctx.fillStyle = innerGradient;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, innerRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw spiral particles (accretion disk)
+        ctx.strokeStyle = '#ff00ff';
+        ctx.lineWidth = 2;
+        for (const p of this.particles) {
+            const px = screenX + Math.cos(p.angle + this.rotation) * p.distance;
+            const py = screenY + Math.sin(p.angle + this.rotation) * p.distance;
+
+            ctx.beginPath();
+            ctx.arc(px, py, 3, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 0, 255, ${p.distance / 80})`;
+            ctx.fill();
+        }
+
+        // Draw deadly center area (visual warning)
+        const deadlyRadiusPx = this.deadlyRadius * GRID_SIZE;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, deadlyRadiusPx, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw black hole center
+        ctx.shadowBlur = 40;
+        ctx.shadowColor = '#ff00ff';
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, 18, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw accretion disk (rotating rings)
+        ctx.strokeStyle = '#ff00ff';
+        ctx.lineWidth = 4;
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = '#ff00ff';
+        ctx.beginPath();
+        ctx.ellipse(
+            screenX, screenY,
+            25, 10,
+            this.rotation,
+            0, Math.PI * 2
+        );
+        ctx.stroke();
+
+        // Second ring
+        ctx.strokeStyle = '#aa00ff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(
+            screenX, screenY,
+            35, 14,
+            this.rotation * 0.7,
+            0, Math.PI * 2
+        );
+        ctx.stroke();
+
+        // Third ring
+        ctx.strokeStyle = '#6600aa';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(
+            screenX, screenY,
+            45, 18,
+            this.rotation * 0.5,
+            0, Math.PI * 2
+        );
+        ctx.stroke();
+
+        // Label
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#ff00ff';
+        ctx.font = 'bold 14px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('GRAVITY WELL', screenX, screenY - this.radius * GRID_SIZE - 10);
+
+        ctx.restore();
+    }
+
+    checkCollision(snake) {
+        if (!this.active || !snake.alive) return false;
+
+        const head = snake.body[0];
+        const dx = this.x - head.x;
+        const dy = this.y - head.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Death if within deadly radius (1.5 cells - about 3x3 area)
+        return dist < this.deadlyRadius;
+    }
+}
+
+// Gravity well management
+let gravityWells = [];
+
+function spawnGravityWell() {
+    // Only spawn for Level 8+
+    if (currentLevel < 8) return;
+
+    // Max 2 gravity wells at a time
+    if (gravityWells.length >= 2) return;
+
+    // Random position away from edges and player
+    let x, y, valid = false;
+    let attempts = 0;
+
+    while (!valid && attempts < 50) {
+        x = Math.floor(Math.random() * (COLS - 10)) + 5;
+        y = Math.floor(Math.random() * (ROWS - 10)) + 5;
+
+        // Check distance from player
+        const playerHead = player.body[0];
+        const distToPlayer = Math.abs(x - playerHead.x) + Math.abs(y - playerHead.y);
+
+        // Check distance from other wells
+        let distFromOtherWells = true;
+        for (const well of gravityWells) {
+            const dist = Math.abs(x - well.x) + Math.abs(y - well.y);
+            if (dist < 10) {
+                distFromOtherWells = false;
+                break;
+            }
+        }
+
+        if (distToPlayer > 8 && distFromOtherWells) {
+            valid = true;
+        }
+        attempts++;
+    }
+
+    if (valid) {
+        gravityWells.push(new GravityWell(x, y));
+        console.log(`[LEVEL 8] Gravity well spawned at (${x}, ${y})`);
+
+        // Show warning
+        showBanner('GRAVITY WELL!', 'DARK MATTER DETECTED!', '#ff00ff');
+    }
+}
+
+function updateGravityWells() {
+    if (currentLevel < 8) return;
+
+    // Spawn new wells periodically (higher chance for better gameplay)
+    if (Math.random() < 0.008 && gravityWells.length < 2) { // ~0.8% chance per frame
+        spawnGravityWell();
+    }
+
+    // Update existing wells
+    for (let i = gravityWells.length - 1; i >= 0; i--) {
+        gravityWells[i].update();
+
+        if (!gravityWells[i].active) {
+            console.log('[LEVEL 8] Gravity well collapsed');
+            gravityWells.splice(i, 1);
+        }
+    }
+}
+
+function drawGravityWells(ctx) {
+    for (const well of gravityWells) {
+        well.draw(ctx);
+    }
+}
+
+function checkGravityWellCollisions() {
+    if (currentLevel < 8) return;
+
+    // Check player collision with gravity well center
+    for (const well of gravityWells) {
+        if (well.checkCollision(player)) {
+            console.log('[LEVEL 8] Player sucked into gravity well!');
+            player.alive = false;
+            createExplosion(player.body[0].x, player.body[0].y, COLORS.PLAYER, 20);
+            triggerScreenShake(16);
+            showBanner('SINGULARITY!', 'GRAVITY WELL!', '#ff00ff');
+            gameOver();
+            return;
+        }
+
+        // Check enemy collisions
+        for (const enemy of enemies) {
+            if (enemy.alive && !enemy.isBoss && well.checkCollision(enemy)) {
+                console.log(`[LEVEL 8] Enemy ${enemy.name} sucked into gravity well!`);
+                enemy.alive = false;
+                enemy.deathTime = Date.now();
+                resetKillStreak(enemy);
+                createExplosion(enemy.body[0].x, enemy.body[0].y, enemy.color, 15);
+                showFloatingText(enemy.body[0].x, enemy.body[0].y, 'SINGULARITY!', '#ff00ff', 0.03);
+            }
+        }
+    }
+}
+
+function resetGravityWells() {
+    gravityWells = [];
+}
+
+// ============================================
+// DEBRIS MANAGEMENT FUNCTIONS
+// ============================================
+
+function spawnDriftingDebris() {
+    // Only spawn debris for Level 7+
+    if (currentLevel < 7) return;
+
+    // Get max debris for current level
+    const hazardConfig = HAZARD_SETTINGS.find(h => h.level === currentLevel);
+    if (!hazardConfig) return;
+
+    const maxDebris = hazardConfig.maxDebris;
+
+    // Check if we need more debris
+    if (driftingDebris.length >= maxDebris) return;
+
+    // Spawn debris
+    const sizeConfig = DEBRIS_SIZES[Math.floor(Math.random() * DEBRIS_SIZES.length)];
+    const color = DEBRIS_COLORS[Math.floor(Math.random() * DEBRIS_COLORS.length)];
+
+    // Load debris image (pick random one)
+    const imageIndex = Math.floor(Math.random() * DEBRIS_IMAGES.length);
+    const imagePath = DEBRIS_IMAGES[imageIndex];
+    let debrisImage = debrisImageCache[imagePath];
+    if (!debrisImage) {
+        debrisImage = new Image();
+        debrisImage.src = imagePath;
+        debrisImageCache[imagePath] = debrisImage;
+    }
+
+    // Choose spawn side (0: left, 1: right, 2: top, 3: bottom)
+    const side = Math.floor(Math.random() * 4);
+    let x, y, direction;
+
+    switch (side) {
+        case 0: // Left side, moving right
+            x = -sizeConfig.w - 1;
+            y = Math.floor(Math.random() * (ROWS - 5)) + 2;
+            direction = { x: 1, y: 0 };
+            break;
+        case 1: // Right side, moving left
+            x = COLS + 1;
+            y = Math.floor(Math.random() * (ROWS - 5)) + 2;
+            direction = { x: -1, y: 0 };
+            break;
+        case 2: // Top, moving down
+            x = Math.floor(Math.random() * (COLS - 5)) + 2;
+            y = -sizeConfig.h - 1;
+            direction = { x: 0, y: 1 };
+            break;
+        case 3: // Bottom, moving up
+            x = Math.floor(Math.random() * (COLS - 5)) + 2;
+            y = ROWS + 1;
+            direction = { x: 0, y: -1 };
+            break;
+    }
+
+    // Validate position - don't spawn too close to player
+    const playerHead = player.body[0];
+    const distToPlayer = Math.abs(x - playerHead.x) + Math.abs(y - playerHead.y);
+    if (distToPlayer < 8) return; // Too close to player
+
+    // Create debris
+    const debris = new DriftingDebris(
+        x, y,
+        sizeConfig.w, sizeConfig.h,
+        color,
+        sizeConfig.speed,
+        direction,
+        debrisImage
+    );
+
+    driftingDebris.push(debris);
+    console.log(`[HAZARD] Drifting debris spawned: size ${sizeConfig.w}x${sizeConfig.h} at (${x.toFixed(1)}, ${y.toFixed(1)}) moving ${side < 2 ? 'horizontally' : 'vertically'}`);
+}
+
+function updateDriftingDebris() {
+    // Only update for Level 7+
+    if (currentLevel < 7) return;
+
+    // Spawn new debris periodically
+    if (Math.random() < 0.01) { // ~1% chance per frame
+        spawnDriftingDebris();
+    }
+
+    // Update all debris
+    for (let i = driftingDebris.length - 1; i >= 0; i--) {
+        const debris = driftingDebris[i];
+        debris.update();
+
+        // Remove if inactive (shouldn't happen with screen wrapping, but just in case)
+        if (!debris.active) {
+            driftingDebris.splice(i, 1);
+        }
+    }
+}
+
+function drawDriftingDebris(ctx) {
+    for (const debris of driftingDebris) {
+        debris.draw(ctx);
+    }
+}
+
+function checkDebrisCollisions() {
+    // Only check for Level 7+
+    if (currentLevel < 7) return;
+
+    // Check player collision - Ghost mode players DON'T die but CAN get near-miss bonuses
+    if (player.alive) {
+        let hitDebris = null;
+        let nearMissDebris = null;
+        let closestDist = Infinity;
+
+        // First pass: Check all debris for collisions and near-misses
+        for (const debris of driftingDebris) {
+            // Check collision (death) - but ghost mode and POWERPILL are immune
+            if (!isGhostMode() && !isPowerPillActive() && debris.checkCollision(player)) {
+                hitDebris = debris;
+                break; // Player died, stop checking
+            }
+
+            // Check for near miss (within 2.5 cells but not hitting)
+            // This applies to ALL players including ghost mode
+            const debrisCenterX = debris.x + debris.width / 2;
+            const debrisCenterY = debris.y + debris.height / 2;
+            const playerHead = player.body[0];
+            const distToDebris = Math.sqrt(
+                Math.pow(playerHead.x - debrisCenterX, 2) +
+                Math.pow(playerHead.y - debrisCenterY, 2)
+            );
+
+            // Near miss: close but not colliding
+            if (distToDebris < 2.5 && distToDebris > 0.8) {
+                if (distToDebris < closestDist) {
+                    closestDist = distToDebris;
+                    nearMissDebris = debris;
+                }
+            }
+        }
+
+        // Handle collision death FIRST
+        if (hitDebris) {
+            console.log('[HAZARD] Player hit by drifting debris!');
+            player.alive = false;
+            createExplosion(player.body[0].x, player.body[0].y, COLORS.PLAYER, 20);
+            triggerScreenShake(14);
+
+            // Show hazard death message
+            showBanner('COLLISION!', 'VOID DEBRIS!', '#ff0040');
+
+            gameOver();
+            return; // Exit early - no near-miss bonus if player died
+        }
+
+        // Award near-miss bonus ONLY if player didn't die (limit to once every 500ms)
+        if (nearMissDebris && Date.now() > lastNearMissTime + 500) {
+            lastNearMissTime = Date.now();
+            score += 5;
+            updateScore();
+
+            // Pick random message - use faster decay (0.04) for quick disappearance
+            const msg = NEAR_MISS_MESSAGES[Math.floor(Math.random() * NEAR_MISS_MESSAGES.length)];
+            showFloatingText(player.body[0].x, player.body[0].y - 1, msg.text, msg.color, 0.04);
+            showFloatingText(player.body[0].x, player.body[0].y - 2, '+5', '#ffff00', 0.04);
+        }
+    }
+
+    // Check enemy collisions (debris kills enemies too!)
+    for (const enemy of enemies) {
+        if (!enemy.alive) continue;
+        // Bosses are immune to debris
+        if (enemy.isBoss) continue;
+
+        for (const debris of driftingDebris) {
+            if (debris.checkCollision(enemy)) {
+                console.log(`[HAZARD] Enemy ${enemy.name} destroyed by debris!`);
+                enemy.alive = false;
+                enemy.deathTime = Date.now();
+                resetKillStreak(enemy);
+                createExplosion(enemy.body[0].x, enemy.body[0].y, enemy.color, 15);
+                // Only show floating text 50% of the time for enemies (reduce clutter)
+                if (Math.random() < 0.5) {
+                    showFloatingText(enemy.body[0].x, enemy.body[0].y, 'DEBRIS KILL!', '#7a8b99', 0.03);
+                }
+                break; // Enemy hit one debris, don't check others
+            }
+        }
+    }
+}
+
+function resetDriftingDebris() {
+    driftingDebris = [];
 }
 
 function spawnSecondBoss() {
@@ -3166,7 +4037,7 @@ function collectPowerUp() {
             text = 'SLOW MOTION!';
             color = '#9d00ff';
         }
-        showFloatingText(player.body[0].x, player.body[0].y, text, color);
+        showFloatingText(player.body[0].x, player.body[0].y, text, color, 0.02);
 
         console.log(`Power-up collected: ${type}, duration: ${duration}ms`);
         powerUpItem = null;
@@ -3200,7 +4071,7 @@ function updatePowerUps() {
                 color = '#9d00ff';
                 enemySpeedMultiplier = 1.0; // Reset enemy speed
             }
-            showFloatingText(player.body[0].x, player.body[0].y, text, color);
+            showFloatingText(player.body[0].x, player.body[0].y, text, color, 0.02);
         }
     }
 
@@ -3266,6 +4137,8 @@ function applyPowerPillDestruction() {
                     console.log(`*** BOSS ${enemy.name} DESTROYED BY POWERPILL! ***`);
                     showBanner('BOSS DEFEATED!', `${enemy.name} DESTROYED!`, '#00ff00');
                     triggerScreenFlash('gold', 0.8);
+                    // BIG RED floating text for boss kill!
+                    showFloatingText(enemy.body[0].x, enemy.body[0].y - 2, 'BOSS DESTROYED!', '#ff0000', 0.02, 2.5);
                 } else {
                     console.log(`POWERPILL DESTRUCTION! Enemy ${i} destroyed!`);
                     announceKill(player, enemy, 'POWERPILL');
@@ -3341,7 +4214,10 @@ function announceKill(killer, victim, method = 'normal') {
         color = '#0088ff';
     }
 
-    showFloatingText(head.x, head.y - 3, announcement, color);
+    // Only show kill announcements 50% of the time for non-player kills (reduce clutter)
+    if (killer.isPlayer || Math.random() < 0.5) {
+        showFloatingText(head.x, head.y - 3, announcement, color, 0.015);
+    }
 
     // MORTAL KOMBAT STYLE ANNOUNCER - Trigger on streak milestones
     const announcerTier = ANNOUNCER_TIERS.find(t => t.threshold === streak.kills);
@@ -3391,7 +4267,7 @@ function onFoodEaten() {
     if (milestoneText && newMultiplier > comboMultiplier) {
         comboMultiplier = newMultiplier;
         soundSystem.playCombo(comboMultiplier);
-        showFloatingText(player.body[0].x, player.body[0].y - 2, milestoneText, '#ff0040');
+        showFloatingText(player.body[0].x, player.body[0].y - 2, milestoneText, '#ff0040', 0.025);
         // GREEN flash for combo milestone
         triggerScreenFlash('green', 0.4);
         console.log(`Combo milestone: ${milestoneText}`);
@@ -3522,7 +4398,9 @@ function handleInput(e) {
     }
 
     if (gameState === GAME_STATE.GAME_OVER) {
-        if (e.key === 'r' || e.key === 'R') {
+        // Any key (except special keys) restarts the game
+        if (e.key.length === 1 || e.key === 'Enter' || e.key === 'Space' ||
+            e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
             resetGame();
         }
         return;
@@ -3584,7 +4462,7 @@ function speedUpGame() {
         gameSpeed -= 10;
         baseGameSpeed = gameSpeed;
         soundSystem.playSpeedUp();
-        showFloatingText(player.body[0].x, player.body[0].y, 'SPEED UP!', '#00ffff');
+        showFloatingText(player.body[0].x, player.body[0].y, 'SPEED UP!', '#00ffff', 0.02);
         console.log('Speed increased: ' + gameSpeed + 'ms');
     }
 }
@@ -3594,15 +4472,15 @@ function slowDownGame() {
         gameSpeed += 10;
         baseGameSpeed = gameSpeed;
         soundSystem.playSpeedDown();
-        showFloatingText(player.body[0].x, player.body[0].y, 'SLOW DOWN', '#ff00ff');
+        showFloatingText(player.body[0].x, player.body[0].y, 'SLOW DOWN', '#ff00ff', 0.02);
         console.log('Speed decreased: ' + gameSpeed + 'ms');
     }
 }
 
 function startCountdown() {
-    // If boss battle mode is ON, initialize Level 6 before countdown
+    // If boss battle mode is ON, initialize Level 6 Boss Battle
     if (bossBattleMode) {
-        initBossBattleMode();
+        initBossBattleMode(); // Start at Level 6 boss fight
     }
 
     gameState = GAME_STATE.COUNTDOWN;
@@ -3672,6 +4550,80 @@ function initBossBattleMode() {
     POWERUP_SPAWN_INTERVAL_MS = 6000;
 
     console.log('BOSS BATTLE MODE: Level 6 initialized with 7 enemies, NO WALLS (1 BOSS)');
+}
+
+// Initialize Level 7 Test Mode (for testing drifting debris hazards)
+function initLevel7TestMode() {
+    currentLevel = 7;
+
+    // Reinitialize enemies for Level 7 (3 regular enemies for manageable testing)
+    enemies = [];
+    enemyAIs = [];
+
+    // 3 regular snakes for Level 7 testing
+    const level7Positions = [
+        { x: COLS - 6, y: 5 },
+        { x: COLS - 6, y: ROWS - 6 },
+        { x: 5, y: ROWS - 6 }
+    ];
+
+    for (let i = 0; i < 3; i++) {
+        const snakeConfig = SNAKE_NAMES[i];
+        const pos = level7Positions[i];
+        const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name, false);
+        enemies.push(enemy);
+        enemyAIs.push(new EnemyAI(enemy));
+    }
+
+    // No walls in Level 7 (clean void space for debris)
+    walls = [];
+
+    // Reset any existing debris
+    driftingDebris = [];
+
+    // Update power-up interval for Level 7
+    POWERUP_SPAWN_INTERVAL_MS = 6000;
+
+    console.log('LEVEL 7 TEST MODE: Initialized with 3 enemies, NO WALLS, drifting debris hazards enabled');
+    console.log('Drifting debris will spawn automatically - watch out for space debris!');
+}
+
+// Initialize Level 8 Test Mode (for testing gravity wells)
+function initLevel8TestMode() {
+    currentLevel = 8;
+
+    // Reinitialize enemies for Level 8 (4 regular enemies)
+    enemies = [];
+    enemyAIs = [];
+
+    // 4 regular snakes for Level 8 testing
+    const level8Positions = [
+        { x: COLS - 6, y: 5 },
+        { x: COLS - 6, y: ROWS - 6 },
+        { x: 5, y: ROWS - 6 },
+        { x: Math.floor(COLS / 2), y: 3 }
+    ];
+
+    for (let i = 0; i < 4; i++) {
+        const snakeConfig = SNAKE_NAMES[i];
+        const pos = level8Positions[i];
+        const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name, false);
+        enemies.push(enemy);
+        enemyAIs.push(new EnemyAI(enemy));
+    }
+
+    // No walls in Level 8
+    walls = [];
+
+    // Reset hazards
+    driftingDebris = [];
+    gravityWells = [];
+
+    // Update power-up interval for Level 8
+    POWERUP_SPAWN_INTERVAL_MS = 5500;
+
+    console.log('LEVEL 8 TEST MODE: Initialized with 4 enemies, NO WALLS, debris + gravity wells enabled');
+    console.log('Gravity wells will spawn automatically - avoid the dark matter singularities!');
 }
 
 // ATTRACT MODE FUNCTIONS
@@ -3932,15 +4884,39 @@ function completeLevel() {
         return;
     }
 
-    // Check if boss is defeated (Level 6)
-    if (currentLevel === MAX_LEVELS) {
+    // Check if boss is defeated (Level 6) - TESTING: Transition to Level 7 instead of victory
+    if (currentLevel === 6) {
         // Check if ALL boss snakes are defeated
         const bosses = enemies.filter(e => e.isBoss);
         const allBossesDead = bosses.length > 0 && bosses.every(b => !b.alive);
         if (allBossesDead) {
-            triggerVictory();
+            console.log('[TEST MODE] Boss defeated! Transitioning to Level 7...');
+            gameState = GAME_STATE.LEVEL_COMPLETE;
+            stopLevelWarningEffects();
+            soundSystem.playLevelComplete();
+            triggerScreenFlash('gold', 0.7);
+
+            setTimeout(() => {
+                // Don't pre-set currentLevel - let startNextLevel() handle the increment from 6 to 7
+                gameState = GAME_STATE.LEVEL_TRANSITION;
+            }, 1500);
             return;
         }
+    }
+
+    // Level 7 complete - transition to Level 8
+    if (currentLevel === 7) {
+        console.log('[TEST MODE] Level 7 complete! Transitioning to Level 8...');
+        gameState = GAME_STATE.LEVEL_COMPLETE;
+        stopLevelWarningEffects();
+        soundSystem.playLevelComplete();
+        triggerScreenFlash('gold', 0.7);
+
+        setTimeout(() => {
+            // Don't pre-set currentLevel - let startNextLevel() handle the increment from 7 to 8
+            gameState = GAME_STATE.LEVEL_TRANSITION;
+        }, 1500);
+        return;
     }
 
     gameState = GAME_STATE.LEVEL_COMPLETE;
@@ -3958,7 +4934,7 @@ function completeLevel() {
 
 function startNextLevel() {
     currentLevel++;
-    const settings = LEVEL_SETTINGS[currentLevel - 1];
+    const settings = LEVEL_SETTINGS[currentLevel - 1] || { powerUpInterval: 6000 };
 
     // Update spawn intervals based on level
     POWERUP_SPAWN_INTERVAL_MS = settings.powerUpInterval;
@@ -3969,35 +4945,67 @@ function startNextLevel() {
         player.growing = 0;
     }
 
-    for (const enemy of enemies) {
-        // Reset death count so enemies spawn at size 1
-        enemy.deathCount = 0;
+    // For non-hazard levels, reset existing enemies
+    if (!settings.hazardLevel) {
+        for (const enemy of enemies) {
+            // Reset death count so enemies spawn at size 1
+            enemy.deathCount = 0;
 
-        if (enemy.alive) {
-            // Alive enemies: reset to just head
-            enemy.body = [enemy.body[0]];
-            enemy.growing = 0;
-        } else {
-            // Dead enemies: respawn them at size 1
-            respawnEnemy(enemy, enemies.indexOf(enemy));
+            // Strip boss status when not on boss level (Level 6)
+            if (enemy.isBoss && currentLevel !== 6) {
+                enemy.isBoss = false;
+                enemy.bossWidth = 1;
+            }
+
+            if (enemy.alive) {
+                enemy.body = [enemy.body[0]];
+                enemy.growing = 0;
+            } else {
+                respawnEnemy(enemy, enemies.indexOf(enemy));
+            }
         }
     }
 
     // Clear projectiles between levels
     projectiles = [];
 
-    // Add new enemy for this level
-    // currentLevel is already incremented: Level 2 = index 3 (KRAIT), Level 3 = index 4 (ASP), etc.
-    // For Level 6 (boss), use PYTHON (index 6)
-    let snakeIndex = 1 + currentLevel;
-    if (snakeIndex >= SNAKE_NAMES.length) {
-        snakeIndex = SNAKE_NAMES.length - 1; // Use PYTHON (last snake) for boss level
-    }
-    const newSnakeConfig = SNAKE_NAMES[snakeIndex];
-    const spawnPos = calculateEnemySpawnPosition();
+    // For hazard levels (7+), reset enemies to correct count from LEVEL_SETTINGS
+    // This ensures we don't carry over too many enemies from previous levels
+    if (settings.hazardLevel) {
+        // Clear existing enemies and respawn correct number
+        enemies = [];
+        enemyAIs = [];
 
-    // Check if this is the boss level (Level 6 - PYTHON)
-    if (settings.bossLevel && newSnakeConfig.name === 'PYTHON') {
+        // Get positions for new enemies (use level 1 positions as base)
+        const positions = [
+            { x: COLS - 6, y: 5 },
+            { x: COLS - 6, y: ROWS - 6 },
+            { x: 5, y: ROWS - 6 },
+            { x: COLS - 8, y: Math.floor(ROWS / 2) },
+            { x: Math.floor(COLS / 2), y: ROWS - 4 },
+            { x: 8, y: 8 },
+            { x: COLS - 8, y: ROWS - 8 }
+        ];
+
+        // Spawn correct number of enemies for this level
+        const enemyCount = settings.enemies;
+        for (let i = 0; i < enemyCount; i++) {
+            const pos = positions[i % positions.length];
+            const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
+            const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name, false);
+            enemies.push(enemy);
+            enemyAIs.push(new EnemyAI(enemy));
+        }
+    } else if (settings.bossLevel) {
+        // Boss level: Keep existing enemies but add PYTHON as boss
+        // currentLevel is already incremented: Level 2 = index 3 (KRAIT), Level 3 = index 4 (ASP), etc.
+        let snakeIndex = 1 + currentLevel;
+        if (snakeIndex >= SNAKE_NAMES.length) {
+            snakeIndex = SNAKE_NAMES.length - 1;
+        }
+        const newSnakeConfig = SNAKE_NAMES[snakeIndex];
+        const spawnPos = calculateEnemySpawnPosition();
+
         // Create PYTHON as a BOSS snake
         const bossEnemy = new Snake(
             spawnPos.x,
@@ -4023,6 +5031,14 @@ function startNextLevel() {
         // Show boss warning
         showBanner('BOSS APPROACHES!', 'PYTHON THE DESTROYER', '#ff0000');
     } else {
+        // Normal level progression: Add one new enemy
+        let snakeIndex = 1 + currentLevel;
+        if (snakeIndex >= SNAKE_NAMES.length) {
+            snakeIndex = SNAKE_NAMES.length - 1;
+        }
+        const newSnakeConfig = SNAKE_NAMES[snakeIndex];
+        const spawnPos = calculateEnemySpawnPosition();
+
         const newEnemy = new Snake(
             spawnPos.x,
             spawnPos.y,
@@ -4039,7 +5055,7 @@ function startNextLevel() {
     initLevelTimer();
 
     // Show size reset message
-    showFloatingText(player.body[0].x, player.body[0].y - 2, 'SIZE RESET!', '#00ffff');
+    showFloatingText(player.body[0].x, player.body[0].y - 2, 'SIZE RESET!', '#00ffff', 0.02);
 
     // Start countdown
     gameState = GAME_STATE.COUNTDOWN;
@@ -4139,7 +5155,7 @@ function drawVictoryScreen() {
 
     // Pulse effect
     const pulse = 1 + Math.sin(Date.now() / 150) * 0.1;
-    ctx.translate(CANVAS_WIDTH / 2, 100);
+    ctx.translate(CANVAS_WIDTH / 2, 60);
     ctx.scale(pulse, pulse);
     ctx.fillText('🏆 VICTORY! 🏆', 0, 0);
     ctx.restore();
@@ -4150,7 +5166,7 @@ function drawVictoryScreen() {
     ctx.font = "bold 36px 'Courier New', monospace";
     ctx.shadowBlur = 25;
     ctx.shadowColor = '#00ff00';
-    ctx.fillText('WELL DONE!', CANVAS_WIDTH / 2, 170);
+    ctx.fillText('WELL DONE!', CANVAS_WIDTH / 2, 120);
     ctx.restore();
 
     // Completion message
@@ -4158,7 +5174,7 @@ function drawVictoryScreen() {
     ctx.fillStyle = '#aaaaaa';
     ctx.font = "20px 'Courier New', monospace";
     ctx.shadowBlur = 0;
-    ctx.fillText('You have completed all the levels', CANVAS_WIDTH / 2, 210);
+    ctx.fillText('You have completed all the levels', CANVAS_WIDTH / 2, 160);
     ctx.restore();
 
     // Final stats
@@ -4167,24 +5183,24 @@ function drawVictoryScreen() {
     ctx.font = "bold 32px 'Courier New', monospace";
     ctx.shadowBlur = 20;
     ctx.shadowColor = '#00ffff';
-    ctx.fillText(`TOP SCORE: ${score}`, CANVAS_WIDTH / 2, 270);
+    ctx.fillText(`TOP SCORE: ${score}`, CANVAS_WIDTH / 2, 210);
     ctx.restore();
 
     // Restart prompt
     ctx.save();
     const pulse2 = 1 + Math.sin(Date.now() / 200) * 0.08;
-    ctx.translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 60);
+    ctx.translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 100);
     ctx.scale(pulse2, pulse2);
     ctx.fillStyle = '#ffffff';
     ctx.font = "bold 24px 'Courier New', monospace";
     ctx.shadowBlur = 20;
     ctx.shadowColor = '#ffffff';
-    ctx.fillText('PRESS R TO PLAY AGAIN', 0, 0);
+    ctx.fillText('PRESS ANY KEY TO PLAY AGAIN', 0, 0);
     ctx.restore();
 }
 
-function showFloatingText(x, y, text, color) {
-    floatingTexts.push(new FloatingText(x, y, text, color));
+function showFloatingText(x, y, text, color, decay = 0.015, baseScale = 1) {
+    floatingTexts.push(new FloatingText(x, y, text, color, decay, baseScale));
 }
 
 function showBanner(text, subText = '', color = '#00ff00') {
@@ -4342,6 +5358,10 @@ function resetGame() {
     wallSpawnTime = null; // Reset wall spawn timer
     nextWallSpawnTime = null; // Reset next wall spawn timer
     lastWallRepositionTime = null; // Reset wall reposition timer
+    driftingDebris = []; // Reset Level 7+ drifting debris
+    debrisImageCache = {}; // Clear debris image cache
+    resetGravityWells(); // Reset Level 8+ gravity wells
+    lastNearMissTime = 0; // Reset near-miss timer
     gameStartTime = Date.now(); // Reset game start time
     score = 0;
     playerLives = MAX_LIVES;
@@ -4619,7 +5639,7 @@ function gameOver() {
 
         // Show "PLAYER DIED" message
         const playerHead = player.body[0];
-        showFloatingText(playerHead.x, playerHead.y - 2, 'PLAYER DIED!', '#ff0040');
+        showFloatingText(playerHead.x, playerHead.y - 2, 'PLAYER DIED!', '#ff0040', 0.025);
 
         // Stop any playing power-up sounds
         soundSystem.stopPowerPillAmbient();
@@ -4709,7 +5729,7 @@ function respawnPlayer() {
     player.spawnTime = Date.now(); // Start spawn protection
 
     // Show immunity notification
-    showFloatingText(newX, newY - 2, 'IMMUNITY 3s!', '#00ffff');
+    showFloatingText(newX, newY - 2, 'IMMUNITY 3s!', '#00ffff', 0.02);
 
     // Resume playing
     gameState = GAME_STATE.PLAYING;
@@ -4746,9 +5766,6 @@ function update(deltaTime) {
     // Update power-ups (check expiration, apply effects)
     updatePowerUps();
 
-    // Check for power-up collection
-    collectPowerUp();
-
     // Update combo timer
     updateCombo();
 
@@ -4757,6 +5774,12 @@ function update(deltaTime) {
 
     // Update projectiles
     updateProjectiles();
+
+    // Update drifting debris (Level 7+ hazard) - update positions
+    updateDriftingDebris();
+
+    // Update gravity wells (Level 8+ hazard) - apply gravity effects
+    updateGravityWells();
 
     // Update enemies AI
     for (const ai of enemyAIs) {
@@ -4818,8 +5841,17 @@ function update(deltaTime) {
                         console.log(`Player wins head-on! Enemy ${i} destroyed. Player grew by ${growthAmount}!`);
                         createExplosion(enemyHead.x, enemyHead.y, enemy.color, 15);
                         soundSystem.playEnemyKill(); // Satisfying kill sound
-                        showFloatingText(playerHead.x, playerHead.y, `+${growthAmount}`, '#00ff00');
-                        announceKill(player, enemy);
+
+                        // Check if boss was killed
+                        if (enemy.isBoss) {
+                            // BIG RED floating text for boss kill!
+                            showFloatingText(enemyHead.x, enemyHead.y - 2, 'BOSS DESTROYED!', '#ff0000', 0.02, 2.5);
+                            showBanner('BOSS DEFEATED!', `${enemy.name} DESTROYED!`, '#00ff00');
+                            triggerScreenFlash('gold', 0.8);
+                        } else {
+                            showFloatingText(playerHead.x, playerHead.y, `+${growthAmount}`, '#00ff00', 0.03);
+                            announceKill(player, enemy);
+                        }
                     } else if (enemyLength > playerLength) {
                         // Enemy wins, player dies
                         player.alive = false;
@@ -4874,7 +5906,7 @@ function update(deltaTime) {
                 console.log(`Ghost mode kill! Enemy ${i} destroyed. Player grew by ${growthAmount}!`);
                 createExplosion(enemyHead.x, enemyHead.y, enemy.color, 15);
                 soundSystem.playEnemyKill(); // Satisfying kill sound
-                showFloatingText(playerHead.x, playerHead.y, `GHOST KILL! +${growthAmount}`, '#9d00ff');
+                showFloatingText(playerHead.x, playerHead.y, `GHOST KILL! +${growthAmount}`, '#9d00ff', 0.03);
                 announceKill(player, enemy);
             }
         }
@@ -4923,8 +5955,23 @@ function update(deltaTime) {
         // Check wall collisions
         checkWallCollisions();
 
-        // Early return if game over from wall collision
-        if (gameState !== GAME_STATE.PLAYING) return;
+        // Check drifting debris collisions (Level 7+)
+        checkDebrisCollisions();
+
+        // Check gravity well collision for this enemy (Level 8+)
+        if (currentLevel >= 8 && !enemy.isBoss) {
+            for (const well of gravityWells) {
+                if (well.checkCollision(enemy)) {
+                    console.log(`[LEVEL 8] Enemy ${enemy.name} sucked into gravity well!`);
+                    enemy.alive = false;
+                    enemy.deathTime = Date.now();
+                    resetKillStreak(enemy);
+                    createExplosion(enemy.body[0].x, enemy.body[0].y, enemy.color, 15);
+                    showFloatingText(enemy.body[0].x, enemy.body[0].y, 'SINGULARITY!', '#ff00ff', 0.03);
+                    break;
+                }
+            }
+        }
 
         // Enemy eats food
         if (enemy.alive && food.checkCollision(enemy)) {
@@ -4932,7 +5979,16 @@ function update(deltaTime) {
             createExplosion(food.position.x, food.position.y, food.isBonus ? COLORS.BONUS_FOOD : COLORS.FOOD, 8);
             food.respawn([player, ...enemies.filter(e => e.alive)]);
         }
+
+        // Early return if game over from wall/debris collision
+        if (gameState !== GAME_STATE.PLAYING) return;
     }
+
+    // Check for power-up collection (AFTER player moves)
+    collectPowerUp();
+
+    // Check gravity well collisions (Level 8+ hazard) - AFTER player moves
+    checkGravityWellCollisions();
 
     // Player eats food
     if (food.checkCollision(player)) {
@@ -4944,7 +6000,7 @@ function update(deltaTime) {
         points *= comboMultiplier;
 
         // Apply level multiplier
-        const settings = LEVEL_SETTINGS[currentLevel - 1];
+        const settings = LEVEL_SETTINGS[currentLevel - 1] || { scoreMultiplier: 1 };
         points = Math.floor(points * settings.scoreMultiplier);
 
         score += points;
@@ -4957,30 +6013,38 @@ function update(deltaTime) {
         // Show random floating text
         const phrase = EATING_PHRASES[Math.floor(Math.random() * EATING_PHRASES.length)];
         const textColor = food.isBonus ? '#ffd700' : '#00ffff';
-        showFloatingText(food.position.x, food.position.y, phrase, textColor);
+        showFloatingText(food.position.x, food.position.y, phrase, textColor, 0.025);
 
         // Show points gained with multiplier
         if (comboMultiplier > 1) {
-            showFloatingText(food.position.x, food.position.y - 1, `+${points}`, '#ff0040');
+            showFloatingText(food.position.x, food.position.y - 1, `+${points}`, '#ff0040', 0.025);
         }
 
         updateScore();
         food.respawn([player, ...enemies.filter(e => e.alive)]);
     }
 
-    // Check if boss is defeated (Level 6 Boss Battle victory) - AFTER all enemy processing
+    // Check if boss is defeated (Level 6 Boss Battle) - IMMEDIATE transition to Level 7
     try {
-        if (currentLevel === MAX_LEVELS && gameState === GAME_STATE.PLAYING && !isVictoryTriggered) {
+        if (currentLevel === 6 && gameState === GAME_STATE.PLAYING) {
             const bosses = enemies.filter(e => e.isBoss);
             const allBossesDead = bosses.length > 0 && bosses.every(b => !b.alive);
             if (allBossesDead) {
-                console.log('BOSS DEFEATED! Triggering victory...');
-                triggerVictory();
+                console.log('[BOSS DEFEATED] Transitioning to Level 7...');
+                gameState = GAME_STATE.LEVEL_COMPLETE;
+                stopLevelWarningEffects();
+                soundSystem.playLevelComplete();
+                triggerScreenFlash('gold', 0.7);
+
+                setTimeout(() => {
+                    // Don't pre-set currentLevel - let startNextLevel() handle the increment from 6 to 7
+                    gameState = GAME_STATE.LEVEL_TRANSITION;
+                }, 1500);
                 return;
             }
         }
     } catch (e) {
-        console.error('Error in victory check:', e);
+        console.error('Error in boss defeat check:', e);
     }
 
     // Update particles
@@ -5120,6 +6184,12 @@ function draw() {
 
     // Draw walls
     drawWalls();
+
+    // Draw drifting debris (Level 7+ hazard)
+    drawDriftingDebris(ctx);
+
+    // Draw gravity wells (Level 8+ hazard) - behind snakes
+    drawGravityWells(ctx);
 
     // Draw projectiles (behind snakes)
     drawProjectiles(ctx);
@@ -5492,8 +6562,14 @@ function drawLevelTimer() {
 
 function drawLevelTransitionScreen() {
     const nextLevel = currentLevel + 1;
-    const newSnake = SNAKE_NAMES[2 + currentLevel]; // Index 3, 4, 5, 6 for levels 2-5
-    const settings = LEVEL_SETTINGS[nextLevel - 1];
+    // Map level to snake index: Level 2->3, 3->4, 4->5, 5->6, 7->7, 8->8
+    let snakeIndex = 2 + currentLevel;
+    if (currentLevel >= 6) {
+        // After boss level (6), Level 7 gets index 7, Level 8 gets index 8
+        snakeIndex = currentLevel + 1;
+    }
+    const newSnake = SNAKE_NAMES[snakeIndex] || { name: 'UNKNOWN', color: '#ffffff', personality: 'MYSTERIOUS' };
+    const settings = LEVEL_SETTINGS[nextLevel - 1] || { name: 'UNKNOWN', hazardLevel: false };
 
     // Dark overlay
     ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
@@ -5551,6 +6627,11 @@ function drawLevelTransitionScreen() {
         ctx.fillStyle = '#ff0000';
         ctx.shadowColor = '#ff0000';
         ctx.fillText('⚠️ WARNING: BOSS APPROACHES! ⚠️', CANVAS_WIDTH / 2, 195);
+    } else if (settings.hazardLevel) {
+        // Hazard level warning (Level 7+, 8+)
+        ctx.fillStyle = '#ff6600';
+        ctx.shadowColor = '#ff6600';
+        ctx.fillText('⚠️ HAZARD LEVEL: VOID SPACE! ⚠️', CANVAS_WIDTH / 2, 195);
     } else {
         ctx.fillStyle = '#ff0040';
         ctx.shadowColor = '#ff0040';
@@ -5640,6 +6721,123 @@ function drawLevelTransitionScreen() {
     }
 
     ctx.restore();
+
+    // ⚠️ LEVEL 7 HAZARD WARNING ⚠️
+    // New danger warning when entering Level 7 (first hazard level with debris)
+    if (currentLevel === 6 && nextLevel === 7) {
+        ctx.save();
+        ctx.font = "bold 22px 'Courier New', monospace";
+        ctx.textAlign = 'center';
+
+        // Warning box background
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
+        ctx.fillRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+
+        // Warning border
+        ctx.strokeStyle = '#ff6600';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#ff6600';
+        ctx.strokeRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+
+        // Warning title
+        ctx.fillStyle = '#ff6600';
+        ctx.shadowColor = '#ff6600';
+        ctx.shadowBlur = 25;
+        ctx.fillText('⚠️ NEW DANGER DETECTED! ⚠️', CANVAS_WIDTH / 2, 410);
+
+        // Warning details
+        ctx.font = "bold 18px 'Courier New', monospace";
+        ctx.fillStyle = '#ffaa00';
+        ctx.shadowColor = '#ffaa00';
+        ctx.shadowBlur = 15;
+        ctx.fillText('VOID SPACE: DRIFTING DEBRIS!', CANVAS_WIDTH / 2, 435);
+
+        ctx.font = "16px 'Courier New', monospace";
+        ctx.fillStyle = '#aaaaaa';
+        ctx.shadowBlur = 10;
+        ctx.fillText('Space fragments will drift across the arena. Avoid collision!', CANVAS_WIDTH / 2, 460);
+
+        ctx.restore();
+    }
+
+    // ✅ LEVEL 7 COMPLETED - SURVIVED DEBRIS ✅
+    // Congratulate player for surviving Level 7's debris
+    if (currentLevel === 7 && nextLevel === 8) {
+        ctx.save();
+        ctx.font = "bold 22px 'Courier New', monospace";
+        ctx.textAlign = 'center';
+
+        // Success box background
+        ctx.fillStyle = 'rgba(255, 102, 0, 0.15)';
+        ctx.fillRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+
+        // Success border
+        ctx.strokeStyle = '#ff6600';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#ff6600';
+        ctx.strokeRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+
+        // Success title
+        ctx.fillStyle = '#ff6600';
+        ctx.shadowColor = '#ff6600';
+        ctx.shadowBlur = 25;
+        ctx.fillText('✅ VOID SPACE SURVIVED! ✅', CANVAS_WIDTH / 2, 410);
+
+        // Success details
+        ctx.font = "bold 18px 'Courier New', monospace";
+        ctx.fillStyle = '#ffaa00';
+        ctx.shadowColor = '#ffaa00';
+        ctx.shadowBlur = 15;
+        ctx.fillText('DANGER: DRIFTING DEBRIS CLEARED!', CANVAS_WIDTH / 2, 435);
+
+        ctx.font = "16px 'Courier New', monospace";
+        ctx.fillStyle = '#aaaaaa';
+        ctx.shadowBlur = 10;
+        ctx.fillText('You survived the void space debris field!', CANVAS_WIDTH / 2, 460);
+
+        ctx.restore();
+    }
+
+    // ⚠️ LEVEL 9 HAZARD WARNING ⚠️
+    // Warning for Level 8→9 transition about gravity wells (Level 8's hazard)
+    if (currentLevel === 8 && nextLevel === 9) {
+        ctx.save();
+        ctx.font = "bold 22px 'Courier New', monospace";
+        ctx.textAlign = 'center';
+
+        // Success box background
+        ctx.fillStyle = 'rgba(128, 0, 255, 0.15)';
+        ctx.fillRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+
+        // Success border
+        ctx.strokeStyle = '#ff00ff';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#ff00ff';
+        ctx.strokeRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+
+        // Success title
+        ctx.fillStyle = '#ff00ff';
+        ctx.shadowColor = '#ff00ff';
+        ctx.shadowBlur = 25;
+        ctx.fillText('✅ COSMIC HAZARD SURVIVED! ✅', CANVAS_WIDTH / 2, 410);
+
+        // Success details
+        ctx.font = "bold 18px 'Courier New', monospace";
+        ctx.fillStyle = '#aa66ff';
+        ctx.shadowColor = '#aa66ff';
+        ctx.shadowBlur = 15;
+        ctx.fillText('DANGER: GRAVITY WELLS CLEARED!', CANVAS_WIDTH / 2, 435);
+
+        ctx.font = "16px 'Courier New', monospace";
+        ctx.fillStyle = '#aaaaaa';
+        ctx.shadowBlur = 10;
+        ctx.fillText('You survived the dark matter singularities!', CANVAS_WIDTH / 2, 460);
+
+        ctx.restore();
+    }
 
     // "Press C to continue" at BOTTOM CENTER
     ctx.save();
