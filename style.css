@@ -498,3 +498,95 @@ body::after {
     margin-top: 3px;
     letter-spacing: 1px;
 }
+
+/* ============================================
+   MOBILE TOUCH CONTROLS
+   ============================================ */
+
+/* Prevent browser touch behaviors on canvas */
+canvas, #gameCanvas {
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile controls overlay container */
+.mobile-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.mobile-controls.active {
+    pointer-events: auto;
+}
+
+.mobile-controls.hidden {
+    display: none;
+}
+
+/* Mobile action buttons */
+.mobile-btn {
+    width: 60px;
+    height: 60px;
+    pointer-events: auto;
+    background: rgba(0, 255, 255, 0.2);
+    border: 2px solid #00ffff;
+    border-radius: 50%;
+    color: #00ffff;
+    font-size: 24px;
+    touch-action: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+.mobile-btn:active {
+    background: rgba(0, 255, 255, 0.5);
+    transform: scale(0.95);
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
+}
+
+/* Pause button specific styling */
+.pause-btn {
+    border-color: #ff0040;
+    color: #ff0040;
+    box-shadow: 0 0 15px rgba(255, 0, 64, 0.3);
+}
+
+.pause-btn:active {
+    box-shadow: 0 0 25px rgba(255, 0, 64, 0.6);
+}
+
+/* Responsive: Always show mobile controls on small screens */
+@media (max-width: 850px) {
+    .mobile-controls {
+        display: flex !important;
+        bottom: 10px;
+    }
+
+    .mobile-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+
+    .controls {
+        font-size: 12px;
+        padding: 0 10px;
+    }
+}

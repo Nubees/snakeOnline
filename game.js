@@ -160,6 +160,19 @@ let currentAnnouncerMode = 'set1'; // Options: 'set1' or 'set2'
 // BOSS BATTLE MODE - Start directly in Level 6
 let bossBattleMode = false; // Toggle with '2' key on ready screen
 
+// ============================================================================
+// MOBILE TOUCH CONTROLS
+// ============================================================================
+const isTouchDevice = () => {
+    return (navigator.maxTouchPoints > 0) ||
+           (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+};
+
+let touchEnabled = false;
+let touchStartX = 0;
+let touchStartY = 0;
+const SWIPE_THRESHOLD = 50; // pixels - minimum movement to register as swipe
+
 let currentAnnouncer = null; // { text, color, startTime, duration, scale }
 let speechSynthesisReady = false;
 let mkVoice = null; // Selected voice for announcements
@@ -7005,6 +7018,10 @@ function initGame() {
     document.addEventListener('keydown', handleInput);
     document.getElementById('restartBtn').addEventListener('click', resetGame);
 
+    // Initialize mobile touch controls
+    initTouchControls();
+    initMobileButtons();
+
     // Start game loop
     requestAnimationFrame(gameLoop);
 }
@@ -7953,6 +7970,124 @@ function togglePause() {
     } else if (gameState === GAME_STATE.PAUSED) {
         gameState = GAME_STATE.PLAYING;
         document.getElementById('pauseScreen').classList.add('hidden');
+    }
+}
+
+// ============================================================================
+// MOBILE TOUCH CONTROL FUNCTIONS
+// ============================================================================
+
+function initTouchControls() {
+    // Check if touch device
+    if (!isTouchDevice()) return;
+
+    touchEnabled = true;
+
+    // Show mobile controls
+    const mobileControls = document.getElementById('mobile-controls');
+    if (mobileControls) mobileControls.classList.remove('hidden');
+
+    // Add touch listeners to canvas
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    // Prevent browser defaults globally
+    document.addEventListener('touchmove', preventDefaultTouch, { passive: false });
+    document.addEventListener('dblclick', preventDefaultTouch, { passive: false });
+}
+
+function preventDefaultTouch(e) {
+    // Only prevent on canvas or mobile controls
+    if (e.target === canvas || e.target.closest('#mobile-controls')) {
+        e.preventDefault();
+    }
+}
+
+function handleTouchStart(e) {
+    if (!touchEnabled) return;
+    e.preventDefault();
+
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+}
+
+function handleTouchEnd(e) {
+    if (!touchEnabled || gameState !== GAME_STATE.PLAYING) return;
+    e.preventDefault();
+
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+
+    // Ignore small movements (taps)
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD && Math.abs(deltaY) < SWIPE_THRESHOLD) {
+        return;
+    }
+
+    // Determine direction
+    let newDirection = null;
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Horizontal swipe
+        newDirection = deltaX > 0 ? 'right' : 'left';
+    } else {
+        // Vertical swipe
+        newDirection = deltaY > 0 ? 'down' : 'up';
+    }
+
+    // Apply to player snake
+    if (newDirection && player) {
+        const dirMap = {
+            'up': DIRECTIONS.UP,
+            'down': DIRECTIONS.DOWN,
+            'left': DIRECTIONS.LEFT,
+            'right': DIRECTIONS.RIGHT
+        };
+
+        const currentDir = player.direction;
+        const newDir = dirMap[newDirection];
+
+        // Prevent 180-degree turns (can't reverse into yourself)
+        if (currentDir.x !== -newDir.x || currentDir.y !== -newDir.y) {
+            player.nextDirection = newDir;
+        }
+    }
+}
+
+function handleTouchMove(e) {
+    if (!touchEnabled) return;
+    e.preventDefault(); // Prevent scrolling
+}
+
+function initMobileButtons() {
+    // Pause button
+    const pauseBtn = document.getElementById('mobilePause');
+    if (pauseBtn) {
+        pauseBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            togglePause();
+        });
+        pauseBtn.addEventListener('click', togglePause);
+    }
+
+    // Speed button - cycles through speeds like Z/X keys
+    const speedBtn = document.getElementById('mobileSpeed');
+    if (speedBtn) {
+        speedBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            cycleGameSpeed();
+        });
+        speedBtn.addEventListener('click', cycleGameSpeed);
+    }
+}
+
+function cycleGameSpeed() {
+    // Toggle between normal and fast speed
+    if (gameSpeed === baseGameSpeed) {
+        speedUpGame();
+    } else {
+        slowDownGame();
     }
 }
 
