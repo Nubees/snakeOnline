@@ -158,7 +158,7 @@ const ANNOUNCER_TIERS = [
 let currentAnnouncerMode = 'set1'; // Options: 'set1' or 'set2'
 
 // BOSS BATTLE MODE - Start directly in Level 6
-let bossBattleMode = false; // Toggle with 'B' key on ready screen
+let bossBattleMode = false; // Toggle with '2' key on ready screen
 
 let currentAnnouncer = null; // { text, color, startTime, duration, scale }
 let speechSynthesisReady = false;
@@ -7029,9 +7029,9 @@ function handleInput(e) {
     if (gameState === GAME_STATE.READY) {
         if (e.key === 'c' || e.key === 'C') {
             startCountdown();
-        } else if (e.key === 'v' || e.key === 'V') {
+        } else if (e.key === '1') {
             toggleAnnouncerMode();
-        } else if (e.key === 'b' || e.key === 'B') {
+        } else if (e.key === '2') {
             bossBattleMode = !bossBattleMode;
         } else if (e.key === 'Backspace') {
             e.preventDefault();
@@ -7073,8 +7073,8 @@ function handleInput(e) {
         return;
     }
 
-    // V key - Toggle announcer mode between synthesized and audio files
-    if (e.key === 'v' || e.key === 'V') {
+    // 1 key - Toggle announcer mode between synthesized and audio files
+    if (e.key === '1') {
         toggleAnnouncerMode();
         return;
     }
@@ -9107,7 +9107,7 @@ function drawReadyScreen() {
     ctx.shadowBlur = 0;
     ctx.fillText('Type name before starting (max 6 chars)', CANVAS_WIDTH / 2, 455);
     ctx.fillText('Arrow Keys: Move  |  Z: Speed Up  |  X: Slow Down', CANVAS_WIDTH / 2, 480);
-    ctx.fillText('P: Pause  |  R: Restart  |  V: Sound Set  |  B: Boss Mode', CANVAS_WIDTH / 2, 500);
+    ctx.fillText('P: Pause  |  R: Restart  |  1: Sound Set  |  2: Boss Mode', CANVAS_WIDTH / 2, 500);
 
     ctx.shadowBlur = 0;
 }
