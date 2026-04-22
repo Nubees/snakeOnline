@@ -45,6 +45,7 @@ const COLORS = {
 // Game State Variables
 let canvas, ctx;
 let gameState = GAME_STATE.READY;
+let audioInitialized = false; // Tracks if Tone.js has been started
 let score = 0;
 let highScore = localStorage.getItem('snakeHighScore') || 0;
 let animationId;
@@ -1564,6 +1565,2652 @@ const HAZARD_SETTINGS = [
     { level: 9, maxDebris: 7 },   // Level 9: Maximum chaos
     { level: 10, maxDebris: 9 },  // Level 10+: Even more
 ];
+
+// =============================================================================
+// MUSIC SYSTEM
+// =============================================================================
+
+class MusicSystem {
+    constructor() {
+        this.currentTrack = 0; // 0-5 = procedural music flavors, 6 = Silent
+        this.audioElements = [];
+        this.trackNames = [
+            '1: Cozy Valley',        // Track 0
+            '2: Tetris Theme',       // Track 1
+            '3: Temple of Time',     // Track 2
+            '4: Song of Storms',     // Track 3
+            '5: Mii Channel Remix',  // Track 4
+            '6: Tetris Theme Alt',   // Track 5
+            '7: L\'s Theme',         // Track 6 - Death Note
+            '8: Misa\'s Theme',       // Track 7 - Death Note
+            '9: River Flows In You', // Track 8 - Yiruma
+            '10: Nuvole Bianche',     // Track 9 - Einaudi
+            '11: Una Mattina',        // Track 10 - Einaudi
+            '12: Silent Mode',        // Track 11
+            '13: Silent Mode'         // Track 12
+        ];
+        this.initialized = false;
+        this.usingMP3 = false;
+        this.mp3Available = [false, false, false, false, false];
+    }
+
+    init() {
+        if (this.initialized) return;
+
+        for (let i = 1; i <= 5; i++) {
+            const audio = new Audio();
+            audio.src = `assets/music/song${i}.mp3`;
+            audio.loop = true;
+            audio.volume = 0.4;
+            audio.preload = 'auto';
+
+            const trackIdx = i - 1;
+            audio.addEventListener('canplaythrough', () => {
+                this.mp3Available[trackIdx] = true;
+                console.log(`[MusicSystem] MP3 track ${i} is available`);
+            });
+            audio.addEventListener('error', () => {
+                this.mp3Available[trackIdx] = false;
+            });
+            this.audioElements.push(audio);
+        }
+
+        this.initialized = true;
+        this.updateHUD();
+    }
+
+    nextTrack() {
+        this.init();
+        this.stop();
+        this.currentTrack = (this.currentTrack + 1) % 13;
+        this.updateHUD();
+        this.play();
+        return this.currentTrack;
+    }
+
+    updateHUD() {
+        const musicTrackEl = document.getElementById('musicTrack');
+        if (musicTrackEl) {
+            const isSilent = this.currentTrack >= 11;
+            const displayName = isSilent ? 'Silent' : this.trackNames[this.currentTrack];
+            musicTrackEl.textContent = displayName;
+        }
+    }
+
+    getCurrentTrackName() {
+        return this.trackNames[this.currentTrack];
+    }
+
+    play() {
+        if (!this.initialized) this.init();
+        if (this.currentTrack >= 11) {
+            this.stopAllMusic();
+            return;
+        }
+
+        const mp3Index = this.currentTrack;
+        if (mp3Index >= 0 && mp3Index < 5 && this.mp3Available[mp3Index]) {
+            this.usingMP3 = true;
+            proceduralMusic.stop();
+            this.audioElements[mp3Index].currentTime = 0;
+            this.audioElements[mp3Index].play().catch(e => console.log('[MusicSystem] Playback blocked:', e));
+        } else {
+            this.usingMP3 = false;
+            this.stopMP3s();
+            this.startProceduralForTrack(this.currentTrack);
+        }
+    }
+
+    async startProceduralForTrack(trackNum) {
+        // Stop any other procedural music first
+        proceduralMusic.stop();
+        poochysTheme.stop();
+        templeOfTime.stop();
+        songOfStorms.stop();
+        miiChannel.stop();
+        tetrisThemeAlt.stop();
+
+        // Track 1 is Tetris Theme (special handling)
+        if (trackNum === 1) {
+            await poochysTheme.start();
+            return;
+        }
+
+        // Track 2 is Temple of Time (special handling)
+        if (trackNum === 2) {
+            await templeOfTime.start();
+            return;
+        }
+
+        // Track 3 is Song of Storms (special handling)
+        if (trackNum === 3) {
+            await songOfStorms.start();
+            return;
+        }
+
+        // Track 4 is Mii Channel Remix (special handling)
+        if (trackNum === 4) {
+            await miiChannel.start();
+            return;
+        }
+
+        // Track 5 is Tetris Theme Alt (special handling)
+        if (trackNum === 5) {
+            await tetrisThemeAlt.start();
+            return;
+        }
+
+        // Track 6 is L's Theme (special handling)
+        if (trackNum === 6) {
+            await lsTheme.start();
+            return;
+        }
+
+        // Track 7 is Misa's Theme (special handling)
+        if (trackNum === 7) {
+            await misasTheme.start();
+            return;
+        }
+
+        // Track 8 is River Flows In You (special handling)
+        if (trackNum === 8) {
+            await riversFlow.start();
+            return;
+        }
+
+        // Track 9 is Nuvole Bianche (special handling)
+        if (trackNum === 9) {
+            await nuvoleBianche.start();
+            return;
+        }
+
+        // Track 10 is Una Mattina (special handling)
+        if (trackNum === 10) {
+            await unaMattina.start();
+            return;
+        }
+
+        // Track 11-12 are Silent (handled by stopAllMusic)
+        if (trackNum >= 11) {
+            this.stopAllMusic();
+            return;
+        }
+
+        const configs = [
+            { tempo: 100, scale: 'cozy', name: 'Cozy Valley' },  // Track 0
+            null, // Track 1 - Tetris Theme (handled above)
+            null, // Track 2 - Temple of Time (handled above)
+            null, // Track 3 - Song of Storms (handled above)
+            null, // Track 4 - Mii Channel Remix (handled above)
+            null, // Track 5 - Tetris Theme Alt (handled above)
+            null, // Track 6 - L's Theme (handled above)
+            null, // Track 7 - Misa's Theme (handled above)
+            null, // Track 8 - River Flows In You (handled above)
+            null, // Track 9 - Nuvole Bianche (handled above)
+            null, // Track 10 - Una Mattina (handled above)
+            null, // Track 11 - Silent (handled above)
+            null, // Track 12 - Silent (handled above)
+        ];
+
+        const config = configs[trackNum] || configs[0];
+        proceduralMusic.setMusicStyle(config.tempo, config.scale);
+        await proceduralMusic.start();
+    }
+
+    stopAllMusic() {
+        this.stopMP3s();
+        proceduralMusic.stop();
+        poochysTheme.stop();
+        templeOfTime.stop();
+        songOfStorms.stop();
+        miiChannel.stop();
+        tetrisThemeAlt.stop();
+        lsTheme.stop();
+        misasTheme.stop();
+        riversFlow.stop();
+        nuvoleBianche.stop();
+        unaMattina.stop();
+    }
+
+    stopMP3s() {
+        this.audioElements.forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
+        });
+    }
+
+    stop() {
+        if (this.currentTrack === 6) {
+            this.stopAllMusic();
+        } else {
+            this.stopMP3s();
+        }
+    }
+}
+
+let musicSystem = new MusicSystem();
+
+// =============================================================================
+// ADAPTIVE PROCEDURAL MUSIC SYSTEM - COZY GAME EDITION
+// =============================================================================
+// Inspired by Stardew Valley - warm, pastoral, flowing music with rich instruments
+
+class ProceduralMusic {
+    constructor() {
+        this.isPlaying = false;
+        this.initialized = false;
+        this.baseTempo = 100;  // Slightly faster for better flow
+        this.currentTempo = 100;
+        this.barCount = 0;
+        this.swing = 0.12;
+        this.dangerLevel = 0;
+        this.urgencyLevel = 0;
+
+        // Chord progressions (I-V-vi-IV and variations)
+        this.chordProgressions = {
+            cozy: [['C3', 'E3', 'G3'], ['G2', 'B2', 'D3'], ['A2', 'C3', 'E3'], ['F2', 'A2', 'C3']],
+            warm: [['C3', 'E3', 'G3'], ['F2', 'A2', 'C3'], ['G2', 'B2', 'D3'], ['C3', 'E3', 'G3']],
+            nostalgic: [['A2', 'C3', 'E3'], ['F2', 'A2', 'C3'], ['C3', 'E3', 'G3'], ['G2', 'B2', 'D3']],
+            gentle: [['C3', 'E3', 'G3'], ['A2', 'C3', 'E3'], ['F2', 'A2', 'C3'], ['G2', 'B2', 'D3']],
+            dreamy: [['F2', 'A2', 'C3'], ['C3', 'E3', 'G3'], ['G2', 'B2', 'D3'], ['A2', 'C3', 'E3']],
+        };
+        this.currentProgression = this.chordProgressions.cozy;
+        this.currentChordIndex = 0;
+
+        // Melodic themes - flowing phrases
+        this.melodicThemes = {
+            morning: [
+                [0, 2, 4, 5, 4, 2, 0, null, 4, 5, 7, 9, 7, 5, 4, 2],
+                [0, 4, 2, 5, 4, 7, 5, 4, 2, 0, null, null, 2, 4, 0, null]
+            ],
+            wandering: [
+                [0, null, 2, 4, null, 5, 4, 2, null, 0, 2, null, 4, 5, 4, 2],
+                [4, 2, 0, null, 4, 5, 7, 5, 4, 2, 0, 2, 4, 2, 0, null]
+            ],
+            peaceful: [
+                [0, 2, 4, 2, 0, null, 0, 2, 4, 5, 4, 2, 4, 2, 0, null],
+                [4, 2, 0, 2, 4, null, 5, 4, 2, 0, null, null, 0, 2, 4, 5]
+            ],
+            building: [
+                [0, 2, 4, 7, 5, 4, 2, 4, 5, 7, 9, 7, 5, 4, 5, 7],
+                [0, 4, 7, 4, 5, 7, 9, 7, 4, 5, 4, 2, 0, 2, 4, 0]
+            ],
+            cozy: [
+                [0, null, 2, 4, 2, 0, null, 2, 4, 5, 4, 2, 0, null, null, null],
+                [4, 2, 0, 2, 4, 5, 4, 2, 0, null, 2, 4, 2, 0, null, null]
+            ]
+        };
+        this.currentTheme = this.melodicThemes.cozy;
+        this.currentPhrase = this.currentTheme[0];
+        this.phraseStep = 0;
+
+        // Arpeggio patterns
+        this.arpeggioPatterns = [[0, 2, 1, 2], [0, 1, 2, 1], [2, 1, 0, 1], [0, 2, 1, 0]];
+        this.currentArpPattern = 0;
+
+        // Instruments
+        this.guitar = null;
+        this.bell = null;
+        this.bass = null;
+        this.pad = null;
+        this.flute = null;
+        this.strings = null;
+
+        // Effects
+        this.reverb = null;
+        this.delay = null;           // Main delay for flute
+        this.echo = null;            // Tape echo for guitar slow parts
+        this.chorus = null;
+        this.musicLoop = null;
+    }
+
+    init() {
+        if (this.initialized || typeof Tone === 'undefined') return;
+
+        try {
+            // Master chain: Reverb -> Destination
+            this.reverb = new Tone.Reverb({ decay: 3.5, wet: 0.3, preDelay: 0.1 }).toDestination();
+
+            // Main dotted 8th delay for flute
+            this.delay = new Tone.FeedbackDelay('8n.', 0.35).connect(this.reverb);
+
+            // Tape echo for guitar - longer, warmer echoes on slow parts
+            this.echo = new Tone.FeedbackDelay('4n', 0.45).connect(this.reverb);
+            this.echo.wet.value = 0.25;
+
+            this.chorus = new Tone.Chorus({ frequency: 0.6, delayTime: 3.5, depth: 0.35, wet: 0.25 }).connect(this.reverb);
+
+            // Guitar - warm plucks with echo for slow parts
+            this.guitar = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.008, decay: 0.55, sustain: 0.2, release: 1.2 }  // Longer release for echoes
+            }).connect(this.echo);  // Route through echo for warm repeats
+            this.guitar.volume.value = -12;
+
+            // Bell - crystalline
+            this.bell = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.001, decay: 1.3, sustain: 0.05, release: 2.0 }
+            }).connect(this.reverb);
+            this.bell.volume.value = -18;
+
+            // Pad - atmospheric
+            this.pad = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 1.5, decay: 1.0, sustain: 0.6, release: 2.5 }
+            }).connect(this.reverb);
+            this.pad.volume.value = -22;
+
+            // Bass - warm and round
+            this.bass = new Tone.MonoSynth({
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.02, decay: 0.3, sustain: 0.5, release: 0.5 },
+                filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.3, baseFrequency: 200, octaves: 2 }
+            }).connect(this.reverb);
+            this.bass.volume.value = -10;
+
+            // Flute - melodic lead
+            this.flute = new Tone.Synth({
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.04, decay: 0.3, sustain: 0.7, release: 0.6 }
+            }).connect(this.delay);
+            this.flute.volume.value = -12;
+
+            // Strings - background
+            this.strings = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sawtooth' },
+                envelope: { attack: 0.6, decay: 0.8, sustain: 0.4, release: 1.5 }
+            }).connect(this.chorus);
+            this.strings.volume.value = -20;
+
+            this.initialized = true;
+        } catch (e) {
+            console.warn('[ProceduralMusic] Init failed:', e);
+        }
+    }
+
+    getCurrentChord() {
+        return this.currentProgression[this.currentChordIndex % this.currentProgression.length];
+    }
+
+    getNoteFromDegree(degree, octave = 4) {
+        const scale = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+        return scale[((degree % 7) + 7) % 7] + octave;
+    }
+
+    humanizeTime(baseTime, amount = 0.015) {
+        return baseTime + (Math.random() * amount - amount / 2);
+    }
+
+    humanizeVel(baseVel, variance = 0.12) {
+        return Math.max(0.2, Math.min(1.0, baseVel + (Math.random() * variance * 2 - variance)));
+    }
+
+    playBar(time) {
+        if (!this.isPlaying) return;
+
+        const stepDuration = Tone.Time('16n').toSeconds();
+        const currentChord = this.getCurrentChord();
+        const rootNote = currentChord[0];
+
+        // Bass with groove
+        const bassPattern = [
+            { time: 0, note: rootNote, vel: 0.8 },
+            { time: 0.25, note: Math.random() < 0.4 ? currentChord[1] : rootNote, vel: 0.5 },
+            { time: 0.5, note: rootNote, vel: 0.6 },
+            { time: 0.75, note: Math.random() < 0.3 ? currentChord[2] : rootNote, vel: 0.5 }
+        ];
+
+        bassPattern.forEach(hit => {
+            const noteTime = time + (hit.time * stepDuration * 4);
+            this.bass.triggerAttackRelease(hit.note, '8n', this.humanizeTime(noteTime, 0.01), this.humanizeVel(hit.vel));
+        });
+
+        // Guitar arpeggios
+        for (let i = 0; i < 8; i++) {
+            if (Math.random() < 0.75) {
+                const arpPattern = this.arpeggioPatterns[this.currentArpPattern];
+                const note = currentChord[arpPattern[i % arpPattern.length]];
+                const noteTime = time + (i * stepDuration * 2);
+                const octave = Math.random() < 0.3 ? '4' : '5';
+                this.guitar.triggerAttackRelease(note.slice(0, -1) + octave, '8n', this.humanizeTime(noteTime), this.humanizeVel(0.45));
+            }
+        }
+
+        // Bell accents
+        const bellPattern = [0.2, 0, 0.15, 0.3, 0.1, 0, 0.25, 0.15];
+        bellPattern.forEach((prob, i) => {
+            if (Math.random() < prob + (this.dangerLevel * 0.2)) {
+                const noteTime = time + (i * stepDuration * 2);
+                const scaleDegree = this.currentPhrase[i % this.currentPhrase.length];
+                if (scaleDegree !== null) {
+                    const note = this.getNoteFromDegree(scaleDegree + 7, 5);
+                    this.bell.triggerAttackRelease(note, '2n', this.humanizeTime(noteTime), this.humanizeVel(0.25, 0.08));
+                }
+            }
+        });
+
+        // Melodic phrase
+        const phrase = this.currentPhrase;
+        for (let i = 0; i < phrase.length; i++) {
+            const scaleDegree = phrase[i];
+            if (scaleDegree !== null && Math.random() < 0.7) {
+                const noteTime = time + (i * stepDuration);
+                const note = this.getNoteFromDegree(scaleDegree + 7, 5);
+                const instrument = (i === 0 || i === 8) ? this.strings : this.flute;
+                const duration = (i % 4 === 0) ? '4n' : '8n';
+                instrument.triggerAttackRelease(note, duration, this.humanizeTime(noteTime), this.humanizeVel(0.55));
+            }
+        }
+
+        // Pad chords
+        if (this.barCount % 2 === 0) {
+            this.pad.triggerAttackRelease(currentChord, '1m', time + 0.1, 0.3);
+        }
+
+        this.currentChordIndex++;
+        if (this.currentChordIndex >= this.currentProgression.length) {
+            this.currentChordIndex = 0;
+            this.currentPhrase = this.currentTheme[Math.floor(Math.random() * this.currentTheme.length)];
+            if (Math.random() < 0.3) this.currentArpPattern = Math.floor(Math.random() * this.arpeggioPatterns.length);
+        }
+
+        this.barCount++;
+    }
+
+    async start() {
+        if (this.isPlaying) return;
+        if (typeof Tone === 'undefined') return;
+
+        this.init();
+        if (!this.initialized) return;
+
+        await Tone.start();
+        Tone.Transport.bpm.value = this.currentTempo;
+        Tone.Transport.swing = this.swing;
+
+        this.musicLoop = new Tone.Loop((time) => this.playBar(time), '1m').start(0);
+        Tone.Transport.start();
+
+        this.isPlaying = true;
+    }
+
+    stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+            if (this.musicLoop) { this.musicLoop.dispose(); this.musicLoop = null; }
+        }
+    }
+
+    setMusicStyle(tempo, progressionName) {
+        this.baseTempo = tempo;
+        this.currentTempo = tempo;
+        if (this.chordProgressions[progressionName]) {
+            this.currentProgression = this.chordProgressions[progressionName];
+            this.currentChordIndex = 0;
+        }
+        if (typeof Tone !== 'undefined' && Tone.Transport) Tone.Transport.bpm.rampTo(tempo, 2);
+    }
+
+    updateGameplayState(distanceToEnemy, playerLives, maxLives, timeRemaining, maxTime) {
+        const maxDistance = 20;
+        this.dangerLevel = Math.max(0, 1 - (distanceToEnemy / maxDistance));
+        if (timeRemaining !== undefined && maxTime !== undefined) {
+            this.urgencyLevel = timeRemaining < 30 ? (30 - timeRemaining) / 30 : 0;
+        }
+        const targetTempo = this.baseTempo + (this.dangerLevel * 15) + (this.urgencyLevel * 10);
+        if (typeof Tone !== 'undefined' && Tone.Transport) Tone.Transport.bpm.rampTo(targetTempo, 4);
+
+        if (this.dangerLevel > 0.6 && this.currentTheme !== this.melodicThemes.building) {
+            this.currentTheme = this.melodicThemes.building;
+            this.currentPhrase = this.currentTheme[0];
+        } else if (this.dangerLevel < 0.3 && this.currentTheme === this.melodicThemes.building) {
+            this.currentTheme = this.melodicThemes.cozy;
+            this.currentPhrase = this.currentTheme[0];
+        }
+    }
+
+    onPowerUpSpawn() {
+        if (!this.initialized || !this.isPlaying) return;
+        const now = Tone.now();
+        ['C5', 'E5', 'G5', 'C6', 'E6'].forEach((note, i) => {
+            setTimeout(() => this.bell.triggerAttackRelease(note, '8n', Tone.now(), 0.4 - (i * 0.05)), i * 60);
+        });
+    }
+
+    onPowerUpCollect() {
+        if (!this.initialized || !this.isPlaying) return;
+        const now = Tone.now();
+        ['E5', 'G5', 'C6', 'E6', 'G6'].forEach((note, i) => {
+            this.guitar.triggerAttackRelease(note, '16n', now + i * 0.08, 0.5 - (i * 0.06));
+        });
+    }
+
+    onFoodCollect() {
+        if (!this.initialized || !this.isPlaying) return;
+        const notes = ['C5', 'D5', 'E5', 'G5'];
+        this.bell.triggerAttackRelease(notes[Math.floor(Math.random() * notes.length)], '8n', Tone.now(), this.humanizeVel(0.35));
+    }
+
+    onPlayerDamage() {
+        if (!this.initialized || !this.isPlaying) return;
+        this.pad.triggerAttackRelease(['C3', 'F#3'], '2n', Tone.now(), 0.5);
+    }
+
+    onLevelComplete() {
+        if (!this.initialized) return;
+        const now = Tone.now();
+        [['C4', 'E4', 'G4'], ['G3', 'B3', 'D4'], ['C4', 'E4', 'G4', 'C5']].forEach((chord, i) => {
+            this.strings.triggerAttackRelease(chord, '1n', now + i * 0.8, 0.5);
+        });
+    }
+
+    setLevel(level) {
+        switch (level) {
+            case 1: case 2:
+                this.baseTempo = 100; this.currentProgression = this.chordProgressions.cozy; this.currentTheme = this.melodicThemes.morning; break;
+            case 3: case 4:
+                this.baseTempo = 96; this.currentProgression = this.chordProgressions.warm; this.currentTheme = this.melodicThemes.wandering; break;
+            case 5: case 6:
+                this.baseTempo = 110; this.currentProgression = this.chordProgressions.nostalgic; this.currentTheme = this.melodicThemes.building; break;
+            case 7: case 8:
+                this.baseTempo = 100; this.currentProgression = this.chordProgressions.gentle; this.currentTheme = this.melodicThemes.wandering; break;
+            case 10:
+                this.baseTempo = 105; this.currentProgression = this.chordProgressions.dreamy; this.currentTheme = this.melodicThemes.peaceful; break;
+            default:
+                this.baseTempo = 100; this.currentProgression = this.chordProgressions.cozy; this.currentTheme = this.melodicThemes.cozy;
+        }
+        this.currentTempo = this.baseTempo;
+        this.currentChordIndex = 0;
+        this.currentPhrase = this.currentTheme[0];
+        if (typeof Tone !== 'undefined' && Tone.Transport) Tone.Transport.bpm.value = this.baseTempo;
+    }
+}
+
+let proceduralMusic = new ProceduralMusic();
+
+// =============================================================================
+// POOCHY'S THEME - Tetris Attack Forest Theme
+// Parsed from MIDI and recreated with Tone.js
+// =============================================================================
+
+class TetrisThemePlayer {
+    constructor() {
+        this.isPlaying = false;
+        this.initialized = false;
+        this.bpm = 130; // Classic Tetris tempo
+        this.currentBar = 0;
+        this.loop = null;
+        this.lead = null;      // Main melody (accordion/synth)
+        this.bass = null;      // Bass line
+        this.chords = null;    // Chord accompaniment
+        this.reverb = null;
+    }
+
+    init() {
+        if (this.initialized || typeof Tone === 'undefined') return;
+        try {
+            this.reverb = new Tone.Reverb({ decay: 1.8, wet: 0.25, preDelay: 0.05 }).toDestination();
+
+            // Lead - bright, slightly reed-like for that Russian folk sound
+            this.lead = new Tone.Synth({
+                oscillator: { type: 'square' },
+                envelope: { attack: 0.01, decay: 0.25, sustain: 0.5, release: 0.4 }
+            }).connect(this.reverb);
+            this.lead.volume.value = -14; // Lowered from -10
+
+            // Bass - deep and round
+            this.bass = new Tone.MonoSynth({
+                oscillator: { type: 'sawtooth' },
+                envelope: { attack: 0.02, decay: 0.3, sustain: 0.6, release: 0.5 },
+                filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.4, baseFrequency: 100, octaves: 3 }
+            }).connect(this.reverb);
+            this.bass.volume.value = -12; // Lowered from -8
+
+            // Chords - softer poly synth
+            this.chords = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.02, decay: 0.4, sustain: 0.3, release: 0.6 }
+            }).connect(this.reverb);
+            this.chords.volume.value = -16;
+
+            this.initialized = true;
+        } catch (e) {
+            console.warn('[TetrisTheme] Init failed:', e);
+        }
+    }
+
+    // Korobeiniki - The classic Tetris melody
+    // Phrase A: E B C D E C B A
+    // Phrase B: A C E D C B A B
+    // Phrase C: G# B D E D B C
+    getMelodyPatterns() {
+        return {
+            // Main theme phrases (eighth notes)
+            phraseA: [
+                ['E5', '8n'], ['B4', '8n'], ['C5', '8n'], ['D5', '8n'],
+                ['C5', '8n'], ['B4', '8n'], ['A4', '8n'], ['A4', '8n']
+            ],
+            phraseB: [
+                ['C5', '8n'], ['E5', '8n'], ['D5', '8n'], ['C5', '8n'],
+                ['B4', '8n'], ['A4', '8n'], ['B4', '8n'], ['G#4', '8n']
+            ],
+            phraseC: [
+                ['B4', '8n'], ['D5', '8n'], ['E5', '8n'], ['D5', '8n'],
+                ['B4', '8n'], ['C5', '8n'], ['B4', '8n'], ['G#4', '8n']
+            ],
+            phraseD: [
+                ['A4', '8n'], ['C5', '8n'], ['A4', '8n'], ['B4', '8n'],
+                ['G#4', '8n'], ['E5', '8n'], ['D5', '8n'], ['C5', '8n']
+            ],
+            // Bridge/variation
+            phraseE: [
+                ['D5', '8n'], ['C5', '8n'], ['B4', '8n'], ['C5', '8n'],
+                ['D5', '8n'], ['E5', '8n'], ['B4', '8n'], ['G#4', '8n']
+            ],
+            // Bass patterns (quarter notes)
+            bassE: [['E3', '4n'], ['E3', '4n'], ['E3', '4n'], ['E3', '4n']],
+            bassA: [['A2', '4n'], ['A2', '4n'], ['A2', '4n'], ['A2', '4n']],
+            bassG: [['G#2', '4n'], ['G#2', '4n'], ['G#2', '4n'], ['G#2', '4n']],
+            bassD: [['D3', '4n'], ['D3', '4n'], ['D3', '4n'], ['D3', '4n']],
+            bassC: [['C3', '4n'], ['C3', '4n'], ['C3', '4n'], ['C3', '4n']],
+            bassB: [['B2', '4n'], ['B2', '4n'], ['B2', '4n'], ['B2', '4n']],
+            // Chord patterns
+            chordE: [['E4', 'G#4', 'B4'], null, null, null],
+            chordA: [['A4', 'C5', 'E5'], null, null, null],
+            chordG: [['G#4', 'B4', 'D5'], null, null, null],
+            chordD: [['D4', 'F#4', 'A4'], null, null, null]
+        };
+    }
+
+    playBar(time, barNum) {
+        if (!this.isPlaying) return;
+        const patterns = this.getMelodyPatterns();
+        const eighthTime = Tone.Time('8n').toSeconds();
+        const quarterTime = Tone.Time('4n').toSeconds();
+
+        // 16-bar Korobeiniki structure
+        const section = barNum % 16;
+        let melody = null;
+        let bassPattern = null;
+        let chordPattern = null;
+
+        // Standard Tetris theme structure
+        switch (section) {
+            case 0: case 1: // Phrase A (E major)
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+            case 2: case 3: // Phrase B (A major)
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassA;
+                chordPattern = patterns.chordA;
+                break;
+            case 4: case 5: // Phrase C (G# minor/major)
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassG;
+                chordPattern = patterns.chordG;
+                break;
+            case 6: case 7: // Phrase A again
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+            case 8: case 9: // Phrase B again
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassA;
+                chordPattern = patterns.chordA;
+                break;
+            case 10: case 11: // Variation
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassD;
+                chordPattern = patterns.chordD;
+                break;
+            case 12: case 13: // Bridge phrase
+                melody = patterns.phraseE;
+                bassPattern = patterns.bassC;
+                chordPattern = patterns.chordE;
+                break;
+            case 14: case 15: // Ending phrase
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+        }
+
+        // Play melody (eighth notes)
+        if (melody) {
+            melody.forEach(([note, duration], i) => {
+                const noteTime = time + (i * eighthTime);
+                const velocity = 0.7 + (Math.random() * 0.1);
+                this.lead.triggerAttackRelease(note, duration, noteTime, velocity);
+            });
+        }
+
+        // Play bass (quarter notes)
+        if (bassPattern) {
+            bassPattern.forEach(([note, duration], i) => {
+                if (note) {
+                    const noteTime = time + (i * quarterTime);
+                    this.bass.triggerAttackRelease(note, duration, noteTime, 0.65);
+                }
+            });
+        }
+
+        // Play chords on beat 1
+        if (chordPattern && chordPattern[0]) {
+            this.chords.triggerAttackRelease(chordPattern[0], '2n', time + 0.05, 0.35);
+        }
+    }
+
+    async start() {
+        if (this.isPlaying) return;
+        if (typeof Tone === 'undefined') return;
+
+        this.init();
+        if (!this.initialized) return;
+
+        await Tone.start();
+        Tone.Transport.bpm.value = this.bpm;
+
+        this.currentBar = 0;
+        this.loop = new Tone.Loop((time) => {
+            this.playBar(time, this.currentBar);
+            this.currentBar++;
+        }, '1m').start(0);
+
+        Tone.Transport.start();
+        this.isPlaying = true;
+        console.log('[TetrisTheme] Started playing - Korobeiniki');
+    }
+
+    stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+            if (this.loop) { this.loop.dispose(); this.loop = null; }
+        }
+    }
+}
+
+let poochysTheme = new TetrisThemePlayer();
+
+// =============================================================================
+// TEMPLE OF TIME - The Legend of Zelda: Ocarina of Time
+// Sacred, contemplative theme with harp-like sounds
+// =============================================================================
+
+class TempleOfTimePlayer {
+    constructor() {
+        this.isPlaying = false;
+        this.initialized = false;
+        this.bpm = 75; // Slow, contemplative tempo
+        this.currentBar = 0;
+        this.loop = null;
+        this.harp = null;      // Main melody (harp-like)
+        this.bass = null;      // Low strings/bass
+        this.pad = null;       // Atmospheric pad
+        this.reverb = null;
+        this.delay = null;
+    }
+
+    init() {
+        if (this.initialized || typeof Tone === 'undefined') return;
+        try {
+            // Long, cathedral-like reverb for the Temple atmosphere
+            this.reverb = new Tone.Reverb({
+                decay: 4.0,
+                wet: 0.45,
+                preDelay: 0.15
+            }).toDestination();
+
+            // Ethereal delay for harp echoes
+            this.delay = new Tone.FeedbackDelay('4n.', 0.4).connect(this.reverb);
+
+            // Harp-like lead - bright attack, long sustain
+            this.harp = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: {
+                    attack: 0.005,
+                    decay: 0.8,
+                    sustain: 0.4,
+                    release: 2.5
+                }
+            }).connect(this.delay);
+            this.harp.volume.value = -12;
+
+            // Bass - deep and resonant
+            this.bass = new Tone.MonoSynth({
+                oscillator: { type: 'sine' },
+                envelope: {
+                    attack: 0.05,
+                    decay: 0.5,
+                    sustain: 0.6,
+                    release: 1.5
+                },
+                filterEnvelope: {
+                    attack: 0.02,
+                    decay: 0.3,
+                    sustain: 0.4,
+                    baseFrequency: 80,
+                    octaves: 2
+                }
+            }).connect(this.reverb);
+            this.bass.volume.value = -10;
+
+            // Pad - soft, atmospheric
+            this.pad = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sine' },
+                envelope: {
+                    attack: 1.2,
+                    decay: 1.0,
+                    sustain: 0.5,
+                    release: 3.0
+                }
+            }).connect(this.reverb);
+            this.pad.volume.value = -20;
+
+            this.initialized = true;
+        } catch (e) {
+            console.warn('[TempleOfTime] Init failed:', e);
+        }
+    }
+
+    // Temple of Time melody - contemplative and sacred
+    // Based on the MIDI: A4-D4-F4-A4 pattern with flowing variations
+    getMelodyPatterns() {
+        return {
+            // Main theme - ascending arpeggio feel
+            phraseA: [
+                ['A4', '4n'], ['D4', '4n'], ['F4', '4n'], ['A4', '4n'],
+                ['D4', '4n'], ['F4', '4n'], ['A4', '4n'], ['C5', '4n']
+            ],
+            phraseA2: [
+                ['A4', '4n'], ['D4', '4n'], ['F4', '4n'], ['A4', '4n'],
+                ['D4', '4n'], ['F4', '4n'], ['A4', '4n'], ['A4', '4n']
+            ],
+            // Descending resolution
+            phraseB: [
+                ['B4', '4n'], ['G4', '4n'], ['F4', '4n'], ['G4', '4n'],
+                ['A4', '4n'], ['D4', '4n'], ['C4', '4n'], ['E4', '4n']
+            ],
+            phraseB2: [
+                ['B4', '4n'], ['G4', '4n'], ['F4', '4n'], ['G4', '4n'],
+                ['A4', '4n'], ['D4', '4n'], ['E4', '4n'], ['D4', '4n']
+            ],
+            // Middle section - more movement
+            phraseC: [
+                ['D4', '4n'], ['C4', '4n'], ['E4', '4n'], ['C4', '4n'],
+                ['E4', '4n'], ['F4', '4n'], ['D4', '4n'], ['D4', '4n']
+            ],
+            phraseC2: [
+                ['D4', '4n'], ['C4', '4n'], ['E4', '4n'], ['C4', '4n'],
+                ['E4', '4n'], ['F4', '4n'], ['D4', '4n'], ['C4', '4n']
+            ],
+            // Higher register phrase
+            phraseD: [
+                ['A4', '4n'], ['C5', '4n'], ['B4', '4n'], ['C5', '4n'],
+                ['A4', '4n'], ['C5', '4n'], ['G4', '4n'], ['A4', '4n']
+            ],
+            // Final resolution
+            phraseEnd: [
+                ['F4', '2n'], ['E4', '2n'], ['D4', '2n'], ['D4', '2n']
+            ],
+            // Bass patterns (whole notes - very slow)
+            bassD: [['D2', '1m']],
+            bassC: [['C2', '1m']],
+            bassF: [['F2', '1m']],
+            bassG: [['G2', '1m']],
+            bassA: [['A2', '1m']],
+            bassE: [['E2', '1m']],
+            // Chord pads
+            chordDm: [['D4', 'F4', 'A4'], null, null, null, null, null, null, null],
+            chordC: [['C4', 'E4', 'G4'], null, null, null, null, null, null, null],
+            chordF: [['F4', 'A4', 'C5'], null, null, null, null, null, null, null],
+            chordG: [['G4', 'B4', 'D5'], null, null, null, null, null, null, null],
+            chordAm: [['A4', 'C5', 'E5'], null, null, null, null, null, null, null]
+        };
+    }
+
+    playBar(time, barNum) {
+        if (!this.isPlaying) return;
+        const patterns = this.getMelodyPatterns();
+        const quarterTime = Tone.Time('4n').toSeconds();
+
+        // 16-bar Temple of Time structure
+        const section = barNum % 16;
+        let melody = null;
+        let bassPattern = null;
+        let chordPattern = null;
+
+        // A-A-B-A-C-D-B-End structure
+        switch (section) {
+            case 0: case 1: // Phrase A
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassD;
+                chordPattern = patterns.chordDm;
+                break;
+            case 2: case 3: // Phrase A variation
+                melody = patterns.phraseA2;
+                bassPattern = patterns.bassD;
+                chordPattern = patterns.chordDm;
+                break;
+            case 4: case 5: // Phrase B
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassG;
+                chordPattern = patterns.chordG;
+                break;
+            case 6: case 7: // Phrase B2
+                melody = patterns.phraseB2;
+                bassPattern = patterns.bassA;
+                chordPattern = patterns.chordAm;
+                break;
+            case 8: case 9: // Phrase C (middle)
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassF;
+                chordPattern = patterns.chordF;
+                break;
+            case 10: case 11: // Phrase C2
+                melody = patterns.phraseC2;
+                bassPattern = patterns.bassC;
+                chordPattern = patterns.chordC;
+                break;
+            case 12: case 13: // Phrase D (higher)
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassD;
+                chordPattern = patterns.chordDm;
+                break;
+            case 14: // Phrase B return
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassG;
+                chordPattern = patterns.chordG;
+                break;
+            case 15: // Ending
+                melody = patterns.phraseEnd;
+                bassPattern = patterns.bassD;
+                chordPattern = patterns.chordDm;
+                break;
+        }
+
+        // Play melody (quarter notes - slow and contemplative)
+        if (melody) {
+            melody.forEach(([note, duration], i) => {
+                const noteTime = time + (i * quarterTime);
+                const velocity = 0.5 + (Math.random() * 0.15);
+                this.harp.triggerAttackRelease(note, duration, noteTime, velocity);
+            });
+        }
+
+        // Play bass (whole notes)
+        if (bassPattern) {
+            bassPattern.forEach(([note, duration], i) => {
+                if (note) {
+                    const noteTime = time + (i * Tone.Time('1m').toSeconds());
+                    this.bass.triggerAttackRelease(note, duration, noteTime, 0.6);
+                }
+            });
+        }
+
+        // Play pad chord at start of bar
+        if (chordPattern && chordPattern[0]) {
+            this.pad.triggerAttackRelease(chordPattern[0], '1m', time + 0.1, 0.25);
+        }
+    }
+
+    async start() {
+        if (this.isPlaying) return;
+        if (typeof Tone === 'undefined') return;
+
+        this.init();
+        if (!this.initialized) return;
+
+        await Tone.start();
+        Tone.Transport.bpm.value = this.bpm;
+
+        this.currentBar = 0;
+        this.loop = new Tone.Loop((time) => {
+            this.playBar(time, this.currentBar);
+            this.currentBar++;
+        }, '1m').start(0);
+
+        Tone.Transport.start();
+        this.isPlaying = true;
+        console.log('[TempleOfTime] Started playing - Sacred contemplation');
+    }
+
+    stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+            if (this.loop) { this.loop.dispose(); this.loop = null; }
+        }
+    }
+}
+
+let templeOfTime = new TempleOfTimePlayer();
+
+// =============================================================================
+// SONG OF STORMS - The Legend of Zelda: Ocarina of Time
+// Fast, energetic waltz with accordion-like sound
+// =============================================================================
+
+class SongOfStormsPlayer {
+    constructor() {
+        this.isPlaying = false;
+        this.initialized = false;
+        this.bpm = 160; // Fast, energetic tempo
+        this.currentBar = 0;
+        this.loop = null;
+        this.lead = null;      // Accordion-like lead
+        this.bass = null;      // Deep bass
+        this.chords = null;    // Chord stabs
+        this.reverb = null;
+        this.delay = null;
+    }
+
+    init() {
+        if (this.initialized || typeof Tone === 'undefined') return;
+        try {
+            // Medium reverb for energetic but spacious feel
+            this.reverb = new Tone.Reverb({
+                decay: 1.5,
+                wet: 0.25,
+                preDelay: 0.05
+            }).toDestination();
+
+            // Light delay for bounce
+            this.delay = new Tone.FeedbackDelay('8n', 0.2).connect(this.reverb);
+
+            // Accordion-like lead
+            this.lead = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sawtooth' },
+                envelope: {
+                    attack: 0.01,
+                    decay: 0.2,
+                    sustain: 0.5,
+                    release: 0.4
+                }
+            }).connect(this.delay);
+            this.lead.volume.value = -12;
+
+            // Bass - deep and punchy
+            this.bass = new Tone.MonoSynth({
+                oscillator: { type: 'square' },
+                envelope: {
+                    attack: 0.02,
+                    decay: 0.2,
+                    sustain: 0.4,
+                    release: 0.3
+                },
+                filterEnvelope: {
+                    attack: 0.01,
+                    decay: 0.2,
+                    sustain: 0.3,
+                    baseFrequency: 60,
+                    octaves: 2.5
+                }
+            }).connect(this.reverb);
+            this.bass.volume.value = -10;
+
+            // Chords - bright and punchy
+            this.chords = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: {
+                    attack: 0.005,
+                    decay: 0.3,
+                    sustain: 0.3,
+                    release: 0.5
+                }
+            }).connect(this.reverb);
+            this.chords.volume.value = -16;
+
+            this.initialized = true;
+        } catch (e) {
+            console.warn('[SongOfStorms] Init failed:', e);
+        }
+    }
+
+    // Song of Storms - fast waltz in D minor
+    getMelodyPatterns() {
+        return {
+            // Main phrase A - D minor arpeggio
+            phraseA: [
+                ['D3', '8n'], ['A4', '8n'], ['A4', '8n'], ['E3', '8n'],
+                ['E4', '8n'], ['B4', '8n'], ['F3', '8n'], ['C5', '8n']
+            ],
+            // Phrase B - F major
+            phraseB: [
+                ['C5', '8n'], ['E3', '8n'], ['E4', '8n'], ['B4', '8n'],
+                ['D3', '8n'], ['A4', '8n'], ['A4', '8n'], ['E3', '8n']
+            ],
+            // Phrase C - building up
+            phraseC: [
+                ['E4', '8n'], ['B4', '8n'], ['F3', '8n'], ['C5', '8n'],
+                ['C5', '8n'], ['E3', '8n'], ['E4', '8n'], ['B4', '8n']
+            ],
+            // Variation with higher notes
+            phraseD: [
+                ['D4', '8n'], ['F4', '8n'], ['D5', '8n'], ['A3', '8n'],
+                ['D4', '8n'], ['F4', '8n'], ['D5', '8n'], ['E5', '8n']
+            ],
+            // Exciting phrase
+            phraseE: [
+                ['C4', '8n'], ['F5', '8n'], ['E5', '8n'], ['F5', '8n'],
+                ['E5', '8n'], ['C5', '8n'], ['A4', '8n'], ['A4', '8n']
+            ],
+            // Ending phrase
+            phraseEnd: [
+                ['D4', '8n'], ['F4', '8n'], ['G4', '8n'], ['A4', '8n'],
+                ['F3', '8n'], ['A4', '8n'], ['D4', '8n'], ['F4', '8n']
+            ],
+            // Bass patterns (quarter notes, oom-pah-pah feel)
+            bassDm: [['D2', '4n'], ['A2', '8n'], ['D2', '8n'], ['D2', '4n'], ['A2', '8n'], ['D2', '8n']],
+            bassE: [['E2', '4n'], ['B2', '8n'], ['E2', '8n'], ['E2', '4n'], ['B2', '8n'], ['E2', '8n']],
+            bassF: [['F2', '4n'], ['C3', '8n'], ['F2', '8n'], ['F2', '4n'], ['C3', '8n'], ['F2', '8n']],
+            bassA: [['A2', '4n'], ['E3', '8n'], ['A2', '8n'], ['A2', '4n'], ['E3', '8n'], ['A2', '8n']],
+            bassC: [['C2', '4n'], ['G2', '8n'], ['C2', '8n'], ['C2', '4n'], ['G2', '8n'], ['C2', '8n']],
+            // Chord patterns (stabs on beat 1)
+            chordDm: [['D4', 'F4', 'A4'], null, null, null, null, null, null, null],
+            chordE: [['E4', 'G4', 'B4'], null, null, null, null, null, null, null],
+            chordF: [['F4', 'A4', 'C5'], null, null, null, null, null, null, null],
+            chordA: [['A4', 'C5', 'E5'], null, null, null, null, null, null, null],
+            chordC: [['C4', 'E4', 'G4'], null, null, null, null, null, null, null]
+        };
+    }
+
+    playBar(time, barNum) {
+        if (!this.isPlaying) return;
+        const patterns = this.getMelodyPatterns();
+        const eighthTime = Tone.Time('8n').toSeconds();
+        const quarterTime = Tone.Time('4n').toSeconds();
+
+        // 16-bar structure
+        const section = barNum % 16;
+        let melody = null;
+        let bassPattern = null;
+        let chordPattern = null;
+
+        switch (section) {
+            case 0: case 1: // Phrase A
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassDm;
+                chordPattern = patterns.chordDm;
+                break;
+            case 2: case 3: // Phrase B
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+            case 4: case 5: // Phrase C
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassF;
+                chordPattern = patterns.chordF;
+                break;
+            case 6: case 7: // Phrase A return
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassDm;
+                chordPattern = patterns.chordDm;
+                break;
+            case 8: case 9: // Phrase D (build up)
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassA;
+                chordPattern = patterns.chordA;
+                break;
+            case 10: case 11: // Phrase E (high energy)
+                melody = patterns.phraseE;
+                bassPattern = patterns.bassC;
+                chordPattern = patterns.chordC;
+                break;
+            case 12: case 13: // Phrase D again
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassA;
+                chordPattern = patterns.chordA;
+                break;
+            case 14: case 15: // Ending
+                melody = patterns.phraseEnd;
+                bassPattern = patterns.bassDm;
+                chordPattern = patterns.chordDm;
+                break;
+        }
+
+        // Play melody (eighth notes - fast!)
+        if (melody) {
+            melody.forEach(([note, duration], i) => {
+                const noteTime = time + (i * eighthTime);
+                const velocity = 0.65 + (Math.random() * 0.15);
+                this.lead.triggerAttackRelease(note, duration, noteTime, velocity);
+            });
+        }
+
+        // Play bass
+        if (bassPattern) {
+            bassPattern.forEach(([note, duration], i) => {
+                if (note && i < 6) {
+                    const noteTime = time + (i * quarterTime / 2);
+                    this.bass.triggerAttackRelease(note, duration, noteTime, 0.7);
+                }
+            });
+        }
+
+        // Play chord stab on beat 1
+        if (chordPattern && chordPattern[0]) {
+            this.chords.triggerAttackRelease(chordPattern[0], '8n', time + 0.02, 0.4);
+        }
+    }
+
+    async start() {
+        if (this.isPlaying) return;
+        if (typeof Tone === 'undefined') return;
+
+        this.init();
+        if (!this.initialized) return;
+
+        await Tone.start();
+        Tone.Transport.bpm.value = this.bpm;
+
+        this.currentBar = 0;
+        this.loop = new Tone.Loop((time) => {
+            this.playBar(time, this.currentBar);
+            this.currentBar++;
+        }, '1m').start(0);
+
+        Tone.Transport.start();
+        this.isPlaying = true;
+        console.log('[SongOfStorms] Started playing - Storm is coming!');
+    }
+
+    stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+            if (this.loop) { this.loop.dispose(); this.loop = null; }
+        }
+    }
+}
+
+let songOfStorms = new SongOfStormsPlayer();
+
+// =============================================================================
+// MII CHANNEL REMIX - Wii Channels (with modified notes)
+// Playful, quirky theme with a bouncy, modified melody
+// =============================================================================
+
+class MiiChannelRemixPlayer {
+    constructor() {
+        this.isPlaying = false;
+        this.initialized = false;
+        this.bpm = 115; // Upbeat tempo
+        this.currentBar = 0;
+        this.loop = null;
+        this.lead = null;      // Whistle-like synth
+        this.bass = null;      // Bouncy bass
+        this.chords = null;    // Sparkle chords
+        this.percussion = null; // Simple drum hits
+        this.reverb = null;
+        this.delay = null;
+    }
+
+    init() {
+        if (this.initialized || typeof Tone === 'undefined') return;
+        try {
+            // Light reverb for that "white void" Mii Plaza feel
+            this.reverb = new Tone.Reverb({
+                decay: 1.2,
+                wet: 0.2,
+                preDelay: 0.04
+            }).toDestination();
+
+            // Subtle delay for bouncing feel
+            this.delay = new Tone.FeedbackDelay('8n.', 0.15).connect(this.reverb);
+
+            // Lead - whistle-like, bright and playful
+            this.lead = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sine' },
+                envelope: {
+                    attack: 0.005,
+                    decay: 0.25,
+                    sustain: 0.4,
+                    release: 0.5
+                }
+            }).connect(this.delay);
+            this.lead.volume.value = -12;
+
+            // Bass - plucky and bouncy
+            this.bass = new Tone.MonoSynth({
+                oscillator: { type: 'triangle' },
+                envelope: {
+                    attack: 0.01,
+                    decay: 0.3,
+                    sustain: 0.3,
+                    release: 0.4
+                },
+                filterEnvelope: {
+                    attack: 0.01,
+                    decay: 0.2,
+                    sustain: 0.4,
+                    baseFrequency: 100,
+                    octaves: 2
+                }
+            }).connect(this.reverb);
+            this.bass.volume.value = -10;
+
+            // Chords - sparkly
+            this.chords = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: {
+                    attack: 0.02,
+                    decay: 0.4,
+                    sustain: 0.2,
+                    release: 0.6
+                }
+            }).connect(this.reverb);
+            this.chords.volume.value = -14;
+
+            // Simple percussion
+            this.percussion = new Tone.MembraneSynth({
+                pitchDecay: 0.05,
+                octaves: 2,
+                oscillator: { type: 'sine' },
+                envelope: {
+                    attack: 0.001,
+                    decay: 0.2,
+                    sustain: 0,
+                    release: 0.2
+                }
+            }).toDestination();
+            this.percussion.volume.value = -18;
+
+            this.initialized = true;
+        } catch (e) {
+            console.warn('[MiiChannelRemix] Init failed:', e);
+        }
+    }
+
+    // Mii Channel Remix - modified from original with different intervals
+    // Original key was around F# major/D major, this variation shifts things
+    getMelodyPatterns() {
+        return {
+            // Phrase A - modified from original (different intervals, some octave shifts)
+            phraseA: [
+                ['F#4', '8n'], ['A4', '8n'], ['C#5', '8n'], ['A4', '8n'], // Similar opening
+                ['F#4', '8n'], ['D4', '8n'], ['D5', '8n'], ['D4', '8n']  // Modified - jumped up to D5
+            ],
+            // Phrase A2 - variation
+            phraseA2: [
+                ['C#4', '8n'], ['D4', '8n'], ['F#4', '8n'], ['A4', '8n'],
+                ['C#5', '8n'], ['A4', '8n'], ['F#4', '8n'], ['E5', '8n']  // Changed ending note
+            ],
+            // Phrase B - different phrase (modified from original)
+            phraseB: [
+                ['D5', '8n'], ['C#5', '8n'], ['G#4', '8n'], ['C#5', '8n'],
+                ['F#4', '8n'], ['C#5', '8n'], ['G#4', '8n'], ['C5', '8n']   // C natural instead of C#
+            ],
+            // Phrase C - walking up differently
+            phraseC: [
+                ['G4', '8n'], ['F#4', '8n'], ['E4', '8n'], ['C#4', '8n'],
+                ['C#4', '8n'], ['E4', '8n'], ['G4', '8n'], ['B4', '8n']    // Different pattern
+            ],
+            // Phrase D - new variation with jump
+            phraseD: [
+                ['C4', '8n'], ['D#4', '8n'], ['D4', '8n'], ['F#4', '8n'],
+                ['A4', '8n'], ['C#5', '8n'], ['A4', '8n'], ['D5', '8n']    // Different target
+            ],
+            // Phrase E - modified
+            phraseE: [
+                ['E4', '8n'], ['E4', '8n'], ['G#4', '8n'], ['E5', '8n'],
+                ['D5', '8n'], ['C#5', '8n'], ['B3', '8n'], ['F#4', '8n']    // Different descent
+            ],
+            // Phrase F - bridge with different intervals
+            phraseF: [
+                ['A4', '8n'], ['C#5', '8n'], ['F#4', '8n'], ['D5', '8n'],
+                ['C#5', '8n'], ['B4', '8n'], ['G4', '8n'], ['E4', '8n']     // Modified contour
+            ],
+            // Phrase G - variation with octave displacement
+            phraseG: [
+                ['D4', '8n'], ['C#4', '8n'], ['B3', '8n'], ['G3', '8n'],
+                ['C#4', '8n'], ['A3', '8n'], ['F#3', '8n'], ['C4', '8n']     // Lower octave variation
+            ],
+            // Phrase H - ending
+            phraseH: [
+                ['B3', '8n'], ['F#4', '8n'], ['D4', '8n'], ['B3', '8n'],
+                ['C#4', '8n'], ['F#4', '8n'], ['A4', '8n'], ['F#4', '8n']
+            ],
+            // Bass patterns - following modified harmony
+            bassFs: [['F#2', '4n'], ['C#3', '8n'], ['F#2', '8n'], ['F#2', '4n'], ['C#3', '8n'], ['F#2', '8n']],
+            bassD: [['D2', '4n'], ['A2', '8n'], ['D2', '8n'], ['D2', '4n'], ['A2', '8n'], ['D2', '8n']],
+            bassE: [['E2', '4n'], ['B2', '8n'], ['E2', '8n'], ['E2', '4n'], ['B2', '8n'], ['E2', '8n']],
+            bassC: [['C2', '4n'], ['G2', '8n'], ['C2', '8n'], ['C2', '4n'], ['G2', '8n'], ['C2', '8n']],
+            bassB: [['B2', '4n'], ['F#3', '8n'], ['B2', '8n'], ['B2', '4n'], ['F#3', '8n'], ['B2', '8n']],
+            // Sparkle chords
+            chordFs: [['F#4', 'A4', 'C#5']],
+            chordD: [['D4', 'F#4', 'A4']],
+            chordE: [['E4', 'G#4', 'B4']],
+            chordC: [['C4', 'E4', 'G4']],
+            chordB: [['B3', 'D#4', 'F#4']]
+        };
+    }
+
+    playBar(time, barNum) {
+        if (!this.isPlaying) return;
+        const patterns = this.getMelodyPatterns();
+        const eighthTime = Tone.Time('8n').toSeconds();
+        const quarterTime = Tone.Time('4n').toSeconds();
+
+        // 16-bar structure
+        const section = barNum % 16;
+        let melody = null;
+        let bassPattern = null;
+        let chordPattern = null;
+
+        // Modified Mii Channel structure with variations
+        switch (section) {
+            case 0: // Phrase A
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassFs;
+                chordPattern = patterns.chordFs;
+                break;
+            case 1: // Phrase A2
+                melody = patterns.phraseA2;
+                bassPattern = patterns.bassFs;
+                chordPattern = patterns.chordFs;
+                break;
+            case 2: // Phrase B (modified)
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+            case 3: // Phrase C (modified)
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassC;
+                chordPattern = patterns.chordC;
+                break;
+            case 4: // Phrase D (new variation)
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassD;
+                chordPattern = patterns.chordD;
+                break;
+            case 5: // Phrase E (modified)
+                melody = patterns.phraseE;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+            case 6: // Phrase F (bridge modified)
+                melody = patterns.phraseF;
+                bassPattern = patterns.bassD;
+                chordPattern = patterns.chordD;
+                break;
+            case 7: // Phrase G (octave variation)
+                melody = patterns.phraseG;
+                bassPattern = patterns.bassC;
+                chordPattern = patterns.chordC;
+                break;
+            case 8: // Phrase A return
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassFs;
+                chordPattern = patterns.chordFs;
+                break;
+            case 9: // Phrase A2
+                melody = patterns.phraseA2;
+                bassPattern = patterns.bassFs;
+                chordPattern = patterns.chordFs;
+                break;
+            case 10: // Phrase B
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+            case 11: // Phrase D variation
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassD;
+                chordPattern = patterns.chordD;
+                break;
+            case 12: // Phrase F
+                melody = patterns.phraseF;
+                bassPattern = patterns.bassFs;
+                chordPattern = patterns.chordFs;
+                break;
+            case 13: // Phrase E
+                melody = patterns.phraseE;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+            case 14: // Phrase H (bridge)
+                melody = patterns.phraseH;
+                bassPattern = patterns.bassB;
+                chordPattern = patterns.chordB;
+                break;
+            case 15: // Phrase A ending
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassFs;
+                chordPattern = patterns.chordFs;
+                break;
+        }
+
+        // Play melody
+        if (melody) {
+            melody.forEach(([note, duration], i) => {
+                const noteTime = time + (i * eighthTime);
+                const velocity = 0.6 + (Math.random() * 0.1);
+                this.lead.triggerAttackRelease(note, duration, noteTime, velocity);
+            });
+        }
+
+        // Play bass
+        if (bassPattern) {
+            bassPattern.forEach(([note, duration], i) => {
+                if (note && i < 6) {
+                    const noteTime = time + (i * quarterTime / 2);
+                    this.bass.triggerAttackRelease(note, duration, noteTime, 0.65);
+                }
+            });
+        }
+
+        // Play chord sparkle
+        if (chordPattern && chordPattern[0]) {
+            this.chords.triggerAttackRelease(chordPattern[0], '8n', time + 0.02, 0.3);
+        }
+
+        // Add light percussion on beats 2 and 4
+        if (section % 2 === 0) {
+            this.percussion.triggerAttackRelease('C2', '16n', time + quarterTime, 0.3);
+        }
+        this.percussion.triggerAttackRelease('C2', '16n', time + (3 * quarterTime), 0.25);
+    }
+
+    async start() {
+        if (this.isPlaying) return;
+        if (typeof Tone === 'undefined') return;
+
+        this.init();
+        if (!this.initialized) return;
+
+        await Tone.start();
+        Tone.Transport.bpm.value = this.bpm;
+
+        this.currentBar = 0;
+        this.loop = new Tone.Loop((time) => {
+            this.playBar(time, this.currentBar);
+            this.currentBar++;
+        }, '1m').start(0);
+
+        Tone.Transport.start();
+        this.isPlaying = true;
+        console.log('[MiiChannelRemix] Started playing - Wii would like to play!');
+    }
+
+    stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+            if (this.loop) { this.loop.dispose(); this.loop = null; }
+        }
+    }
+}
+
+let miiChannel = new MiiChannelRemixPlayer();
+
+// =============================================================================
+// TETRIS THEME ALT - Alternative arrangement
+// Synthwave/electronic version of Korobeiniki
+// =============================================================================
+
+class TetrisThemeAltPlayer {
+    constructor() {
+        this.isPlaying = false;
+        this.initialized = false;
+        this.bpm = 130;
+        this.currentBar = 0;
+        this.loop = null;
+        this.lead = null;
+        this.bass = null;
+        this.pad = null;
+        this.reverb = null;
+        this.delay = null;
+        this.filter = null;
+    }
+
+    init() {
+        if (this.initialized || typeof Tone === 'undefined') return;
+        try {
+            this.reverb = new Tone.Reverb({ decay: 2.0, wet: 0.3, preDelay: 0.08 }).toDestination();
+            this.delay = new Tone.FeedbackDelay('8n.', 0.3).connect(this.reverb);
+            this.filter = new Tone.Filter(800, 'lowpass').connect(this.delay);
+
+            // Synthwave lead - sawtooth with filter
+            this.lead = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sawtooth' },
+                envelope: { attack: 0.02, decay: 0.3, sustain: 0.4, release: 0.6 }
+            }).connect(this.filter);
+            this.lead.volume.value = -12;
+
+            // Electronic bass - punchy
+            this.bass = new Tone.MonoSynth({
+                oscillator: { type: 'square' },
+                envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.4 },
+                filterEnvelope: { attack: 0.01, decay: 0.1, sustain: 0.3, baseFrequency: 80, octaves: 3 }
+            }).connect(this.reverb);
+            this.bass.volume.value = -10;
+
+            // Synth pad
+            this.pad = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.5, decay: 0.8, sustain: 0.4, release: 1.5 }
+            }).connect(this.reverb);
+            this.pad.volume.value = -18;
+
+            this.initialized = true;
+        } catch (e) {
+            console.warn('[TetrisThemeAlt] Init failed:', e);
+        }
+    }
+
+    // Alternative arrangement - different patterns
+    getMelodyPatterns() {
+        return {
+            // Variation with different note patterns
+            phraseA: [
+                ['E5', '8n'], ['B4', '8n'], ['C5', '8n'], ['D5', '8n'],
+                ['C5', '8n'], ['B4', '8n'], ['A4', '8n'], ['A4', '8n']
+            ],
+            phraseA2: [
+                ['C5', '8n'], ['E5', '8n'], ['D5', '8n'], ['C5', '8n'],
+                ['B4', '4n'], ['A4', '4n'], ['B4', '8n'], ['G4', '8n']
+            ],
+            phraseB: [
+                ['B4', '8n'], ['D5', '8n'], ['E5', '8n'], ['D5', '8n'],
+                ['B4', '8n'], ['C5', '8n'], ['B4', '8n'], ['G4', '8n']
+            ],
+            phraseC: [
+                ['A4', '8n'], ['C5', '8n'], ['E5', '8n'], ['A4', '8n'],
+                ['C5', '8n'], ['E5', '8n'], ['F5', '8n'], ['E5', '8n']
+            ],
+            phraseD: [
+                ['D5', '8n'], ['F5', '8n'], ['A5', '8n'], ['D5', '8n'],
+                ['F5', '8n'], ['E5', '8n'], ['D5', '8n'], ['C5', '8n']
+            ],
+            phraseEnd: [
+                ['E5', '4n'], ['C5', '4n'], ['A4', '2n'], ['G4', '2n']
+            ],
+            bassE: [['E2', '2n'], ['B2', '2n']],
+            bassA: [['A2', '2n'], ['E3', '2n']],
+            bassG: [['G2', '2n'], ['D3', '2n']],
+            bassD: [['D3', '2n'], ['A3', '2n']],
+            chordE: [['E4', 'G4', 'B4'], null, null, null, null, null, null, null],
+            chordA: [['A4', 'C5', 'E5'], null, null, null, null, null, null, null],
+            chordG: [['G4', 'B4', 'D5'], null, null, null, null, null, null, null],
+            chordD: [['D4', 'F4', 'A4'], null, null, null, null, null, null, null]
+        };
+    }
+
+    playBar(time, barNum) {
+        if (!this.isPlaying) return;
+        const patterns = this.getMelodyPatterns();
+        const eighthTime = Tone.Time('8n').toSeconds();
+        const quarterTime = Tone.Time('4n').toSeconds();
+
+        const section = barNum % 16;
+        let melody = null;
+        let bassPattern = null;
+        let chordPattern = null;
+
+        // Filter modulation
+        if (this.filter) {
+            const freq = 600 + (section * 100);
+            this.filter.frequency.rampTo(freq, 0.5, time);
+        }
+
+        switch (section) {
+            case 0: case 1:
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+            case 2: case 3:
+                melody = patterns.phraseA2;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+            case 4: case 5:
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassA;
+                chordPattern = patterns.chordA;
+                break;
+            case 6: case 7:
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+            case 8: case 9:
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassA;
+                chordPattern = patterns.chordA;
+                break;
+            case 10: case 11:
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassG;
+                chordPattern = patterns.chordG;
+                break;
+            case 12: case 13:
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassA;
+                chordPattern = patterns.chordA;
+                break;
+            case 14: case 15:
+                melody = patterns.phraseEnd;
+                bassPattern = patterns.bassE;
+                chordPattern = patterns.chordE;
+                break;
+        }
+
+        if (melody) {
+            melody.forEach(([note, duration], i) => {
+                const noteTime = time + (i * eighthTime);
+                const velocity = 0.65 + (Math.random() * 0.1);
+                this.lead.triggerAttackRelease(note, duration, noteTime, velocity);
+            });
+        }
+
+        if (bassPattern) {
+            bassPattern.forEach(([note, duration], i) => {
+                const noteTime = time + (i * quarterTime * 2);
+                this.bass.triggerAttackRelease(note, duration, noteTime, 0.7);
+            });
+        }
+
+        if (chordPattern && chordPattern[0]) {
+            this.pad.triggerAttackRelease(chordPattern[0], '1m', time + 0.1, 0.35);
+        }
+    }
+
+    async start() {
+        if (this.isPlaying) return;
+        if (typeof Tone === 'undefined') return;
+
+        this.init();
+        if (!this.initialized) return;
+
+        await Tone.start();
+        Tone.Transport.bpm.value = this.bpm;
+
+        this.currentBar = 0;
+        this.loop = new Tone.Loop((time) => {
+            this.playBar(time, this.currentBar);
+            this.currentBar++;
+        }, '1m').start(0);
+
+        Tone.Transport.start();
+        this.isPlaying = true;
+        console.log('[TetrisThemeAlt] Started playing - Synthwave edition');
+    }
+
+    stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+            if (this.loop) { this.loop.dispose(); this.loop = null; }
+        }
+    }
+}
+
+let tetrisThemeAlt = new TetrisThemeAltPlayer();
+
+// =============================================================================
+// L'S THEME - Death Note
+// Mysterious, jazz-influenced detective theme
+// =============================================================================
+
+class LsThemePlayer {
+    constructor() {
+        this.isPlaying = false;
+        this.initialized = false;
+        this.bpm = 90;
+        this.currentBar = 0;
+        this.loop = null;
+        this.lead = null;
+        this.bass = null;
+        this.reverb = null;
+    }
+
+    init() {
+        if (this.initialized || typeof Tone === 'undefined') return;
+        try {
+            this.reverb = new Tone.Reverb({ decay: 2.5, wet: 0.35, preDelay: 0.1 }).toDestination();
+
+            // Mysterious piano-like lead
+            this.lead = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.01, decay: 0.4, sustain: 0.3, release: 0.8 }
+            }).connect(this.reverb);
+            this.lead.volume.value = -12;
+
+            // Walking bass
+            this.bass = new Tone.MonoSynth({
+                oscillator: { type: 'sawtooth' },
+                envelope: { attack: 0.02, decay: 0.3, sustain: 0.5, release: 0.4 },
+                filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.3, baseFrequency: 120, octaves: 2 }
+            }).connect(this.reverb);
+            this.bass.volume.value = -10;
+
+            this.initialized = true;
+        } catch (e) {
+            console.warn('[LsTheme] Init failed:', e);
+        }
+    }
+
+    getMelodyPatterns() {
+        return {
+            // F# minor jazzy feel
+            phraseA: [
+                ['F#3', '8n'], ['B2', '8n'], ['D3', '8n'], ['D3', '8n'],
+                ['D3', '8n'], ['D3', '8n'], ['F#3', '8n'], ['D3', '8n']
+            ],
+            phraseB: [
+                ['F#3', '8n'], ['F#3', '8n'], ['F#3', '8n'], ['A#3', '8n'],
+                ['F#3', '8n'], ['B2', '8n'], ['D3', '8n'], ['D3', '8n']
+            ],
+            phraseC: [
+                ['D3', '8n'], ['D3', '8n'], ['F#3', '8n'], ['D3', '8n'],
+                ['F#3', '8n'], ['B2', '8n'], ['F#3', '8n'], ['A#3', '8n']
+            ],
+            bassF: [['F#2', '2n'], ['C#3', '2n']],
+            bassB: [['B1', '2n'], ['F#2', '2n']],
+            bassD: [['D2', '2n'], ['A2', '2n']]
+        };
+    }
+
+    playBar(time, barNum) {
+        if (!this.isPlaying) return;
+        const patterns = this.getMelodyPatterns();
+        const eighthTime = Tone.Time('8n').toSeconds();
+        const quarterTime = Tone.Time('4n').toSeconds();
+
+        const section = barNum % 12;
+        let melody = null;
+        let bassPattern = null;
+
+        switch (section) {
+            case 0: case 1: case 2:
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassF;
+                break;
+            case 3: case 4: case 5:
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassB;
+                break;
+            case 6: case 7: case 8:
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassD;
+                break;
+            default:
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassF;
+        }
+
+        if (melody) {
+            melody.forEach(([note, duration], i) => {
+                const noteTime = time + (i * eighthTime);
+                this.lead.triggerAttackRelease(note, duration, noteTime, 0.6);
+            });
+        }
+
+        if (bassPattern) {
+            bassPattern.forEach(([note, duration], i) => {
+                const noteTime = time + (i * quarterTime * 2);
+                this.bass.triggerAttackRelease(note, duration, noteTime, 0.7);
+            });
+        }
+    }
+
+    async start() {
+        if (this.isPlaying) return;
+        if (typeof Tone === 'undefined') return;
+        this.init();
+        if (!this.initialized) return;
+        await Tone.start();
+        Tone.Transport.bpm.value = this.bpm;
+        this.currentBar = 0;
+        this.loop = new Tone.Loop((time) => {
+            this.playBar(time, this.currentBar);
+            this.currentBar++;
+        }, '1m').start(0);
+        Tone.Transport.start();
+        this.isPlaying = true;
+        console.log('[LsTheme] Started - Justice will prevail');
+    }
+
+    stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+            if (this.loop) { this.loop.dispose(); this.loop = null; }
+        }
+    }
+}
+
+let lsTheme = new LsThemePlayer();
+
+// =============================================================================
+// MISA'S THEME - Death Note
+// Pop idol upbeat theme
+// =============================================================================
+
+class MisasThemePlayer {
+    constructor() {
+        this.isPlaying = false;
+        this.initialized = false;
+        this.bpm = 140;
+        this.currentBar = 0;
+        this.loop = null;
+        this.lead = null;
+        this.bass = null;
+        this.reverb = null;
+    }
+
+    init() {
+        if (this.initialized || typeof Tone === 'undefined') return;
+        try {
+            this.reverb = new Tone.Reverb({ decay: 1.5, wet: 0.25, preDelay: 0.05 }).toDestination();
+
+            // Bright pop synth
+            this.lead = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sawtooth' },
+                envelope: { attack: 0.01, decay: 0.2, sustain: 0.4, release: 0.4 }
+            }).connect(this.reverb);
+            this.lead.volume.value = -12;
+
+            // Pop bass
+            this.bass = new Tone.MonoSynth({
+                oscillator: { type: 'square' },
+                envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.3 },
+                filterEnvelope: { attack: 0.01, decay: 0.1, sustain: 0.3, baseFrequency: 100, octaves: 2.5 }
+            }).connect(this.reverb);
+            this.bass.volume.value = -10;
+
+            this.initialized = true;
+        } catch (e) {
+            console.warn('[MisasTheme] Init failed:', e);
+        }
+    }
+
+    getMelodyPatterns() {
+        return {
+            // E major pop feel
+            phraseA: [
+                ['E4', '8n'], ['E4', '8n'], ['G#4', '8n'], ['E4', '8n'],
+                ['E4', '8n'], ['E4', '8n'], ['G#4', '8n'], ['E4', '8n']
+            ],
+            phraseB: [
+                ['E4', '8n'], ['E4', '8n'], ['E4', '8n'], ['G#4', '8n'],
+                ['G#4', '8n'], ['G#4', '8n'], ['G#4', '8n'], ['E4', '8n']
+            ],
+            phraseC: [
+                ['E4', '8n'], ['A4', '8n'], ['A4', '8n'], ['A4', '8n'],
+                ['A4', '8n'], ['E4', '8n'], ['E4', '8n'], ['E4', '8n']
+            ],
+            bassE: [['E2', '2n'], ['B2', '2n']],
+            bassA: [['A2', '2n'], ['E3', '2n']]
+        };
+    }
+
+    playBar(time, barNum) {
+        if (!this.isPlaying) return;
+        const patterns = this.getMelodyPatterns();
+        const eighthTime = Tone.Time('8n').toSeconds();
+        const quarterTime = Tone.Time('4n').toSeconds();
+
+        const section = barNum % 8;
+        let melody = null;
+        let bassPattern = null;
+
+        switch (section) {
+            case 0: case 1: case 2: case 3:
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassE;
+                break;
+            case 4: case 5:
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassE;
+                break;
+            default:
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassA;
+        }
+
+        if (melody) {
+            melody.forEach(([note, duration], i) => {
+                const noteTime = time + (i * eighthTime);
+                this.lead.triggerAttackRelease(note, duration, noteTime, 0.65);
+            });
+        }
+
+        if (bassPattern) {
+            bassPattern.forEach(([note, duration], i) => {
+                const noteTime = time + (i * quarterTime * 2);
+                this.bass.triggerAttackRelease(note, duration, noteTime, 0.7);
+            });
+        }
+    }
+
+    async start() {
+        if (this.isPlaying) return;
+        if (typeof Tone === 'undefined') return;
+        this.init();
+        if (!this.initialized) return;
+        await Tone.start();
+        Tone.Transport.bpm.value = this.bpm;
+        this.currentBar = 0;
+        this.loop = new Tone.Loop((time) => {
+            this.playBar(time, this.currentBar);
+            this.currentBar++;
+        }, '1m').start(0);
+        Tone.Transport.start();
+        this.isPlaying = true;
+        console.log('[MisasTheme] Started - Pop idol energy');
+    }
+
+    stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+            if (this.loop) { this.loop.dispose(); this.loop = null; }
+        }
+    }
+}
+
+let misasTheme = new MisasThemePlayer();
+
+// =============================================================================
+// RIVER FLOWS IN YOU - Yiruma
+// Beautiful contemporary piano piece
+// =============================================================================
+
+class RiversFlowPlayer {
+    constructor() {
+        this.isPlaying = false;
+        this.initialized = false;
+        this.bpm = 72;
+        this.currentBar = 0;
+        this.loop = null;
+        this.piano = null;
+        this.bass = null;
+        this.reverb = null;
+        this.delay = null;
+    }
+
+    init() {
+        if (this.initialized || typeof Tone === 'undefined') return;
+        try {
+            this.reverb = new Tone.Reverb({ decay: 3.5, wet: 0.4, preDelay: 0.08 }).toDestination();
+            this.delay = new Tone.FeedbackDelay('4n.', 0.3).connect(this.reverb);
+
+            // Soft piano-like tones
+            this.piano = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.005, decay: 0.6, sustain: 0.3, release: 1.5 }
+            }).connect(this.delay);
+            this.piano.volume.value = -12;
+
+            // Gentle bass
+            this.bass = new Tone.MonoSynth({
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.05, decay: 0.5, sustain: 0.4, release: 1.0 },
+                filterEnvelope: { attack: 0.02, decay: 0.3, sustain: 0.4, baseFrequency: 80, octaves: 2 }
+            }).connect(this.reverb);
+            this.bass.volume.value = -10;
+
+            this.initialized = true;
+        } catch (e) {
+            console.warn('[RiversFlow] Init failed:', e);
+        }
+    }
+
+    getMelodyPatterns() {
+        return {
+            // A major flowing melody
+            phraseA: [
+                ['A5', '8n'], ['G#5', '8n'], ['A5', '8n'], ['G#5', '8n'],
+                ['A5', '8n'], ['E5', '8n'], ['A5', '8n'], ['D5', '8n']
+            ],
+            phraseB: [
+                ['C#5', '8n'], ['A5', '8n'], ['G#5', '8n'], ['A5', '8n'],
+                ['G#5', '8n'], ['A5', '8n'], ['E5', '8n'], ['A5', '8n']
+            ],
+            phraseC: [
+                ['D5', '8n'], ['C#5', '8n'], ['A5', '8n'], ['A5', '8n'],
+                ['A4', '8n'], ['A5', '8n'], ['A4', '8n'], ['A5', '8n']
+            ],
+            phraseD: [
+                ['A4', '8n'], ['D5', '8n'], ['C#5', '8n'], ['D5', '8n'],
+                ['E5', '8n'], ['C#5', '8n'], ['B4', '8n'], ['B3', '8n']
+            ],
+            bassA: [['A2', '2n'], ['E3', '2n']],
+            bassF: [['F#2', '2n'], ['C#3', '2n']],
+            bassD: [['D2', '2n'], ['A2', '2n']],
+            bassE: [['E2', '2n'], ['B2', '2n']]
+        };
+    }
+
+    playBar(time, barNum) {
+        if (!this.isPlaying) return;
+        const patterns = this.getMelodyPatterns();
+        const eighthTime = Tone.Time('8n').toSeconds();
+        const quarterTime = Tone.Time('4n').toSeconds();
+
+        const section = barNum % 16;
+        let melody = null;
+        let bassPattern = null;
+
+        switch (section) {
+            case 0: case 1:
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassA;
+                break;
+            case 2: case 3:
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassA;
+                break;
+            case 4: case 5:
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassF;
+                break;
+            case 6: case 7:
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassD;
+                break;
+            case 8: case 9:
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassE;
+                break;
+            case 10: case 11:
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassA;
+                break;
+            case 12: case 13:
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassF;
+                break;
+            default:
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassE;
+        }
+
+        if (melody) {
+            melody.forEach(([note, duration], i) => {
+                const noteTime = time + (i * eighthTime);
+                const velocity = 0.5 + (Math.random() * 0.1);
+                this.piano.triggerAttackRelease(note, duration, noteTime, velocity);
+            });
+        }
+
+        if (bassPattern) {
+            bassPattern.forEach(([note, duration], i) => {
+                const noteTime = time + (i * quarterTime * 2);
+                this.bass.triggerAttackRelease(note, duration, noteTime, 0.6);
+            });
+        }
+    }
+
+    async start() {
+        if (this.isPlaying) return;
+        if (typeof Tone === 'undefined') return;
+        this.init();
+        if (!this.initialized) return;
+        await Tone.start();
+        Tone.Transport.bpm.value = this.bpm;
+        this.currentBar = 0;
+        this.loop = new Tone.Loop((time) => {
+            this.playBar(time, this.currentBar);
+            this.currentBar++;
+        }, '1m').start(0);
+        Tone.Transport.start();
+        this.isPlaying = true;
+        console.log('[RiversFlow] Started - Flowing like water');
+    }
+
+    stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+            if (this.loop) { this.loop.dispose(); this.loop = null; }
+        }
+    }
+}
+
+let riversFlow = new RiversFlowPlayer();
+
+// =============================================================================
+// NUVOLE BIANCHE - Ludovico Einaudi
+// Ethereal, flowing contemporary piano piece
+// =============================================================================
+
+class NuvoleBianchePlayer {
+    constructor() {
+        this.isPlaying = false;
+        this.initialized = false;
+        this.bpm = 65;
+        this.currentBar = 0;
+        this.loop = null;
+        this.piano = null;
+        this.bass = null;
+        this.reverb = null;
+        this.delay = null;
+    }
+
+    init() {
+        if (this.initialized || typeof Tone === 'undefined') return;
+        try {
+            this.reverb = new Tone.Reverb({ decay: 4.0, wet: 0.5, preDelay: 0.1 }).toDestination();
+            this.delay = new Tone.FeedbackDelay('8n', 0.25).connect(this.reverb);
+
+            // Soft, ethereal piano
+            this.piano = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.02, decay: 0.8, sustain: 0.4, release: 2.0 }
+            }).connect(this.delay);
+            this.piano.volume.value = -12;
+
+            // Deep, resonant bass
+            this.bass = new Tone.MonoSynth({
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.05, decay: 0.6, sustain: 0.5, release: 1.5 },
+                filterEnvelope: { attack: 0.02, decay: 0.4, sustain: 0.4, baseFrequency: 60, octaves: 2 }
+            }).connect(this.reverb);
+            this.bass.volume.value = -10;
+
+            this.initialized = true;
+        } catch (e) {
+            console.warn('[NuvoleBianche] Init failed:', e);
+        }
+    }
+
+    getMelodyPatterns() {
+        return {
+            // Opening motif - gentle rising
+            phraseA: [
+                ['C4', '8n'], ['C#4', '8n'], ['C4', '8n'], ['A#3', '8n'],
+                ['C4', '8n'], ['C#4', '8n'], ['D#4', '8n'], ['D#4', '8n']
+            ],
+            // Main theme - repetitive G# oscillation
+            phraseB: [
+                ['A#4', '8n'], ['G#4', '8n'], ['G#4', '8n'], ['G#4', '8n'],
+                ['A#4', '8n'], ['G#4', '8n'], ['G#4', '8n'], ['G#4', '8n']
+            ],
+            // Variation
+            phraseC: [
+                ['A#4', '8n'], ['G#4', '8n'], ['G#4', '8n'], ['G#4', '8n'],
+                ['C#5', '8n'], ['C5', '8n'], ['C5', '8n'], ['D#4', '8n']
+            ],
+            // Descending resolution
+            phraseD: [
+                ['C5', '8n'], ['A#4', '8n'], ['A#4', '8n'], ['D#4', '8n'],
+                ['C#5', '8n'], ['C5', '8n'], ['A#4', '8n'], ['D#4', '8n']
+            ],
+            // Lower register variation
+            phraseE: [
+                ['A#4', '8n'], ['G#4', '8n'], ['G#4', '8n'], ['G#4', '8n'],
+                ['G4', '8n'], ['F4', '8n'], ['F4', '8n'], ['F4', '8n']
+            ],
+            // Closing phrase
+            phraseF: [
+                ['D#4', '8n'], ['C5', '8n'], ['C5', '8n'], ['C5', '8n'],
+                ['C#5', '8n'], ['C5', '8n'], ['C5', '8n'], ['D#4', '8n']
+            ],
+            bassC: [['C3', '1n']],
+            bassG: [['G#2', '1n']],
+            bassD: [['D#3', '1n']],
+            bassF: [['F3', '1n']]
+        };
+    }
+
+    playBar(time, barNum) {
+        if (!this.isPlaying) return;
+        const patterns = this.getMelodyPatterns();
+        const eighthTime = Tone.Time('8n').toSeconds();
+        const quarterTime = Tone.Time('4n').toSeconds();
+
+        const section = barNum % 24;
+        let melody = null;
+        let bassPattern = null;
+
+        switch (section) {
+            case 0: case 1:
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassC;
+                break;
+            case 2: case 3:
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassG;
+                break;
+            case 4: case 5:
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassG;
+                break;
+            case 6: case 7:
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassD;
+                break;
+            case 8: case 9:
+                melody = patterns.phraseE;
+                bassPattern = patterns.bassG;
+                break;
+            case 10: case 11:
+                melody = patterns.phraseF;
+                bassPattern = patterns.bassC;
+                break;
+            case 12: case 13:
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassC;
+                break;
+            case 14: case 15:
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassG;
+                break;
+            case 16: case 17:
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassG;
+                break;
+            case 18: case 19:
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassG;
+                break;
+            case 20: case 21:
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassF;
+                break;
+            default:
+                melody = patterns.phraseE;
+                bassPattern = patterns.bassC;
+        }
+
+        if (melody) {
+            melody.forEach(([note, duration], i) => {
+                const noteTime = time + (i * eighthTime);
+                const velocity = 0.4 + (Math.random() * 0.15);
+                this.piano.triggerAttackRelease(note, duration, noteTime, velocity);
+            });
+        }
+
+        if (bassPattern) {
+            bassPattern.forEach(([note, duration], i) => {
+                const noteTime = time + (i * quarterTime * 4);
+                this.bass.triggerAttackRelease(note, duration, noteTime, 0.5);
+            });
+        }
+    }
+
+    async start() {
+        if (this.isPlaying) return;
+        if (typeof Tone === 'undefined') return;
+        this.init();
+        if (!this.initialized) return;
+        await Tone.start();
+        Tone.Transport.bpm.value = this.bpm;
+        this.currentBar = 0;
+        this.loop = new Tone.Loop((time) => {
+            this.playBar(time, this.currentBar);
+            this.currentBar++;
+        }, '1m').start(0);
+        Tone.Transport.start();
+        this.isPlaying = true;
+        console.log('[NuvoleBianche] Started - White clouds drifting');
+    }
+
+    stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+            if (this.loop) { this.loop.dispose(); this.loop = null; }
+        }
+    }
+}
+
+let nuvoleBianche = new NuvoleBianchePlayer();
+
+// =============================================================================
+// UNA MATTINA - Ludovico Einaudi
+// Gentle, flowing piano piece from "The Intouchables"
+// Key: A minor, gentle arpeggios with a nostalgic melody
+// =============================================================================
+
+class UnaMattinaPlayer {
+    constructor() {
+        this.isPlaying = false;
+        this.initialized = false;
+        this.bpm = 80;
+        this.currentBar = 0;
+        this.loop = null;
+        this.piano = null;
+        this.bass = null;
+        this.reverb = null;
+        this.delay = null;
+    }
+
+    init() {
+        if (this.initialized || typeof Tone === 'undefined') return;
+        try {
+            this.reverb = new Tone.Reverb({ decay: 3.5, wet: 0.45, preDelay: 0.08 }).toDestination();
+            this.delay = new Tone.FeedbackDelay('8n', 0.2).connect(this.reverb);
+
+            // Warm, intimate piano tone
+            this.piano = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.015, decay: 0.7, sustain: 0.35, release: 1.8 }
+            }).connect(this.delay);
+            this.piano.volume.value = -12;
+
+            // Subtle bass support
+            this.bass = new Tone.MonoSynth({
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.03, decay: 0.5, sustain: 0.4, release: 1.2 },
+                filterEnvelope: { attack: 0.02, decay: 0.3, sustain: 0.4, baseFrequency: 80, octaves: 2 }
+            }).connect(this.reverb);
+            this.bass.volume.value = -10;
+
+            this.initialized = true;
+        } catch (e) {
+            console.warn('[UnaMattina] Init failed:', e);
+        }
+    }
+
+    getMelodyPatterns() {
+        return {
+            // Opening arpeggio - A minor
+            phraseA: [
+                ['E4', '8n'], ['A4', '8n'], ['C5', '8n'], ['E5', '8n'],
+                ['E5', '8n'], ['C5', '8n'], ['A4', '8n'], ['E4', '8n']
+            ],
+            // Main theme - gentle descent
+            phraseB: [
+                ['E5', '8n'], ['D5', '8n'], ['C5', '8n'], ['B4', '8n'],
+                ['A4', '8n'], ['G4', '8n'], ['A4', '8n'], ['C5', '8n']
+            ],
+            // Variation with higher notes
+            phraseC: [
+                ['A5', '8n'], ['G5', '8n'], ['E5', '8n'], ['D5', '8n'],
+                ['C5', '8n'], ['B4', '8n'], ['C5', '8n'], ['E5', '8n']
+            ],
+            // Melodic return
+            phraseD: [
+                ['D5', '8n'], ['C5', '8n'], ['B4', '8n'], ['A4', '8n'],
+                ['G4', '8n'], ['A4', '8n'], ['B4', '8n'], ['C5', '8n']
+            ],
+            // Lower register contemplative
+            phraseE: [
+                ['C4', '8n'], ['E4', '8n'], ['G4', '8n'], ['B4', '8n'],
+                ['A4', '8n'], ['G4', '8n'], ['E4', '8n'], ['C4', '8n']
+            ],
+            // Resolution phrase
+            phraseF: [
+                ['A3', '4n'], ['E4', '4n'], ['A4', '4n'], ['E5', '4n']
+            ],
+            bassA: [['A2', '1n']],
+            bassC: [['C3', '1n']],
+            bassE: [['E2', '1n']],
+            bassF: [['F2', '1n']]
+        };
+    }
+
+    playBar(time, barNum) {
+        if (!this.isPlaying) return;
+        const patterns = this.getMelodyPatterns();
+        const eighthTime = Tone.Time('8n').toSeconds();
+        const quarterTime = Tone.Time('4n').toSeconds();
+
+        const section = barNum % 20;
+        let melody = null;
+        let bassPattern = null;
+
+        switch (section) {
+            case 0: case 1:
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassA;
+                break;
+            case 2: case 3:
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassA;
+                break;
+            case 4: case 5:
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassC;
+                break;
+            case 6: case 7:
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassA;
+                break;
+            case 8: case 9:
+                melody = patterns.phraseE;
+                bassPattern = patterns.bassE;
+                break;
+            case 10: case 11:
+                melody = patterns.phraseA;
+                bassPattern = patterns.bassA;
+                break;
+            case 12: case 13:
+                melody = patterns.phraseB;
+                bassPattern = patterns.bassA;
+                break;
+            case 14: case 15:
+                melody = patterns.phraseC;
+                bassPattern = patterns.bassC;
+                break;
+            case 16: case 17:
+                melody = patterns.phraseD;
+                bassPattern = patterns.bassF;
+                break;
+            default:
+                melody = patterns.phraseF;
+                bassPattern = patterns.bassA;
+        }
+
+        if (melody) {
+            melody.forEach(([note, duration], i) => {
+                const noteTime = time + (i * eighthTime);
+                const velocity = 0.45 + (Math.random() * 0.1);
+                this.piano.triggerAttackRelease(note, duration, noteTime, velocity);
+            });
+        }
+
+        if (bassPattern) {
+            bassPattern.forEach(([note, duration], i) => {
+                const noteTime = time + (i * quarterTime * 4);
+                this.bass.triggerAttackRelease(note, duration, noteTime, 0.55);
+            });
+        }
+    }
+
+    async start() {
+        if (this.isPlaying) return;
+        if (typeof Tone === 'undefined') return;
+        this.init();
+        if (!this.initialized) return;
+        await Tone.start();
+        Tone.Transport.bpm.value = this.bpm;
+        this.currentBar = 0;
+        this.loop = new Tone.Loop((time) => {
+            this.playBar(time, this.currentBar);
+            this.currentBar++;
+        }, '1m').start(0);
+        Tone.Transport.start();
+        this.isPlaying = true;
+        console.log('[UnaMattina] Started - One morning');
+    }
+
+    stop() {
+        if (!this.isPlaying) return;
+        this.isPlaying = false;
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+            if (this.loop) { this.loop.dispose(); this.loop = null; }
+        }
+    }
+}
+
+let unaMattina = new UnaMattinaPlayer();
+
+// Initialize audio on first user interaction
+async function initAudioOnFirstInteraction() {
+    console.log('[Audio] First interaction - initializing audio');
+    if (typeof Tone !== 'undefined' && Tone.context.state !== 'running') {
+        try {
+            await Tone.start();
+            console.log('[Audio] Tone.js started');
+        } catch (err) {
+            console.warn('[Audio] Failed to start Tone.js:', err);
+        }
+    }
+    if (!proceduralMusic.initialized) proceduralMusic.init();
+    if (!poochysTheme.initialized) poochysTheme.init();
+    if (!templeOfTime.initialized) templeOfTime.init();
+    if (!songOfStorms.initialized) songOfStorms.init();
+    if (!miiChannel.initialized) miiChannel.init();
+    if (!tetrisThemeAlt.initialized) tetrisThemeAlt.init();
+    if (!lsTheme.initialized) lsTheme.init();
+    if (!misasTheme.initialized) misasTheme.init();
+    if (!riversFlow.initialized) riversFlow.init();
+    if (!nuvoleBianche.initialized) nuvoleBianche.init();
+    if (!unaMattina.initialized) unaMattina.init();
+    musicSystem.init();
+    initVolumeControl();
+}
+
+// Volume Control - Slider for music volume
+let masterVolume = 0.7; // Default 70%
+
+function initVolumeControl() {
+    const volumeSlider = document.getElementById('musicVolume');
+    if (!volumeSlider) return;
+
+    // Set initial volume
+    updateMasterVolume(volumeSlider.value / 100);
+
+    // Listen for slider changes
+    volumeSlider.addEventListener('input', (e) => {
+        const volume = e.target.value / 100;
+        updateMasterVolume(volume);
+    });
+}
+
+function updateMasterVolume(volume) {
+    masterVolume = volume;
+    if (typeof Tone !== 'undefined' && Tone.Destination) {
+        // Tone.js uses decibels: 0 = full volume, -Infinity = silent
+        // Map 0-1 to -60dB to 0dB range
+        const db = volume <= 0 ? -Infinity : 20 * Math.log10(volume);
+        Tone.Destination.volume.rampTo(db, 0.1);
+    }
+}
 
 // Snake Class
 class Snake {
@@ -4365,6 +7012,12 @@ function handleInput(e) {
     // Track input time for attract mode
     lastInputTime = Date.now();
 
+    // Initialize audio on first interaction
+    if (!audioInitialized) {
+        audioInitialized = true;
+        initAudioOnFirstInteraction();
+    }
+
     // ATTRACT state: any key returns to READY screen
     if (gameState === GAME_STATE.ATTRACT) {
         stopAttractMode();
@@ -4432,6 +7085,23 @@ function handleInput(e) {
     }
     if (e.key === 'x' || e.key === 'X') {
         slowDownGame();
+        return;
+    }
+
+    // M key - Music track toggle (works in READY and PLAYING states)
+    if (e.key === 'm' || e.key === 'M') {
+        const trackNum = musicSystem.nextTrack();
+        const trackName = musicSystem.getCurrentTrackName();
+        console.log(`[Music] Switched to track ${trackNum}: ${trackName}`);
+
+        if (gameState === GAME_STATE.PLAYING && player && player.body && player.body[0]) {
+            if (trackNum === 6) {
+                showFloatingText(player.body[0].x, player.body[0].y - 2, `♪ ${trackName} ♪`, '#888888', 0.02);
+            } else {
+                const displayNum = trackNum + 1;
+                showFloatingText(player.body[0].x, player.body[0].y - 2, `♪ M${displayNum} ${trackName} ♪`, '#00ffff', 0.02);
+            }
+        }
         return;
     }
 
@@ -4790,10 +7460,16 @@ function updateAttractMode() {
     }
 }
 
-function startGame() {
+async function startGame() {
     gameState = GAME_STATE.PLAYING;
     soundSystem.playStart();
     initLevelTimer();
+
+    // Start music based on selected track
+    if (musicSystem.currentTrack !== 6 && !musicSystem.usingMP3) {
+        proceduralMusic.setLevel(currentLevel);
+        await musicSystem.startProceduralForTrack(musicSystem.currentTrack);
+    }
 }
 
 // LEVEL SYSTEM FUNCTIONS
