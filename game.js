@@ -166,7 +166,8 @@ let mkVoice = null; // Selected voice for announcements
 
 // LEVEL SYSTEM
 const MAX_LEVELS = 8;
-const LEVEL_DURATION_MS = 1 * 60 * 1000; // 1 minute per level (for testing)
+const LEVEL_DURATION_MS = 4 * 60 * 1000; // 4 minutes per level (240 seconds)
+const BONUS_LEVEL_DURATION_MS = 2 * 60 * 1000; // 2 minutes for bonus levels (Level 10)
 const LEVEL_WARNING_MS = 10000; // 10 seconds warning
 
 // Level settings for each level
@@ -7477,14 +7478,17 @@ function initLevelTimer() {
     levelStartTime = Date.now();
     levelWarningActive = false;
     levelComplete = false;
-    levelTimeRemaining = LEVEL_DURATION_MS;
+    // Level 10 (Bonus): 2 minutes, Level 6: unlimited, others: 4 minutes
+    const levelDuration = (currentLevel === 10) ? BONUS_LEVEL_DURATION_MS : LEVEL_DURATION_MS;
+    levelTimeRemaining = levelDuration;
 
     // Reset HTML timer display
     const timerEl = document.getElementById('levelTimer');
     if (timerEl) {
         timerEl.classList.remove('warning');
         timerEl.style.color = ''; // Reset color
-        timerEl.textContent = `LEVEL ${currentLevel} | 4:00`;
+        const initialMinutes = currentLevel === 10 ? 2 : 4;
+        timerEl.textContent = `LEVEL ${currentLevel} | ${initialMinutes}:00`;
     }
 }
 
@@ -7498,7 +7502,9 @@ function updateLevelTimer() {
     }
 
     const elapsed = Date.now() - levelStartTime;
-    levelTimeRemaining = LEVEL_DURATION_MS - elapsed;
+    // Level 10 (Bonus): 2 minutes, all others: 4 minutes
+    const levelDuration = (currentLevel === 10) ? BONUS_LEVEL_DURATION_MS : LEVEL_DURATION_MS;
+    levelTimeRemaining = levelDuration - elapsed;
 
     // Update HTML timer element
     updateHTMLTimer();
@@ -7991,7 +7997,7 @@ function resetGame() {
     // Reset level system
     currentLevel = 1;
     levelStartTime = 0;
-    levelTimeRemaining = LEVEL_DURATION_MS;
+    levelTimeRemaining = LEVEL_DURATION_MS; // Level 1 starts with 4 minutes
     levelWarningActive = false;
     levelComplete = false;
     secondBossSpawnTime = null;
