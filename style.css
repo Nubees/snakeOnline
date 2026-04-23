@@ -274,12 +274,13 @@ body::after {
 
 /* Controls Info */
 .controls {
-    font-size: calc(var(--font-size-small) * 1.05);
+    font-size: 28px;
     color: var(--grid-glow);
     text-align: center;
     letter-spacing: 1px;
     flex-shrink: 0;
-    transform: translateY(2vh);
+    padding: 8px 0;
+    line-height: 1.5;
 }
 
 /* Overlay Screens (Game Over, Pause) */
@@ -450,9 +451,9 @@ body::after {
 
     .controls {
         width: 100%;
-        padding: 6px 8px;
-        font-size: 11px;
-        line-height: 1.4;
+        padding: 10px 8px;
+        font-size: 22px;
+        line-height: 1.5;
         text-align: center;
         background: rgba(0, 0, 0, 0.5);
         flex-shrink: 0;
