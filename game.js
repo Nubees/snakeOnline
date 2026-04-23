@@ -3403,7 +3403,7 @@ class LsThemePlayer {
                 oscillator: { type: 'triangle' },
                 envelope: { attack: 0.01, decay: 0.4, sustain: 0.3, release: 0.8 }
             }).connect(this.reverb);
-            this.lead.volume.value = -12;
+            this.lead.volume.value = -8;  // Louder (was -12)
 
             // Walking bass
             this.bass = new Tone.MonoSynth({
@@ -3411,7 +3411,7 @@ class LsThemePlayer {
                 envelope: { attack: 0.02, decay: 0.3, sustain: 0.5, release: 0.4 },
                 filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.3, baseFrequency: 120, octaves: 2 }
             }).connect(this.reverb);
-            this.bass.volume.value = -10;
+            this.bass.volume.value = -6;  // Louder (was -10)
 
             this.initialized = true;
         } catch (e) {
@@ -8165,7 +8165,6 @@ function cycleGameSpeed() {
 function updateMobileStartButton() {
     const startBtn = document.getElementById('mobileStartBtn');
     const readyControls = document.getElementById('mobile-ready-controls');
-    if (!touchEnabled) return;
 
     if (gameState === GAME_STATE.READY) {
         if (startBtn) startBtn.classList.remove('hidden');
