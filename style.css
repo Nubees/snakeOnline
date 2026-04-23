@@ -118,14 +118,15 @@ body::after {
     justify-content: space-between;
     width: var(--canvas-width);
     margin-bottom: var(--spacing-sm);
-    font-size: var(--font-size-normal);
+    margin-top: -3vh;
+    font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 2px;
 }
 
 .score, .high-score {
-    text-shadow: 0 0 15px var(--text-glow);
-    font-size: 24px;
+    text-shadow: 0 0 10px var(--text-glow);
+    font-size: 18px;
     font-weight: bold;
 }
 
@@ -136,18 +137,18 @@ body::after {
 .music-track-container {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 16px;
+    gap: 8px;
+    font-size: 12px;
     color: #00ff88;
-    text-shadow: 0 0 10px rgba(0, 255, 136, 0.7);
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.7);
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
 .music-icon {
     color: #00ffff;
-    font-size: 18px;
+    font-size: 14px;
 }
 
 #musicTrack {
@@ -230,22 +231,22 @@ body::after {
 
 .level-timer {
     color: #00ffff;
-    font-size: 22px;
+    font-size: 16px;
     font-weight: bold;
-    text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
     letter-spacing: 2px;
 }
 
 .level-timer.warning {
     color: #ff0000;
-    text-shadow: 0 0 20px rgba(255, 0, 0, 0.9);
+    text-shadow: 0 0 15px rgba(255, 0, 0, 0.9);
     animation: pulse 0.5s infinite;
 }
 
 .lives {
     color: #ff0040;
-    font-size: var(--font-size-large);
-    text-shadow: 0 0 15px rgba(255, 0, 64, 0.8);
+    font-size: 24px;
+    text-shadow: 0 0 10px rgba(255, 0, 64, 0.8);
     letter-spacing: 3px;
 }
 
