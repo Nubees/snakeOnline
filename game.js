@@ -4218,18 +4218,19 @@ function initVolumeControl() {
     // Music change button (next track)
     const musicChangeBtn = document.getElementById('musicChangeBtn');
     if (musicChangeBtn) {
-        musicChangeBtn.addEventListener('click', () => {
+        const handleMusicChange = async (e) => {
+            if (e) e.preventDefault();
+            // Ensure audio is initialized first
+            if (typeof initAudioOnFirstInteraction === 'function') {
+                await initAudioOnFirstInteraction();
+            }
+            // Cycle to next track
             if (musicSystem) {
                 musicSystem.nextTrack();
             }
-        });
-        // Also handle touch for mobile
-        musicChangeBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (musicSystem) {
-                musicSystem.nextTrack();
-            }
-        });
+        };
+        musicChangeBtn.addEventListener('click', handleMusicChange);
+        musicChangeBtn.addEventListener('touchend', handleMusicChange);
     }
 }
 
@@ -7039,6 +7040,9 @@ function initGame() {
     // Initialize mobile touch controls
     initTouchControls();
     initMobileButtons();
+
+    // Initialize volume control (music button handlers)
+    initVolumeControl();
 
     // Start game loop
     requestAnimationFrame(gameLoop);

@@ -15,7 +15,7 @@
                 <div class="lives" id="livesContainer">♥♥♥</div>
                 <div class="music-track-container">
                     <input type="range" id="musicVolume" class="volume-slider" min="0" max="100" value="70" title="Music Volume">
-                    <button id="musicChangeBtn" class="music-change-btn" title="Change Song" onclick="console.log('[MusicBtn] Clicked'); if(typeof initAudioOnFirstInteraction==='function'){console.log('[MusicBtn] Init audio'); initAudioOnFirstInteraction();} if(typeof musicSystem!=='undefined'&&musicSystem){console.log('[MusicBtn] Calling nextTrack'); musicSystem.nextTrack();}else{console.log('[MusicBtn] musicSystem not found');}">▶▶</button>
+                    <button id="musicChangeBtn" class="music-change-btn" title="Change Song">▶▶</button>
                     <span class="music-icon">♪</span>
                     <span id="musicTrack">Silent</span>
                 </div>
