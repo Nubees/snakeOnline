@@ -274,11 +274,12 @@ body::after {
 
 /* Controls Info */
 .controls {
-    font-size: var(--font-size-small);
+    font-size: calc(var(--font-size-small) * 1.05);
     color: var(--grid-glow);
     text-align: center;
     letter-spacing: 1px;
     flex-shrink: 0;
+    transform: translateY(2vh);
 }
 
 /* Overlay Screens (Game Over, Pause) */
