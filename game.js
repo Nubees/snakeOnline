@@ -7067,6 +7067,13 @@ async function initGame() {
     // Initialize volume control (music button + slider)
     initVolumeControl();
 
+    // Handle mobile canvas scaling to fill screen
+    resizeCanvasForMobile();
+    window.addEventListener('resize', resizeCanvasForMobile);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(resizeCanvasForMobile, 100);
+    });
+
     // Start game loop
     requestAnimationFrame(gameLoop);
 }
@@ -8247,6 +8254,40 @@ function cycleGameSpeed() {
     } else {
         slowDownGame();
     }
+}
+
+function resizeCanvasForMobile() {
+    // Only apply on mobile/touch devices
+    if (!isTouchDevice()) return;
+
+    const canvasEl = document.getElementById('gameCanvas');
+    if (!canvasEl) return;
+
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Canvas native aspect ratio is 800:600 (4:3)
+    const nativeWidth = 800;
+    const nativeHeight = 600;
+    const nativeAspect = nativeWidth / nativeHeight;
+    const viewportAspect = viewportWidth / viewportHeight;
+
+    let displayWidth, displayHeight;
+
+    if (viewportAspect > nativeAspect) {
+        // Viewport is wider than canvas aspect - fit to height
+        displayHeight = viewportHeight;
+        displayWidth = displayHeight * nativeAspect;
+    } else {
+        // Viewport is taller than canvas aspect - fit to width
+        displayWidth = viewportWidth;
+        displayHeight = displayWidth / nativeAspect;
+    }
+
+    // Apply size via CSS
+    canvasEl.style.width = displayWidth + 'px';
+    canvasEl.style.height = displayHeight + 'px';
 }
 
 function updateMobileStartButton() {
