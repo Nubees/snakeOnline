@@ -578,7 +578,7 @@ canvas, #gameCanvas {
 /* Mobile Start Button */
 .mobile-start-btn {
     position: absolute;
-    top: 52%;
+    top: 48%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 9999;
