@@ -628,12 +628,11 @@ canvas, #gameCanvas {
 }
 
 .mobile-start-btn.hidden {
-    display: none;
+    display: none !important;
 }
 
-/* DEBUG: Always show mobile buttons for testing */
-.mobile-start-btn, .mobile-ready-controls {
-    display: block !important;
+.mobile-ready-controls.hidden {
+    display: none !important;
 }
 
 /* Mobile Ready Screen Controls (Announcer + Boss) */
