@@ -8208,14 +8208,11 @@ function cycleGameSpeed() {
 }
 
 function updateMobileStartButton() {
-    const startBtn = document.getElementById('mobileStartBtn');
     const readyControls = document.getElementById('mobile-ready-controls');
 
     if (gameState === GAME_STATE.READY) {
-        if (startBtn) startBtn.classList.remove('hidden');
         if (readyControls) readyControls.classList.remove('hidden');
     } else {
-        if (startBtn) startBtn.classList.add('hidden');
         if (readyControls) readyControls.classList.add('hidden');
     }
 }

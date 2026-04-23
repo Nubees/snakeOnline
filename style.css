@@ -577,11 +577,6 @@ canvas, #gameCanvas {
 
 /* Mobile Start Button */
 .mobile-start-btn {
-    position: absolute;
-    top: 47%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 9999;
     padding: 20px 50px;
     font-family: var(--font-primary);
     font-size: 24px;
@@ -602,13 +597,13 @@ canvas, #gameCanvas {
 }
 
 @keyframes pulse-start {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); }
-    50% { transform: translate(-50%, -50%) scale(1.05); }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
 }
 
 .mobile-start-btn:active {
     background: rgba(0, 255, 255, 0.6);
-    transform: translate(-50%, -50%) scale(0.95);
+    transform: scale(0.95);
     box-shadow: 0 0 50px rgba(0, 255, 255, 0.8), inset 0 0 20px rgba(0, 255, 255, 0.3);
 }
 
@@ -620,15 +615,16 @@ canvas, #gameCanvas {
     display: none !important;
 }
 
-/* Mobile Ready Screen Controls (Announcer + Boss) */
+/* Mobile Ready Screen Controls (Announcer + Boss + Start) */
 .mobile-ready-controls {
     position: absolute;
-    top: 58%;
+    top: 47%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     z-index: 9999;
     display: flex;
-    gap: 30px;
+    align-items: center;
+    gap: 15px;
     pointer-events: auto;
 }
 
@@ -684,9 +680,6 @@ canvas, #gameCanvas {
 
 /* Always show mobile buttons on touch/small screens */
 @media (max-width: 850px), (hover: none) {
-    .mobile-start-btn {
-        display: block !important;
-    }
     .mobile-ready-controls {
         display: flex !important;
     }
