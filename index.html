@@ -15,7 +15,7 @@
                 <div class="lives" id="livesContainer">♥♥♥</div>
                 <div class="music-track-container">
                     <input type="range" id="musicVolume" class="volume-slider" min="0" max="100" value="70" title="Music Volume">
-                    <button id="musicChangeBtn" class="music-change-btn" title="Change Song">▶▶</button>
+                    <button id="musicChangeBtn" class="music-change-btn" title="Change Song" onclick="if(typeof initAudioOnFirstInteraction==='function')initAudioOnFirstInteraction();if(typeof musicSystem!=='undefined'&&musicSystem&&typeof musicSystem.nextTrack==='function')musicSystem.nextTrack();">▶▶</button>
                     <span class="music-icon">♪</span>
                     <span id="musicTrack">Silent</span>
                 </div>
@@ -43,9 +43,9 @@
         </div>
     </div>
     <!-- Mobile buttons outside game container for proper positioning -->
-    <button id="mobileStartBtn" class="mobile-start-btn" onclick="if(typeof startCountdown==='function')startCountdown();">START GAME</button>
+    <button id="mobileStartBtn" class="mobile-start-btn" onclick="if(typeof initAudioOnFirstInteraction==='function')initAudioOnFirstInteraction();if(typeof startCountdown==='function')startCountdown();">START GAME</button>
     <div id="mobile-ready-controls" class="mobile-ready-controls">
-        <button class="mobile-option-btn" id="mobileAnnouncer" onclick="if(typeof toggleAnnouncerMode==='function')toggleAnnouncerMode();">🔊</button>
+        <button class="mobile-option-btn" id="mobileAnnouncer" onclick="if(typeof initAudioOnFirstInteraction==='function')initAudioOnFirstInteraction();if(typeof toggleAnnouncerMode==='function')toggleAnnouncerMode();">🔊</button>
         <button class="mobile-option-btn" id="mobileBoss" onclick="bossBattleMode=!bossBattleMode;this.classList.toggle('active',bossBattleMode);">👹</button>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>

@@ -689,8 +689,12 @@ canvas, #gameCanvas {
 }
 
 #mobileBoss.active {
-    background: rgba(255, 0, 64, 0.5);
-    box-shadow: 0 0 25px rgba(255, 0, 64, 0.6);
+    background: rgba(255, 0, 64, 0.6) !important;
+    border-color: #ff0040 !important;
+    color: #ff0040 !important;
+    box-shadow: 0 0 30px rgba(255, 0, 64, 0.8), inset 0 0 15px rgba(255, 0, 64, 0.3) !important;
+    text-shadow: 0 0 15px rgba(255, 0, 64, 0.9) !important;
+    animation: pulse 1s infinite;
 }
 
 /* Always show mobile buttons on touch/small screens */
