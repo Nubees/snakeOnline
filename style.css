@@ -118,7 +118,8 @@ body::after {
 .hud {
     display: flex;
     justify-content: space-between;
-    width: var(--canvas-width);
+    width: 100%;
+    padding: 0 var(--spacing-md);
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
