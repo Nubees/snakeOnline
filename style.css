@@ -576,6 +576,17 @@ canvas, #gameCanvas {
     box-shadow: 0 0 25px rgba(255, 0, 64, 0.6);
 }
 
+/* Slow down button specific styling */
+.slow-btn {
+    border-color: #00ff88;
+    color: #00ff88;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+}
+
+.slow-btn:active {
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.6);
+}
+
 /* Mobile Start Button */
 .mobile-start-btn {
     padding: 18px 45px;

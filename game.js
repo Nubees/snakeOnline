@@ -8165,14 +8165,24 @@ function initMobileButtons() {
         pauseBtn.addEventListener('click', togglePause);
     }
 
+    // Slow down button
+    const slowBtn = document.getElementById('mobileSlow');
+    if (slowBtn) {
+        slowBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            slowDownGame();
+        });
+        slowBtn.addEventListener('click', slowDownGame);
+    }
+
     // Speed button - cycles through speeds like Z/X keys
     const speedBtn = document.getElementById('mobileSpeed');
     if (speedBtn) {
         speedBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            cycleGameSpeed();
+            speedUpGame();
         });
-        speedBtn.addEventListener('click', cycleGameSpeed);
+        speedBtn.addEventListener('click', speedUpGame);
     }
 
     // Announcer toggle button (replaces '1' key)
