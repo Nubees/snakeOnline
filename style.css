@@ -382,15 +382,26 @@ body::after {
         --canvas-height: auto;
     }
 
+    .game-container {
+        padding: 0;
+        justify-content: flex-start;
+    }
+
     .hud {
         width: 100%;
-        max-width: 600px;
+        max-width: none;
+        padding: 8px 4px;
     }
 
     #gameCanvas {
         width: 100%;
-        max-width: 600px;
+        max-width: none;
         height: auto;
+        border-radius: 0;
+    }
+
+    .controls {
+        padding: 8px 4px;
     }
 }
 
