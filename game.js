@@ -9398,10 +9398,38 @@ function drawReadyScreen() {
     ctx.shadowColor = '#ffffff';
     ctx.fillText('Press 3 to start on PC', CANVAS_WIDTH / 2, 450);
 
+    // Rainbow glow helper for name prompt
+    const rainbowHue = (Date.now() / 300) % 360;
+    const rainbowColor = `hsl(${rainbowHue}, 100%, 60%)`;
+    const rainbowColor2 = `hsl(${(rainbowHue + 180) % 360}, 100%, 60%)`;
+
+    const namePromptText = 'Type name before starting (max 6 chars)';
     ctx.font = "14px 'Courier New', monospace";
-    ctx.fillStyle = '#aaaaaa';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = rainbowColor;
+    ctx.fillText(namePromptText, CANVAS_WIDTH / 2, 485);
+
+    // Rainbow underline
+    const promptWidth = ctx.measureText(namePromptText).width;
+    const underlineY = 488;
+    const underlineGrad = ctx.createLinearGradient(
+        CANVAS_WIDTH / 2 - promptWidth / 2, 0,
+        CANVAS_WIDTH / 2 + promptWidth / 2, 0
+    );
+    underlineGrad.addColorStop(0, rainbowColor);
+    underlineGrad.addColorStop(0.5, rainbowColor2);
+    underlineGrad.addColorStop(1, rainbowColor);
+    ctx.strokeStyle = underlineGrad;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(CANVAS_WIDTH / 2 - promptWidth / 2, underlineY);
+    ctx.lineTo(CANVAS_WIDTH / 2 + promptWidth / 2, underlineY);
+    ctx.stroke();
+
+    // Reset shadow for remaining text
     ctx.shadowBlur = 0;
-    ctx.fillText('Type name before starting (max 6 chars)', CANVAS_WIDTH / 2, 485);
+    ctx.fillStyle = '#aaaaaa';
     ctx.fillText('Arrow Keys: Move  |  Z: Speed Up  |  X: Slow Down', CANVAS_WIDTH / 2, 510);
     ctx.fillText('P: Pause  |  R: Restart  |  1: Sound Set  |  2: Boss Mode', CANVAS_WIDTH / 2, 530);
 
