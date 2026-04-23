@@ -7075,7 +7075,12 @@ function handleInput(e) {
     // ATTRACT state: any key returns to READY screen
     if (gameState === GAME_STATE.ATTRACT) {
         stopAttractMode();
-        return;
+        // Let alphanumeric keys fall through to READY state so they can be typed
+        // immediately without requiring a second keypress
+        const isLetterOrNumber = e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key);
+        if (!isLetterOrNumber) {
+            return;
+        }
     }
 
     // READY state: 3 key starts countdown, allow typing name
@@ -7090,10 +7095,11 @@ function handleInput(e) {
             e.preventDefault();
             playerName = playerName.slice(0, -1);
             localStorage.setItem('snakePlayerName', playerName);
-        } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9]/)) {
+        } else if (e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key)) {
             if (playerName.length < MAX_PLAYER_NAME_LENGTH) {
                 playerName += e.key.toUpperCase();
                 localStorage.setItem('snakePlayerName', playerName);
+                console.log('[Name] Typed:', playerName);
             }
         }
         return;
