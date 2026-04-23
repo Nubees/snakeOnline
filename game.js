@@ -7067,11 +7067,11 @@ async function initGame() {
     // Initialize volume control (music button + slider)
     initVolumeControl();
 
-    // Handle mobile canvas scaling to fill screen
-    resizeCanvasForMobile();
-    window.addEventListener('resize', resizeCanvasForMobile);
+    // Handle canvas scaling to fill screen on all devices
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', () => {
-        setTimeout(resizeCanvasForMobile, 100);
+        setTimeout(resizeCanvas, 100);
     });
 
     // Start game loop
@@ -8256,10 +8256,7 @@ function cycleGameSpeed() {
     }
 }
 
-function resizeCanvasForMobile() {
-    // Only apply on mobile/touch devices
-    if (!isTouchDevice()) return;
-
+function resizeCanvas() {
     const canvasEl = document.getElementById('gameCanvas');
     if (!canvasEl) return;
 

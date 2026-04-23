@@ -106,10 +106,12 @@ body::after {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: var(--spacing-md);
-    position: relative; /* For absolute positioning of mobile buttons */
+    justify-content: space-between;
+    height: 100vh;
+    width: 100vw;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
 }
 
 /* HUD - Heads Up Display */
@@ -117,11 +119,10 @@ body::after {
     display: flex;
     justify-content: space-between;
     width: var(--canvas-width);
-    margin-bottom: var(--spacing-sm);
-    margin-top: -3vh;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
+    flex-shrink: 0;
 }
 
 .score, .high-score {
@@ -266,17 +267,17 @@ body::after {
     border-radius: 4px;
     box-shadow: var(--canvas-glow), inset 0 0 20px rgba(0, 0, 0, 0.5);
     background-color: rgba(0, 0, 0, 0.8);
-    max-width: 100%;
+    width: var(--canvas-width);
     height: auto;
 }
 
 /* Controls Info */
 .controls {
-    margin-top: var(--spacing-sm);
     font-size: var(--font-size-small);
     color: var(--grid-glow);
     text-align: center;
     letter-spacing: 1px;
+    flex-shrink: 0;
 }
 
 /* Overlay Screens (Game Over, Pause) */
