@@ -4214,6 +4214,23 @@ function initVolumeControl() {
         const volume = e.target.value / 100;
         updateMasterVolume(volume);
     });
+
+    // Music change button (next track)
+    const musicChangeBtn = document.getElementById('musicChangeBtn');
+    if (musicChangeBtn) {
+        musicChangeBtn.addEventListener('click', () => {
+            if (musicSystem) {
+                musicSystem.nextTrack();
+            }
+        });
+        // Also handle touch for mobile
+        musicChangeBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (musicSystem) {
+                musicSystem.nextTrack();
+            }
+        });
+    }
 }
 
 function updateMasterVolume(volume) {

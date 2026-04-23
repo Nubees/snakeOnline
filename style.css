@@ -154,6 +154,29 @@ body::after {
     font-weight: bold;
 }
 
+.music-change-btn {
+    background: rgba(0, 255, 255, 0.2);
+    border: 2px solid #00ffff;
+    border-radius: 4px;
+    color: #00ffff;
+    font-size: 12px;
+    font-family: var(--font-primary);
+    font-weight: bold;
+    padding: 4px 8px;
+    cursor: pointer;
+    touch-action: none;
+    transition: all 0.2s ease;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    line-height: 1;
+}
+
+.music-change-btn:active {
+    background: rgba(0, 255, 255, 0.5);
+    transform: scale(0.95);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+}
+
 .volume-slider {
     width: 120px;
     height: 6px;
