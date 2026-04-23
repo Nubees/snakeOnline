@@ -9325,7 +9325,7 @@ function drawReadyScreen() {
     ctx.shadowColor = '#ff00ff';
     ctx.shadowBlur = 15;
     const displayName = (playerName || 'ANON').substring(0, MAX_PLAYER_NAME_LENGTH).toUpperCase();
-    ctx.fillText(`PLAYER: ${displayName}`, CANVAS_WIDTH / 2, 295);
+    ctx.fillText(`PLAYER: ${displayName}`, CANVAS_WIDTH / 2, 325);
 
     // ANNOUNCER MODE INDICATOR
     const announcerText = currentAnnouncerMode === 'set1' ? 'SET 1' : 'SET 2';
@@ -9335,12 +9335,12 @@ function drawReadyScreen() {
     ctx.font = "bold 16px 'Courier New', monospace";
     ctx.shadowColor = announcerColor;
     ctx.shadowBlur = 15;
-    ctx.fillText(`♪ ANNOUNCER: ${announcerText} ♪`, CANVAS_WIDTH / 2, 325);
+    ctx.fillText(`♪ ANNOUNCER: ${announcerText} ♪`, CANVAS_WIDTH / 2, 355);
 
     ctx.font = "12px 'Courier New', monospace";
     ctx.fillStyle = '#aaaaaa';
     ctx.shadowBlur = 5;
-    ctx.fillText('Press 1 to Change', CANVAS_WIDTH / 2, 342);
+    ctx.fillText('Press 1 to Change', CANVAS_WIDTH / 2, 372);
 
     // BOSS BATTLE MODE TOGGLE
     const bossBattleColor = bossBattleMode ? '#ff0040' : '#888888';
@@ -9350,26 +9350,26 @@ function drawReadyScreen() {
     ctx.font = "bold 16px 'Courier New', monospace";
     ctx.shadowColor = bossBattleColor;
     ctx.shadowBlur = bossBattleMode ? 15 : 0;
-    ctx.fillText(`⚔️ ${bossBattleText} ⚔️`, CANVAS_WIDTH / 2, 370);
+    ctx.fillText(`⚔️ ${bossBattleText} ⚔️`, CANVAS_WIDTH / 2, 400);
 
     ctx.font = "12px 'Courier New', monospace";
     ctx.fillStyle = '#aaaaaa';
     ctx.shadowBlur = 5;
-    ctx.fillText('Press 2 to Toggle', CANVAS_WIDTH / 2, 387);
+    ctx.fillText('Press 2 to Toggle', CANVAS_WIDTH / 2, 417);
 
     // Instructions
     ctx.fillStyle = '#ffffff';
     ctx.font = "bold 20px 'Courier New', monospace";
     ctx.shadowBlur = 10;
     ctx.shadowColor = '#ffffff';
-    ctx.fillText('Press 3 to Start', CANVAS_WIDTH / 2, 420);
+    ctx.fillText('Press 3 to Start', CANVAS_WIDTH / 2, 450);
 
     ctx.font = "14px 'Courier New', monospace";
     ctx.fillStyle = '#aaaaaa';
     ctx.shadowBlur = 0;
-    ctx.fillText('Type name before starting (max 6 chars)', CANVAS_WIDTH / 2, 455);
-    ctx.fillText('Arrow Keys: Move  |  Z: Speed Up  |  X: Slow Down', CANVAS_WIDTH / 2, 480);
-    ctx.fillText('P: Pause  |  R: Restart  |  1: Sound Set  |  2: Boss Mode', CANVAS_WIDTH / 2, 500);
+    ctx.fillText('Type name before starting (max 6 chars)', CANVAS_WIDTH / 2, 485);
+    ctx.fillText('Arrow Keys: Move  |  Z: Speed Up  |  X: Slow Down', CANVAS_WIDTH / 2, 510);
+    ctx.fillText('P: Pause  |  R: Restart  |  1: Sound Set  |  2: Boss Mode', CANVAS_WIDTH / 2, 530);
 
     ctx.shadowBlur = 0;
 }

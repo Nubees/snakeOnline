@@ -119,14 +119,14 @@ body::after {
     width: var(--canvas-width);
     margin-bottom: var(--spacing-sm);
     margin-top: -3vh;
-    font-size: 14px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
 }
 
 .score, .high-score {
-    text-shadow: 0 0 10px var(--text-glow);
-    font-size: 18px;
+    text-shadow: 0 0 8px var(--text-glow);
+    font-size: 14px;
     font-weight: bold;
 }
 
@@ -231,23 +231,23 @@ body::after {
 
 .level-timer {
     color: #00ffff;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: bold;
-    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
-    letter-spacing: 2px;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
+    letter-spacing: 1px;
 }
 
 .level-timer.warning {
     color: #ff0000;
-    text-shadow: 0 0 15px rgba(255, 0, 0, 0.9);
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.9);
     animation: pulse 0.5s infinite;
 }
 
 .lives {
     color: #ff0040;
-    font-size: 24px;
-    text-shadow: 0 0 10px rgba(255, 0, 64, 0.8);
-    letter-spacing: 3px;
+    font-size: 18px;
+    text-shadow: 0 0 8px rgba(255, 0, 64, 0.8);
+    letter-spacing: 2px;
 }
 
 .life-heart.active {
