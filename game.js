@@ -56,8 +56,8 @@ let baseGameSpeed = 100; // Base speed for Z/X adjustments
 // Scoreboard System
 const MAX_SCOREBOARD_ENTRIES = 4;
 const MAX_PLAYER_NAME_LENGTH = 6;
-let playerName = localStorage.getItem('snakePlayerName') || '';
-let highScores = JSON.parse(localStorage.getItem('snakeHighScores')) || [];
+let playerName = '';
+let highScores = [];
 
 // Snake Names and Kill Streaks
 // Colors designed for MAXIMUM CONTRAST - evenly spaced around color wheel
@@ -6972,7 +6972,7 @@ function onFoodEaten() {
     comboMultiplier = newMultiplier;
 }
 
-function initGame() {
+async function initGame() {
     canvas = document.getElementById('gameCanvas');
     ctx = canvas.getContext('2d');
 
@@ -7040,9 +7040,18 @@ function initGame() {
     // Reset death flag
     isGameOverInProgress = false;
 
-    // Load player name and high scores
-    playerName = localStorage.getItem('snakePlayerName') || '';
-    highScores = JSON.parse(localStorage.getItem('snakeHighScores')) || [];
+    // Load high scores from server JSON file (fallback to localStorage)
+    try {
+        const response = await fetch('scores.json?v=1');
+        if (response.ok) {
+            const serverScores = await response.json();
+            highScores = serverScores.slice(0, MAX_SCOREBOARD_ENTRIES);
+        } else {
+            highScores = JSON.parse(localStorage.getItem('snakeHighScores')) || [];
+        }
+    } catch (err) {
+        highScores = JSON.parse(localStorage.getItem('snakeHighScores')) || [];
+    }
 
     // Initialize attract mode timing
     lastInputTime = Date.now();
@@ -7094,11 +7103,9 @@ function handleInput(e) {
         } else if (e.key === 'Backspace') {
             e.preventDefault();
             playerName = playerName.slice(0, -1);
-            localStorage.setItem('snakePlayerName', playerName);
         } else if (e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key)) {
             if (playerName.length < MAX_PLAYER_NAME_LENGTH) {
                 playerName += e.key.toUpperCase();
-                localStorage.setItem('snakePlayerName', playerName);
                 console.log('[Name] Typed:', playerName);
             }
         }
@@ -7212,6 +7219,9 @@ function startCountdown() {
     if (bossBattleMode) {
         initBossBattleMode(); // Start at Level 6 boss fight
     }
+
+    // Clear player name when game starts
+    playerName = '';
 
     gameState = GAME_STATE.COUNTDOWN;
     countdownValue = 3;
@@ -7876,6 +7886,9 @@ function triggerVictory() {
         addHighScore(playerName || 'ANON', score);
     }
 
+    // Clear name after game ends
+    playerName = '';
+
     if (score > highScore) {
         highScore = score;
         localStorage.setItem('snakeHighScore', highScore);
@@ -8315,6 +8328,7 @@ function resetGame() {
     score = 0;
     playerLives = MAX_LIVES;
     gameSpeed = baseGameSpeed;
+    playerName = ''; // Clear name on reset
     gameState = GAME_STATE.READY;
     updateMobileStartButton(); // Show mobile start button if on touch device
 
@@ -8354,6 +8368,16 @@ function updateScore() {
 }
 
 // Scoreboard Functions
+function formatScoreDate(dateValue) {
+    if (!dateValue) return '';
+    const d = new Date(dateValue);
+    if (isNaN(d.getTime())) return '';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = String(d.getFullYear()).slice(2);
+    return `${day}/${month}/${year}`;
+}
+
 function getHighScores() {
     const scores = JSON.parse(localStorage.getItem('snakeHighScores')) || [];
     return scores.slice(0, MAX_SCOREBOARD_ENTRIES);
@@ -8633,6 +8657,9 @@ function gameOver() {
     if (score > 0) {
         addHighScore(playerName || 'ANON', score);
     }
+
+    // Clear name after game ends
+    playerName = '';
 
     if (score > highScore) {
         highScore = score;
@@ -9301,7 +9328,7 @@ function drawReadyScreen() {
     ctx.shadowBlur = 15;
     ctx.fillText('SCOREBOARD', CANVAS_WIDTH / 2, 110);
 
-    ctx.font = "18px 'Courier New', monospace";
+    ctx.font = "16px 'Courier New', monospace";
     ctx.shadowBlur = 10;
 
     if (scores.length === 0) {
@@ -9313,6 +9340,7 @@ function drawReadyScreen() {
                 const rank = i + 1;
                 const name = scores[i].name.padEnd(6, ' ');
                 const scoreVal = scores[i].score.toString().padStart(6, ' ');
+                const dateStr = formatScoreDate(scores[i].date);
 
                 // Different colors for ranks
                 if (i === 0) ctx.fillStyle = '#ffd700'; // Gold
@@ -9320,7 +9348,7 @@ function drawReadyScreen() {
                 else if (i === 2) ctx.fillStyle = '#cd7f32'; // Bronze
                 else ctx.fillStyle = '#00ffff'; // Cyan for 4th
 
-                ctx.fillText(`${rank}. ${name}  ${scoreVal}`, CANVAS_WIDTH / 2, 145 + (i * 28));
+                ctx.fillText(`${rank}. ${name}  ${scoreVal}  ${dateStr}`, CANVAS_WIDTH / 2, 145 + (i * 28));
             }
         }
     }
@@ -10257,7 +10285,7 @@ function gameLoop(timestamp) {
 }
 
 // Start the game when page loads
-window.onload = initGame;
+window.onload = () => { initGame(); };
 
 // Export updated modules
 if (typeof module !== 'undefined' && module.exports) {
