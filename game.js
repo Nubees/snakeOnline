@@ -6,11 +6,71 @@ let COLS = CANVAS_WIDTH / GRID_SIZE;
 let ROWS = CANVAS_HEIGHT / GRID_SIZE;
 
 // Difficulty scaling based on grid size
-function getScaledEnemyCount(baseCount) {
+function getMaxEnemyCount() {
     const gridCellCount = COLS * ROWS;
     const baseCellCount = 40 * 30; // Original 800x600 grid
     const sizeFactor = Math.floor((gridCellCount - baseCellCount) / 400);
-    return baseCount + Math.max(0, sizeFactor);
+    return 3 + Math.max(0, sizeFactor);
+}
+
+// Staggered enemy spawn system
+const STAGGERED_SPAWN_INTERVAL_MS = 5000; // 5 seconds between batches
+let staggeredSpawnTarget = 0;
+let staggeredSpawnNextTime = 0;
+
+function processStaggeredSpawns() {
+    if (enemies.length >= staggeredSpawnTarget) return;
+    if (Date.now() < staggeredSpawnNextTime) return;
+    if (gameState !== GAME_STATE.PLAYING) return;
+
+    const spawnCount = Math.min(3, staggeredSpawnTarget - enemies.length);
+    const positions = [
+        { x: COLS - Math.floor(COLS * 0.15), y: Math.floor(ROWS * 0.17) },
+        { x: COLS - Math.floor(COLS * 0.15), y: ROWS - Math.floor(ROWS * 0.2) },
+        { x: Math.floor(COLS * 0.12), y: ROWS - Math.floor(ROWS * 0.2) },
+        { x: Math.floor(COLS / 2), y: Math.floor(ROWS * 0.1) },
+        { x: Math.floor(COLS * 0.08), y: Math.floor(ROWS / 2) },
+        { x: COLS - Math.floor(COLS * 0.2), y: Math.floor(ROWS / 2) },
+        { x: Math.floor(COLS / 2), y: ROWS - Math.floor(ROWS * 0.13) }
+    ];
+
+    for (let i = 0; i < spawnCount; i++) {
+        const snakeIndex = enemies.length;
+        const snakeConfig = SNAKE_NAMES[snakeIndex % SNAKE_NAMES.length];
+        const pos = positions[i % positions.length];
+        const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name);
+        enemies.push(enemy);
+        enemyAIs.push(new EnemyAI(enemy));
+    }
+
+    staggeredSpawnNextTime = Date.now() + STAGGERED_SPAWN_INTERVAL_MS;
+    console.log(`Staggered spawn: +${spawnCount} snakes (${enemies.length}/${staggeredSpawnTarget})`);
+}
+
+// Food and power-up scaling: 1 spawner per 3 snakes
+function getTargetFoodCount() {
+    return Math.max(1, Math.ceil(enemies.length / 3));
+}
+
+function getTargetPowerUpCount() {
+    return Math.max(1, Math.ceil(enemies.length / 3));
+}
+
+function ensureFoodCount() {
+    const target = getTargetFoodCount();
+    const allSnakes = [player, ...enemies.filter(e => e.alive)];
+
+    // Only add missing foods - never remove existing ones (they get eaten naturally)
+    while (foods.length < target) {
+        const f = new Food();
+        f.respawn(allSnakes);
+        foods.push(f);
+    }
+}
+
+function ensurePowerUpCount() {
+    // Power-ups are only added via spawnPowerUp which respects the target count.
+    // We don't remove existing power-ups here to avoid abrupt disappearance.
 }
 
 // Game State
@@ -99,7 +159,7 @@ let countdownValue = 3;
 let countdownInterval = null;
 
 // ATTRACT MODE SYSTEM
-const ATTRACT_IDLE_TIME_MS = 15000; // 15 seconds idle before attract mode
+const ATTRACT_IDLE_TIME_MS = 60000; // 60 seconds idle before attract mode
 const ATTRACT_DURATION_MS = 30000; // 30 seconds demo play
 let attractModeStartTime = 0;
 let lastInputTime = 0;
@@ -252,19 +312,19 @@ function checkAchievement(id) {
     switch (id) {
         // Level Mastery
         case 'lvl1_complete':
-            if (level >= 1 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
+            if (currentLevel >= 1 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
             break;
         case 'lvl7_complete':
-            if (level >= 7 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
+            if (currentLevel >= 7 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
             break;
         case 'lvl8_complete':
-            if (level >= 8 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
+            if (currentLevel >= 8 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
             break;
         case 'lvl9_complete':
-            if (level >= 9 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
+            if (currentLevel >= 9 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
             break;
         case 'lvl10_complete':
-            if (level >= 10 && gameState === GAME_STATE.LEVEL_TRANSITION && runStats.foodEatenThisLevel >= 20) unlockAchievement(id);
+            if (currentLevel >= 10 && gameState === GAME_STATE.LEVEL_TRANSITION && runStats.foodEatenThisLevel >= 20) unlockAchievement(id);
             break;
 
         // Score Milestones
@@ -286,13 +346,13 @@ function checkAchievement(id) {
             if (gameState === GAME_STATE.LEVEL_TRANSITION && playerLives === MAX_LIVES) unlockAchievement(id);
             break;
         case 'boss_no_death':
-            if (level === 6 && gameState === GAME_STATE.LEVEL_TRANSITION && playerLives === MAX_LIVES) unlockAchievement(id);
+            if (currentLevel === 6 && gameState === GAME_STATE.LEVEL_TRANSITION && playerLives === MAX_LIVES) unlockAchievement(id);
             break;
         case 'ghost_10_enemies':
             if (stats.lifetimeGhostEnemyPasses >= 10) unlockAchievement(id);
             break;
         case 'survive_3min':
-            if (level >= 7 && gameState === GAME_STATE.LEVEL_TRANSITION && (Date.now() - runStats.levelStartTime) >= 180000) unlockAchievement(id);
+            if (currentLevel >= 7 && gameState === GAME_STATE.LEVEL_TRANSITION && (Date.now() - runStats.levelStartTime) >= 180000) unlockAchievement(id);
             break;
 
         // Collection / Lifetime
@@ -314,7 +374,7 @@ function checkAchievement(id) {
             if (stats.lifetimeHeadhunterKills >= 10) unlockAchievement(id);
             break;
         case 'boss_speedkill':
-            if (level === 6 && gameState === GAME_STATE.LEVEL_TRANSITION && runStats.bossStartTime > 0 && (Date.now() - runStats.bossStartTime) <= 30000) unlockAchievement(id);
+            if (currentLevel === 6 && gameState === GAME_STATE.LEVEL_TRANSITION && runStats.bossStartTime > 0 && (Date.now() - runStats.bossStartTime) <= 30000) unlockAchievement(id);
             break;
         case 'combo_5x':
             if (stats.maxComboReached >= 5) unlockAchievement(id);
@@ -375,7 +435,7 @@ const POWERUP_TYPES = {
 };
 
 let activePowerUps = []; // Array of { type, endTime }
-let powerUpItem = null; // Current power-up item on map
+let powerUpItems = []; // Array of PowerUpItem on map (scales with enemy count)
 let lastPowerUpSpawn = 0;
 let POWERUP_SPAWN_INTERVAL_MS = 15000; // Spawn every 15 seconds (variable, changes per level)
 const POWERUP_DURATION_MS = 8000; // 8 seconds duration
@@ -5444,7 +5504,7 @@ class EnemyAI {
         this.changeDirectionTimer = 0;
     }
 
-    think(food, allSnakes) {
+    think(foods, allSnakes) {
         if (!this.snake.alive) return;
 
         // BOSS: Think and change direction faster
@@ -5464,11 +5524,11 @@ class EnemyAI {
             this.changeDirectionTimer = this.snake.isBoss ?
                 Math.random() * 3 + 2 : // Boss: every 2-5 frames
                 Math.random() * 10 + 5;  // Normal: every 5-15 frames
-            this.chooseDirection(food, allSnakes);
+            this.chooseDirection(foods, allSnakes);
         }
     }
 
-    chooseDirection(food, allSnakes) {
+    chooseDirection(foods, allSnakes) {
         const head = this.snake.body[0];
         const possibleDirs = [
             DIRECTIONS.UP,
@@ -5538,10 +5598,14 @@ class EnemyAI {
                     score -= distToPlayer * 10; // High weight on chasing player
                 }
             } else {
-                // Normal enemies: Prefer moving toward food
-                const distToFood = Math.abs(newX - food.position.x) +
-                                  Math.abs(newY - food.position.y);
-                score -= distToFood * 2;
+                // Normal enemies: Prefer moving toward nearest food
+                let nearestFoodDist = Infinity;
+                for (const f of foods) {
+                    const dist = Math.abs(newX - f.position.x) +
+                                 Math.abs(newY - f.position.y);
+                    if (dist < nearestFoodDist) nearestFoodDist = dist;
+                }
+                score -= nearestFoodDist * 2;
             }
 
             // Avoid other snakes
@@ -5619,18 +5683,18 @@ class AttractAI {
         this.lastDirectionChange = 0;
     }
 
-    think(food, allSnakes) {
+    think(foods, allSnakes) {
         if (!this.snake.alive) return;
 
         this.changeDirectionTimer--;
 
         if (this.changeDirectionTimer <= 0) {
             this.changeDirectionTimer = Math.random() * 8 + 4; // Change every 4-12 frames
-            this.chooseDirection(food, allSnakes);
+            this.chooseDirection(foods, allSnakes);
         }
     }
 
-    chooseDirection(food, allSnakes) {
+    chooseDirection(foods, allSnakes) {
         const head = this.snake.body[0];
         const possibleDirs = [
             DIRECTIONS.UP,
@@ -5664,7 +5728,7 @@ class AttractAI {
             return;
         }
 
-        // Score directions based on food distance
+        // Score directions based on nearest food distance
         let bestDir = validDirs[0];
         let bestScore = -Infinity;
 
@@ -5674,10 +5738,14 @@ class AttractAI {
             const newX = head.x + dir.x;
             const newY = head.y + dir.y;
 
-            // Strong preference for food
-            const distToFood = Math.abs(newX - food.position.x) +
-                              Math.abs(newY - food.position.y);
-            score -= distToFood * 3;
+            // Strong preference for nearest food
+            let nearestFoodDist = Infinity;
+            for (const f of foods) {
+                const dist = Math.abs(newX - f.position.x) +
+                             Math.abs(newY - f.position.y);
+                if (dist < nearestFoodDist) nearestFoodDist = dist;
+            }
+            score -= nearestFoodDist * 3;
 
             // Avoid other snakes slightly
             for (const other of allSnakes) {
@@ -5702,7 +5770,7 @@ class AttractAI {
 let player;
 let enemies = [];
 let enemyAIs = [];
-let food;
+let foods = []; // Array of Food items (scales with enemy count)
 let particles = [];
 
 // Particle class for effects
@@ -6164,51 +6232,51 @@ class GravityWell {
     }
 
     applyGravityToFood() {
-        if (!food) return;
+        for (const food of foods) {
+            const dx = this.x - food.position.x;
+            const dy = this.y - food.position.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
 
-        const dx = this.x - food.position.x;
-        const dy = this.y - food.position.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+            // Only pull if within radius and not too close
+            if (dist < this.radius && dist > 0.5) {
+                // Food moves on grid but we accumulate fractional pull
+                if (!food.gravityPull) food.gravityPull = { x: 0, y: 0 };
 
-        // Only pull if within radius and not too close
-        if (dist < this.radius && dist > 0.5) {
-            // Food moves on grid but we accumulate fractional pull
-            if (!food.gravityPull) food.gravityPull = { x: 0, y: 0 };
+                // Pull strength increases as distance decreases
+                const pullStrength = 0.15 * (1 - dist / this.radius);
 
-            // Pull strength increases as distance decreases
-            const pullStrength = 0.15 * (1 - dist / this.radius);
+                food.gravityPull.x += (dx / dist) * pullStrength;
+                food.gravityPull.y += (dy / dist) * pullStrength;
 
-            food.gravityPull.x += (dx / dist) * pullStrength;
-            food.gravityPull.y += (dy / dist) * pullStrength;
+                // Apply movement when accumulated pull exceeds 0.5
+                let moved = false;
+                if (Math.abs(food.gravityPull.x) >= 0.5) {
+                    food.position.x += Math.sign(food.gravityPull.x);
+                    food.gravityPull.x -= Math.sign(food.gravityPull.x);
+                    moved = true;
+                }
+                if (Math.abs(food.gravityPull.y) >= 0.5) {
+                    food.position.y += Math.sign(food.gravityPull.y);
+                    food.gravityPull.y -= Math.sign(food.gravityPull.y);
+                    moved = true;
+                }
 
-            // Apply movement when accumulated pull exceeds 0.5
-            let moved = false;
-            if (Math.abs(food.gravityPull.x) >= 0.5) {
-                food.position.x += Math.sign(food.gravityPull.x);
-                food.gravityPull.x -= Math.sign(food.gravityPull.x);
-                moved = true;
-            }
-            if (Math.abs(food.gravityPull.y) >= 0.5) {
-                food.position.y += Math.sign(food.gravityPull.y);
-                food.gravityPull.y -= Math.sign(food.gravityPull.y);
-                moved = true;
-            }
+                // Keep food within bounds
+                if (food.position.x < 0) food.position.x = 0;
+                if (food.position.x >= COLS) food.position.x = COLS - 1;
+                if (food.position.y < 0) food.position.y = 0;
+                if (food.position.y >= ROWS) food.position.y = ROWS - 1;
 
-            // Keep food within bounds
-            if (food.position.x < 0) food.position.x = 0;
-            if (food.position.x >= COLS) food.position.x = COLS - 1;
-            if (food.position.y < 0) food.position.y = 0;
-            if (food.position.y >= ROWS) food.position.y = ROWS - 1;
-
-            // Visual effect when food is being pulled
-            if (moved) {
-                // Small purple particles following food
-                if (Math.random() < 0.3) {
+                // Visual effect when food is being pulled
+                if (moved) {
+                    // Small purple particles following food
+                    if (Math.random() < 0.3) {
                     createExplosion(food.position.x, food.position.y, '#ff00ff', 1);
                 }
             }
         }
     }
+}
 
     draw(ctx) {
         if (!this.active) return;
@@ -6784,8 +6852,8 @@ function isValidWallPosition(x, y, w, h) {
         }
     }
 
-    // Check collision with food
-    if (food) {
+    // Check collision with any food
+    for (const food of foods) {
         if (
             food.position.x >= x &&
             food.position.x < x + w &&
@@ -6893,6 +6961,7 @@ function createExplosion(x, y, color, count = 10) {
 // POWER-UP MANAGEMENT FUNCTIONS
 function spawnPowerUp() {
     const now = Date.now();
+    const targetCount = getTargetPowerUpCount();
 
     // Handle POWERPILL spawning (every 40 seconds)
     if (!nextPowerPillSpawnTime) {
@@ -6902,10 +6971,11 @@ function spawnPowerUp() {
     }
 
     // Check if it's time to spawn PowerPill
-    if (now >= nextPowerPillSpawnTime && !powerUpItem) {
+    const hasPowerPill = powerUpItems.some(p => p.type === POWERUP_TYPES.POWERPILL);
+    if (now >= nextPowerPillSpawnTime && !hasPowerPill) {
         const pos = findValidPowerUpPosition();
         if (pos) {
-            powerUpItem = new PowerUpItem(pos.x, pos.y, POWERUP_TYPES.POWERPILL);
+            powerUpItems.push(new PowerUpItem(pos.x, pos.y, POWERUP_TYPES.POWERPILL));
             console.log(`*** POWERPILL SPAWNED at (${pos.x}, ${pos.y}) ***`);
             // Schedule next spawn (every 40 seconds)
             nextPowerPillSpawnTime = now + POWERPILL_SPAWN_INTERVAL_MS;
@@ -6914,9 +6984,9 @@ function spawnPowerUp() {
         }
     }
 
-    // Regular power-ups (Ghost/Magnet)
+    // Regular power-ups (Ghost/Magnet/SlowDown)
     if (now - lastPowerUpSpawn < POWERUP_SPAWN_INTERVAL_MS) return;
-    if (powerUpItem) return; // Don't spawn if one already exists
+    if (powerUpItems.length >= targetCount) return; // Don't spawn if at target count
 
     const pos = findValidPowerUpPosition();
     if (pos) {
@@ -6926,7 +6996,7 @@ function spawnPowerUp() {
         if (rand < 0.33) type = POWERUP_TYPES.GHOST;
         else if (rand < 0.66) type = POWERUP_TYPES.MAGNET;
         else type = POWERUP_TYPES.SLOW_DOWN;
-        powerUpItem = new PowerUpItem(pos.x, pos.y, type);
+        powerUpItems.push(new PowerUpItem(pos.x, pos.y, type));
         lastPowerUpSpawn = now;
         console.log(`Power-up spawned: ${type} at (${pos.x}, ${pos.y})`);
     }
@@ -6951,6 +7021,13 @@ function findValidPowerUpPosition() {
                 valid = false;
             }
         }
+
+        // Check distance from existing power-ups
+        for (const p of powerUpItems) {
+            const dist = Math.abs(x - p.x) + Math.abs(y - p.y);
+            if (dist < 5) valid = false;
+        }
+
         attempts++;
     } while (!valid && attempts < 50);
 
@@ -6958,10 +7035,13 @@ function findValidPowerUpPosition() {
 }
 
 function collectPowerUp() {
-    if (!powerUpItem || !player.alive) return;
+    if (powerUpItems.length === 0 || !player.alive) return;
 
-    if (powerUpItem.checkCollision(player)) {
-        const type = powerUpItem.type;
+    for (let i = 0; i < powerUpItems.length; i++) {
+        const p = powerUpItems[i];
+        if (!p.checkCollision(player)) continue;
+
+        const type = p.type;
 
         // Different durations for different power-ups
         let duration = POWERUP_DURATION_MS; // default 8 seconds
@@ -7013,7 +7093,8 @@ function collectPowerUp() {
         checkAchievement('powerups_50_lifetime');
 
         console.log(`Power-up collected: ${type}, duration: ${duration}ms`);
-        powerUpItem = null;
+        powerUpItems.splice(i, 1);
+        break; // Only collect one power-up per frame
     }
 }
 
@@ -7060,20 +7141,20 @@ function updatePowerUps() {
         enemySpeedMultiplier = 1.8; // Enemies slowed by fear (not as much as SLOW_DOWN)
     }
 
-    // Apply magnet effect - pull food toward player
+    // Apply magnet effect - pull all foods toward player
     if (hasPowerUp(POWERUP_TYPES.MAGNET)) {
         const playerHead = player.body[0];
-        const foodPos = food.position;
+        for (const food of foods) {
+            const dx = playerHead.x - food.position.x;
+            const dy = playerHead.y - food.position.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
 
-        const dx = playerHead.x - foodPos.x;
-        const dy = playerHead.y - foodPos.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist <= MAGNET_RADIUS_CELLS && dist > 1) {
-            // Move food toward player gradually
-            if (Math.random() < 0.3) { // 30% chance per frame to move
-                foodPos.x += Math.sign(dx);
-                foodPos.y += Math.sign(dy);
+            if (dist <= MAGNET_RADIUS_CELLS && dist > 1) {
+                // Move food toward player gradually
+                if (Math.random() < 0.3) { // 30% chance per frame to move
+                    food.position.x += Math.sign(dx);
+                    food.position.y += Math.sign(dy);
+                }
             }
         }
     }
@@ -7318,6 +7399,9 @@ async function initGame() {
     canvas = document.getElementById('gameCanvas');
     ctx = canvas.getContext('2d');
 
+    // Calculate dynamic grid dimensions FIRST — all spawn logic depends on correct COLS/ROWS
+    calculateGridDimensions();
+
     // Load achievement progress from localStorage
     loadAchievementProgress();
 
@@ -7345,17 +7429,19 @@ async function initGame() {
         { x: Math.floor(COLS * 0.12), y: ROWS - Math.floor(ROWS * 0.2) }
     ];
 
-    const enemyCount = getScaledEnemyCount(3);
-    for (let i = 0; i < enemyCount; i++) {
+    // Start with exactly 3 snakes; staggered spawn fills up to grid-based max
+    for (let i = 0; i < 3; i++) {
         const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
-        const pos = level1Positions[i % level1Positions.length];
+        const pos = level1Positions[i];
         const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name);
         enemies.push(enemy);
         enemyAIs.push(new EnemyAI(enemy));
     }
+    staggeredSpawnTarget = getMaxEnemyCount();
+    staggeredSpawnNextTime = Date.now() + STAGGERED_SPAWN_INTERVAL_MS;
 
-    food = new Food();
-    food.respawn([player, ...enemies]);
+    foods = [];
+    ensureFoodCount();
 
     particles = [];
     projectiles = []; // Reset projectiles
@@ -7372,7 +7458,7 @@ async function initGame() {
 
     // Reset power-up system
     activePowerUps = [];
-    powerUpItem = null;
+    powerUpItems = [];
     lastPowerUpSpawn = 0;
 
     // Reset combo system
@@ -7413,8 +7499,7 @@ async function initGame() {
     // Initialize volume control (music button + slider)
     initVolumeControl();
 
-    // Calculate dynamic grid dimensions based on available viewport space
-    calculateGridDimensions();
+    // Window resize handling
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', () => {
         setTimeout(resizeCanvas, 100);
@@ -7629,11 +7714,11 @@ function initBossBattleMode() {
         { x: Math.floor(COLS / 2), y: ROWS - Math.floor(ROWS * 0.13) }
     ];
 
-    const enemyCount6 = getScaledEnemyCount(7);
+    const enemyCount6 = getMaxEnemyCount();
     for (let i = 0; i < enemyCount6; i++) {
         const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
         const pos = level6Positions[i % level6Positions.length];
-        const isBoss = (i === 6); // PYTHON is the boss (index 6)
+        const isBoss = (i === enemyCount6 - 1); // Last snake is the boss
         const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name, isBoss);
         if (isBoss) {
             enemy.bossWidth = GRID_SIZE * 2; // Boss is 2x width
@@ -7673,7 +7758,7 @@ function initLevel7TestMode() {
         { x: Math.floor(COLS * 0.12), y: ROWS - Math.floor(ROWS * 0.2) }
     ];
 
-    const enemyCount7 = getScaledEnemyCount(3);
+    const enemyCount7 = getMaxEnemyCount();
     for (let i = 0; i < enemyCount7; i++) {
         const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
         const pos = level7Positions[i % level7Positions.length];
@@ -7711,7 +7796,7 @@ function initLevel8TestMode() {
         { x: Math.floor(COLS / 2), y: Math.floor(ROWS * 0.1) }
     ];
 
-    const enemyCount8 = getScaledEnemyCount(4);
+    const enemyCount8 = getMaxEnemyCount();
     for (let i = 0; i < enemyCount8; i++) {
         const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
         const pos = level8Positions[i % level8Positions.length];
@@ -7788,7 +7873,7 @@ function resetGameForAttract() {
 
     enemies = [];
     enemyAIs = [];
-    const enemyCount = getScaledEnemyCount(3);
+    const enemyCount = getMaxEnemyCount();
     for (let i = 0; i < enemyCount; i++) {
         const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
         const pos = level1Positions[i % level1Positions.length];
@@ -7798,7 +7883,8 @@ function resetGameForAttract() {
     }
 
     // Reset food
-    food.respawn([player, ...enemies]);
+    foods = [];
+    ensureFoodCount();
 
     // Reset score
     score = 0;
@@ -7818,12 +7904,12 @@ function updateAttractMode() {
 
     // AI controls player
     if (attractAI && player.alive) {
-        attractAI.think(food, [player, ...enemies]);
+        attractAI.think(foods, [player, ...enemies]);
     }
 
     // Update enemy AIs
     for (const ai of enemyAIs) {
-        ai.think(food, [player, ...enemies]);
+        ai.think(foods, [player, ...enemies]);
     }
 
     // Move player (faster in attract mode for more action)
@@ -7845,11 +7931,14 @@ function updateAttractMode() {
         }
 
         // Check food collision
-        if (food.checkCollision(player)) {
-            player.grow(food.isBonus ? 3 : 1);
-            createExplosion(food.position.x, food.position.y, food.isBonus ? COLORS.BONUS_FOOD : COLORS.FOOD, 8);
-            food.respawn([player, ...enemies.filter(e => e.alive)]);
-            soundSystem.playEat();
+        for (const f of foods) {
+            if (f.checkCollision(player)) {
+                player.grow(f.isBonus ? 3 : 1);
+                createExplosion(f.position.x, f.position.y, f.isBonus ? COLORS.BONUS_FOOD : COLORS.FOOD, 8);
+                f.respawn([player, ...enemies.filter(e => e.alive)]);
+                soundSystem.playEat();
+                break;
+            }
         }
     } else {
         // Respawn player in attract mode for continuous demo
@@ -8136,17 +8225,18 @@ function startNextLevel() {
             { x: COLS - Math.floor(COLS * 0.2), y: ROWS - Math.floor(ROWS * 0.17) }
         ];
 
-        // Spawn correct number of enemies for this level (scaled to grid size)
-        const enemyCount = getScaledEnemyCount(settings.enemies);
-        for (let i = 0; i < enemyCount; i++) {
+        // Spawn 3 initial snakes; staggered spawn fills up to grid-based max
+        for (let i = 0; i < 3; i++) {
             const pos = positions[i % positions.length];
             const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
             const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name, false);
             enemies.push(enemy);
             enemyAIs.push(new EnemyAI(enemy));
         }
+        staggeredSpawnTarget = getMaxEnemyCount();
+        staggeredSpawnNextTime = Date.now() + STAGGERED_SPAWN_INTERVAL_MS;
     } else if (settings.bossLevel) {
-        // Boss level: Keep existing enemies but add PYTHON as boss
+        // Boss level: Keep existing enemies but add PYTHON as boss (respect max cap)
         // currentLevel is already incremented: Level 2 = index 3 (KRAIT), Level 3 = index 4 (ASP), etc.
         let snakeIndex = 1 + currentLevel;
         if (snakeIndex >= SNAKE_NAMES.length) {
@@ -8155,50 +8245,59 @@ function startNextLevel() {
         const newSnakeConfig = SNAKE_NAMES[snakeIndex];
         const spawnPos = calculateEnemySpawnPosition();
 
-        // Create PYTHON as a BOSS snake
-        const bossEnemy = new Snake(
-            spawnPos.x,
-            spawnPos.y,
-            newSnakeConfig.color,
-            newSnakeConfig.color,
-            false,
-            newSnakeConfig.name,
-            true // isBoss flag
-        );
-        // Boss starts with larger size: width 2x (size 2), length 4x (4 segments)
-        bossEnemy.body = [
-            { x: spawnPos.x, y: spawnPos.y },
-            { x: spawnPos.x - 1, y: spawnPos.y },
-            { x: spawnPos.x - 2, y: spawnPos.y },
-            { x: spawnPos.x - 3, y: spawnPos.y }
-        ];
-        bossEnemy.isBoss = true;
-        bossEnemy.bossWidth = 2; // 2x width
-        enemies.push(bossEnemy);
-        enemyAIs.push(new EnemyAI(bossEnemy));
+        // Create PYTHON as a BOSS snake (respect grid-based max)
+        if (enemies.length < getMaxEnemyCount()) {
+            const bossEnemy = new Snake(
+                spawnPos.x,
+                spawnPos.y,
+                newSnakeConfig.color,
+                newSnakeConfig.color,
+                false,
+                newSnakeConfig.name,
+                true // isBoss flag
+            );
+            // Boss starts with larger size: width 2x (size 2), length 4x (4 segments)
+            bossEnemy.body = [
+                { x: spawnPos.x, y: spawnPos.y },
+                { x: spawnPos.x - 1, y: spawnPos.y },
+                { x: spawnPos.x - 2, y: spawnPos.y },
+                { x: spawnPos.x - 3, y: spawnPos.y }
+            ];
+            bossEnemy.isBoss = true;
+            bossEnemy.bossWidth = 2; // 2x width
+            enemies.push(bossEnemy);
+            enemyAIs.push(new EnemyAI(bossEnemy));
 
-        // Show boss warning
-        showBanner('BOSS APPROACHES!', 'PYTHON THE DESTROYER', '#ff0000');
-    } else {
-        // Normal level progression: Add one new enemy
-        let snakeIndex = 1 + currentLevel;
-        if (snakeIndex >= SNAKE_NAMES.length) {
-            snakeIndex = SNAKE_NAMES.length - 1;
+            // Show boss warning
+            showBanner('BOSS APPROACHES!', 'PYTHON THE DESTROYER', '#ff0000');
         }
-        const newSnakeConfig = SNAKE_NAMES[snakeIndex];
-        const spawnPos = calculateEnemySpawnPosition();
+    } else {
+        // Normal level progression: Add one new enemy (respect grid-based max)
+        if (enemies.length < getMaxEnemyCount()) {
+            let snakeIndex = 1 + currentLevel;
+            if (snakeIndex >= SNAKE_NAMES.length) {
+                snakeIndex = SNAKE_NAMES.length - 1;
+            }
+            const newSnakeConfig = SNAKE_NAMES[snakeIndex];
+            const spawnPos = calculateEnemySpawnPosition();
 
-        const newEnemy = new Snake(
-            spawnPos.x,
-            spawnPos.y,
-            newSnakeConfig.color,
-            newSnakeConfig.color,
-            false,
-            newSnakeConfig.name
-        );
-        enemies.push(newEnemy);
-        enemyAIs.push(new EnemyAI(newEnemy));
+            const newEnemy = new Snake(
+                spawnPos.x,
+                spawnPos.y,
+                newSnakeConfig.color,
+                newSnakeConfig.color,
+                false,
+                newSnakeConfig.name
+            );
+            enemies.push(newEnemy);
+            enemyAIs.push(new EnemyAI(newEnemy));
+        }
     }
+
+    // Reset food and power-ups for new level
+    foods = [];
+    ensureFoodCount();
+    powerUpItems = [];
 
     // Reset level timer
     initLevelTimer();
@@ -8856,17 +8955,19 @@ function resetGame() {
         { x: Math.floor(COLS * 0.12), y: ROWS - Math.floor(ROWS * 0.2) }
     ];
 
-    const enemyCount = getScaledEnemyCount(3);
-    for (let i = 0; i < enemyCount; i++) {
+    // Start with exactly 3 snakes; staggered spawn fills up to grid-based max
+    for (let i = 0; i < 3; i++) {
         const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
-        const pos = level1Positions[i % level1Positions.length];
+        const pos = level1Positions[i];
         const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name);
         enemies.push(enemy);
         enemyAIs.push(new EnemyAI(enemy));
     }
+    staggeredSpawnTarget = getMaxEnemyCount();
+    staggeredSpawnNextTime = Date.now() + STAGGERED_SPAWN_INTERVAL_MS;
 
-    food = new Food();
-    food.respawn([player, ...enemies]);
+    foods = [];
+    ensureFoodCount();
 
     particles = [];
     projectiles = []; // Reset projectiles
@@ -8889,7 +8990,7 @@ function resetGame() {
 
     // Reset power-up system
     activePowerUps = [];
-    powerUpItem = null;
+    powerUpItems = [];
     lastPowerUpSpawn = 0;
     nextPowerPillSpawnTime = 0; // Reset POWERPILL timer
     soundSystem.stopPowerPillAmbient(); // Stop any playing ambient sound
@@ -9295,6 +9396,9 @@ function update(deltaTime) {
 
     if (gameState !== GAME_STATE.PLAYING && gameState !== GAME_STATE.RESPAWNING) return;
 
+    // Staggered enemy spawn (adds 3 snakes every 5 seconds until max reached)
+    processStaggeredSpawns();
+
     // Update level timer (4 minute countdown)
     updateLevelTimer();
 
@@ -9327,7 +9431,7 @@ function update(deltaTime) {
 
     // Update enemies AI
     for (const ai of enemyAIs) {
-        ai.think(food, [player, ...enemies]);
+        ai.think(foods, [player, ...enemies]);
     }
 
     // Move all snakes
@@ -9538,10 +9642,14 @@ function update(deltaTime) {
         }
 
         // Enemy eats food
-        if (enemy.alive && food.checkCollision(enemy)) {
-            enemy.grow(food.isBonus ? 3 : 1);
-            createExplosion(food.position.x, food.position.y, food.isBonus ? COLORS.BONUS_FOOD : COLORS.FOOD, 8);
-            food.respawn([player, ...enemies.filter(e => e.alive)]);
+        for (let fi = 0; fi < foods.length; fi++) {
+            const f = foods[fi];
+            if (enemy.alive && f.checkCollision(enemy)) {
+                enemy.grow(f.isBonus ? 3 : 1);
+                createExplosion(f.position.x, f.position.y, f.isBonus ? COLORS.BONUS_FOOD : COLORS.FOOD, 8);
+                f.respawn([player, ...enemies.filter(e => e.alive)]);
+                break; // Enemy can only eat one food per frame
+            }
         }
 
         // Early return if game over from wall/debris collision
@@ -9555,37 +9663,41 @@ function update(deltaTime) {
     checkGravityWellCollisions();
 
     // Player eats food
-    if (food.checkCollision(player)) {
-        // Calculate base points
-        let points = food.isBonus ? 30 : 10;
+    for (let fi = 0; fi < foods.length; fi++) {
+        const f = foods[fi];
+        if (f.checkCollision(player)) {
+            // Calculate base points
+            let points = f.isBonus ? 30 : 10;
 
-        // Apply combo multiplier
-        onFoodEaten();
-        points *= comboMultiplier;
+            // Apply combo multiplier
+            onFoodEaten();
+            points *= comboMultiplier;
 
-        // Apply level multiplier
-        const settings = LEVEL_SETTINGS[currentLevel - 1] || { scoreMultiplier: 1 };
-        points = Math.floor(points * settings.scoreMultiplier);
+            // Apply level multiplier
+            const settings = LEVEL_SETTINGS[currentLevel - 1] || { scoreMultiplier: 1 };
+            points = Math.floor(points * settings.scoreMultiplier);
 
-        score += points;
-        player.grow(food.isBonus ? 3 : 1);
-        createExplosion(food.position.x, food.position.y, food.isBonus ? COLORS.BONUS_FOOD : COLORS.FOOD, 12);
+            score += points;
+            player.grow(f.isBonus ? 3 : 1);
+            createExplosion(f.position.x, f.position.y, f.isBonus ? COLORS.BONUS_FOOD : COLORS.FOOD, 12);
 
-        // Play eating sound
-        soundSystem.playEat();
+            // Play eating sound
+            soundSystem.playEat();
 
-        // Show random floating text
-        const phrase = EATING_PHRASES[Math.floor(Math.random() * EATING_PHRASES.length)];
-        const textColor = food.isBonus ? '#ffd700' : '#00ffff';
-        showFloatingText(food.position.x, food.position.y, phrase, textColor, 0.025);
+            // Show random floating text
+            const phrase = EATING_PHRASES[Math.floor(Math.random() * EATING_PHRASES.length)];
+            const textColor = f.isBonus ? '#ffd700' : '#00ffff';
+            showFloatingText(f.position.x, f.position.y, phrase, textColor, 0.025);
 
-        // Show points gained with multiplier
-        if (comboMultiplier > 1) {
-            showFloatingText(food.position.x, food.position.y - 1, `+${points}`, '#ff0040', 0.025);
+            // Show points gained with multiplier
+            if (comboMultiplier > 1) {
+                showFloatingText(f.position.x, f.position.y - 1, `+${points}`, '#ff0040', 0.025);
+            }
+
+            updateScore();
+            f.respawn([player, ...enemies.filter(e => e.alive)]);
+            break; // Player can only eat one food per frame
         }
-
-        updateScore();
-        food.respawn([player, ...enemies.filter(e => e.alive)]);
     }
 
     // Check if boss is defeated (Level 6 Boss Battle) - IMMEDIATE transition to Level 7
@@ -9629,6 +9741,10 @@ function update(deltaTime) {
 
     // Check for enemy respawns (7 second delay, increasing size)
     checkEnemyRespawns();
+
+    // Ensure food and power-up counts scale with enemy count
+    ensureFoodCount();
+    ensurePowerUpCount();
 }
 
 // Screen shake variables
@@ -9758,13 +9874,15 @@ function draw() {
     // Draw projectiles (behind snakes)
     drawProjectiles(ctx);
 
-    // Draw power-up item if exists
-    if (powerUpItem) {
-        powerUpItem.draw(ctx);
+    // Draw power-up items
+    for (const p of powerUpItems) {
+        p.draw(ctx);
     }
 
     // Draw food
-    food.draw(ctx);
+    for (const f of foods) {
+        f.draw(ctx);
+    }
 
     // Draw enemies (dead ones fade)
     for (const enemy of enemies) {
