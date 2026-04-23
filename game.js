@@ -8263,26 +8263,29 @@ function resizeCanvasForMobile() {
     const canvasEl = document.getElementById('gameCanvas');
     if (!canvasEl) return;
 
-    // Get viewport dimensions
+    // Measure HUD and controls heights
+    const hudEl = document.querySelector('.hud');
+    const controlsEl = document.querySelector('.controls');
+    const hudHeight = hudEl ? hudEl.offsetHeight : 0;
+    const controlsHeight = controlsEl ? controlsEl.offsetHeight : 0;
+
+    // Available space between HUD and controls
+    const availableHeight = window.innerHeight - hudHeight - controlsHeight;
     const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
 
     // Canvas native aspect ratio is 800:600 (4:3)
     const nativeWidth = 800;
     const nativeHeight = 600;
     const nativeAspect = nativeWidth / nativeHeight;
-    const viewportAspect = viewportWidth / viewportHeight;
 
-    let displayWidth, displayHeight;
+    // Fit within available space while maintaining aspect ratio
+    let displayWidth = viewportWidth;
+    let displayHeight = displayWidth / nativeAspect;
 
-    if (viewportAspect > nativeAspect) {
-        // Viewport is wider than canvas aspect - fit to height
-        displayHeight = viewportHeight;
+    // If height exceeds available space, scale down
+    if (displayHeight > availableHeight) {
+        displayHeight = availableHeight;
         displayWidth = displayHeight * nativeAspect;
-    } else {
-        // Viewport is taller than canvas aspect - fit to width
-        displayWidth = viewportWidth;
-        displayHeight = displayWidth / nativeAspect;
     }
 
     // Apply size via CSS
