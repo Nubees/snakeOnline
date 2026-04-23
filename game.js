@@ -8036,12 +8036,21 @@ function handleTouchStart(e) {
 }
 
 function handleTouchEnd(e) {
-    if (!touchEnabled || gameState !== GAME_STATE.PLAYING) return;
+    if (!touchEnabled) return;
     e.preventDefault();
 
     const touch = e.changedTouches[0];
     const deltaX = touch.clientX - touchStartX;
     const deltaY = touch.clientY - touchStartY;
+
+    // Handle attract mode - tap anywhere to stop demo
+    if (gameState === GAME_STATE.ATTRACT) {
+        stopAttractMode();
+        return;
+    }
+
+    // Only process swipes during gameplay
+    if (gameState !== GAME_STATE.PLAYING) return;
 
     // Ignore small movements (taps)
     if (Math.abs(deltaX) < SWIPE_THRESHOLD && Math.abs(deltaY) < SWIPE_THRESHOLD) {

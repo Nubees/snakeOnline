@@ -689,6 +689,16 @@ canvas, #gameCanvas {
     box-shadow: 0 0 25px rgba(255, 0, 64, 0.6);
 }
 
+/* Always show mobile buttons on touch/small screens */
+@media (max-width: 850px), (hover: none) {
+    .mobile-start-btn {
+        display: block !important;
+    }
+    .mobile-ready-controls {
+        display: flex !important;
+    }
+}
+
 /* Responsive: Always show mobile controls on small screens */
 @media (max-width: 850px) {
     .mobile-controls {
