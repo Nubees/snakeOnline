@@ -8276,7 +8276,7 @@ function resizeCanvas() {
     const nativeAspect = nativeWidth / nativeHeight;
 
     // Fit within available space while maintaining aspect ratio
-    let displayWidth = viewportWidth * 0.95;
+    let displayWidth = viewportWidth;
     let displayHeight = displayWidth / nativeAspect;
 
     // If height exceeds available space, scale down
