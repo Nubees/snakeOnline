@@ -4224,16 +4224,26 @@ function initVolumeControl() {
     if (musicChangeBtn) {
         const handleMusicChange = async (e) => {
             if (e) e.preventDefault();
+            console.log('[Music] Change button clicked');
             // Ensure audio is initialized first
             if (typeof initAudioOnFirstInteraction === 'function') {
-                await initAudioOnFirstInteraction();
+                try {
+                    await initAudioOnFirstInteraction();
+                } catch (err) {
+                    console.warn('[Music] Audio init error:', err);
+                }
             }
             // Cycle to next track
             if (musicSystem) {
-                musicSystem.nextTrack();
+                const newTrack = musicSystem.nextTrack();
+                console.log('[Music] Switched to track', newTrack, musicSystem.getCurrentTrackName());
+            } else {
+                console.warn('[Music] musicSystem not available');
             }
         };
-        // Use click only - works on both desktop and mobile without double-firing
+        // Use both touchstart (instant on mobile) and click (desktop fallback)
+        // preventDefault on touchstart suppresses the synthetic click, avoiding double-fires
+        musicChangeBtn.addEventListener('touchstart', handleMusicChange, { passive: false });
         musicChangeBtn.addEventListener('click', handleMusicChange);
     }
 }
