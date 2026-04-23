@@ -1,9 +1,17 @@
-// Game Constants
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 600;
+// Game Constants - Dynamic grid dimensions (set at initialization)
+let CANVAS_WIDTH = 800;
+let CANVAS_HEIGHT = 600;
 const GRID_SIZE = 20;
-const COLS = CANVAS_WIDTH / GRID_SIZE;
-const ROWS = CANVAS_HEIGHT / GRID_SIZE;
+let COLS = CANVAS_WIDTH / GRID_SIZE;
+let ROWS = CANVAS_HEIGHT / GRID_SIZE;
+
+// Difficulty scaling based on grid size
+function getScaledEnemyCount(baseCount) {
+    const gridCellCount = COLS * ROWS;
+    const baseCellCount = 40 * 30; // Original 800x600 grid
+    const sizeFactor = Math.floor((gridCellCount - baseCellCount) / 400);
+    return baseCount + Math.max(0, sizeFactor);
+}
 
 // Game State
 const GAME_STATE = {
@@ -1894,10 +1902,21 @@ class MusicSystem {
 
     updateHUD() {
         const musicTrackEl = document.getElementById('musicTrack');
+        const musicTrackNumEl = document.getElementById('musicTrackNum');
         if (musicTrackEl) {
             const isSilent = this.currentTrack >= 11;
             const displayName = isSilent ? 'Silent' : this.trackNames[this.currentTrack];
             musicTrackEl.textContent = displayName;
+
+            // Update compact track number for landscape mode
+            if (musicTrackNumEl) {
+                if (isSilent) {
+                    musicTrackNumEl.textContent = '♪';
+                } else {
+                    const trackNum = this.currentTrack + 1; // Tracks are 0-indexed
+                    musicTrackNumEl.textContent = trackNum + ':';
+                }
+            }
         }
     }
 
@@ -6343,8 +6362,10 @@ function spawnGravityWell() {
     let attempts = 0;
 
     while (!valid && attempts < 50) {
-        x = Math.floor(Math.random() * (COLS - 10)) + 5;
-        y = Math.floor(Math.random() * (ROWS - 10)) + 5;
+        const marginX = Math.floor(COLS * 0.12);
+        const marginY = Math.floor(ROWS * 0.17);
+        x = Math.floor(Math.random() * Math.max(1, COLS - marginX * 2)) + marginX;
+        y = Math.floor(Math.random() * Math.max(1, ROWS - marginY * 2)) + marginY;
 
         // Check distance from player
         const playerHead = player.body[0];
@@ -6471,21 +6492,21 @@ function spawnDriftingDebris() {
     switch (side) {
         case 0: // Left side, moving right
             x = -sizeConfig.w - 1;
-            y = Math.floor(Math.random() * (ROWS - 5)) + 2;
+            y = Math.floor(Math.random() * Math.max(1, ROWS - 5)) + 2;
             direction = { x: 1, y: 0 };
             break;
         case 1: // Right side, moving left
             x = COLS + 1;
-            y = Math.floor(Math.random() * (ROWS - 5)) + 2;
+            y = Math.floor(Math.random() * Math.max(1, ROWS - 5)) + 2;
             direction = { x: -1, y: 0 };
             break;
         case 2: // Top, moving down
-            x = Math.floor(Math.random() * (COLS - 5)) + 2;
+            x = Math.floor(Math.random() * Math.max(1, COLS - 5)) + 2;
             y = -sizeConfig.h - 1;
             direction = { x: 0, y: 1 };
             break;
         case 3: // Bottom, moving up
-            x = Math.floor(Math.random() * (COLS - 5)) + 2;
+            x = Math.floor(Math.random() * Math.max(1, COLS - 5)) + 2;
             y = ROWS + 1;
             direction = { x: 0, y: -1 };
             break;
@@ -6718,8 +6739,8 @@ function spawnSingleWall() {
     let x, y;
 
     while (!valid && attempts < 100) {
-        x = Math.floor(Math.random() * (COLS - shape.w - 2)) + 1;
-        y = Math.floor(Math.random() * (ROWS - shape.h - 2)) + 1;
+        x = Math.floor(Math.random() * Math.max(1, COLS - shape.w - 2)) + 1;
+        y = Math.floor(Math.random() * Math.max(1, ROWS - shape.h - 2)) + 1;
 
         valid = isValidWallPosition(x, y, shape.w, shape.h);
         attempts++;
@@ -6915,8 +6936,8 @@ function findValidPowerUpPosition() {
     let x, y, valid;
     let attempts = 0;
     do {
-        x = Math.floor(Math.random() * (COLS - 2)) + 1;
-        y = Math.floor(Math.random() * (ROWS - 2)) + 1;
+        x = Math.floor(Math.random() * Math.max(1, COLS - 2)) + 1;
+        y = Math.floor(Math.random() * Math.max(1, ROWS - 2)) + 1;
         valid = true;
 
         // Check distance from player
@@ -7311,22 +7332,23 @@ async function initGame() {
     levelWarningActive = false;
     levelComplete = false;
 
-    // Create player (RED)
-    player = new Snake(5, Math.floor(ROWS / 2), COLORS.PLAYER, COLORS.PLAYER_GLOW, true);
+    // Create player (RED) - proportional to grid size
+    player = new Snake(Math.floor(COLS * 0.12), Math.floor(ROWS / 2), COLORS.PLAYER, COLORS.PLAYER_GLOW, true);
 
-    // Create Level 1 enemies (first 3 snakes)
+    // Create Level 1 enemies (first 3 snakes) - proportional positions
     enemies = [];
     enemyAIs = [];
 
     const level1Positions = [
-        { x: COLS - 6, y: 5 },
-        { x: COLS - 6, y: ROWS - 6 },
-        { x: 5, y: ROWS - 6 }
+        { x: COLS - Math.floor(COLS * 0.15), y: Math.floor(ROWS * 0.17) },
+        { x: COLS - Math.floor(COLS * 0.15), y: ROWS - Math.floor(ROWS * 0.2) },
+        { x: Math.floor(COLS * 0.12), y: ROWS - Math.floor(ROWS * 0.2) }
     ];
 
-    for (let i = 0; i < 3; i++) {
-        const snakeConfig = SNAKE_NAMES[i];
-        const pos = level1Positions[i];
+    const enemyCount = getScaledEnemyCount(3);
+    for (let i = 0; i < enemyCount; i++) {
+        const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
+        const pos = level1Positions[i % level1Positions.length];
         const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name);
         enemies.push(enemy);
         enemyAIs.push(new EnemyAI(enemy));
@@ -7391,8 +7413,8 @@ async function initGame() {
     // Initialize volume control (music button + slider)
     initVolumeControl();
 
-    // Handle canvas scaling to fill screen on all devices
-    resizeCanvas();
+    // Calculate dynamic grid dimensions based on available viewport space
+    calculateGridDimensions();
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', () => {
         setTimeout(resizeCanvas, 100);
@@ -7596,20 +7618,21 @@ function initBossBattleMode() {
     enemies = [];
     enemyAIs = [];
 
-    // All 7 snakes active in Level 6
+    // All 7 snakes active in Level 6 - proportional positions
     const level6Positions = [
-        { x: COLS - 6, y: 5 },
-        { x: COLS - 6, y: ROWS - 6 },
-        { x: 5, y: ROWS - 6 },
-        { x: Math.floor(COLS / 2), y: 3 },
-        { x: 3, y: Math.floor(ROWS / 2) },
-        { x: COLS - 8, y: Math.floor(ROWS / 2) },
-        { x: Math.floor(COLS / 2), y: ROWS - 4 }
+        { x: COLS - Math.floor(COLS * 0.15), y: Math.floor(ROWS * 0.17) },
+        { x: COLS - Math.floor(COLS * 0.15), y: ROWS - Math.floor(ROWS * 0.2) },
+        { x: Math.floor(COLS * 0.12), y: ROWS - Math.floor(ROWS * 0.2) },
+        { x: Math.floor(COLS / 2), y: Math.floor(ROWS * 0.1) },
+        { x: Math.floor(COLS * 0.08), y: Math.floor(ROWS / 2) },
+        { x: COLS - Math.floor(COLS * 0.2), y: Math.floor(ROWS / 2) },
+        { x: Math.floor(COLS / 2), y: ROWS - Math.floor(ROWS * 0.13) }
     ];
 
-    for (let i = 0; i < 7; i++) {
-        const snakeConfig = SNAKE_NAMES[i];
-        const pos = level6Positions[i];
+    const enemyCount6 = getScaledEnemyCount(7);
+    for (let i = 0; i < enemyCount6; i++) {
+        const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
+        const pos = level6Positions[i % level6Positions.length];
         const isBoss = (i === 6); // PYTHON is the boss (index 6)
         const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name, isBoss);
         if (isBoss) {
@@ -7643,16 +7666,17 @@ function initLevel7TestMode() {
     enemies = [];
     enemyAIs = [];
 
-    // 3 regular snakes for Level 7 testing
+    // 3 regular snakes for Level 7 testing - proportional positions
     const level7Positions = [
-        { x: COLS - 6, y: 5 },
-        { x: COLS - 6, y: ROWS - 6 },
-        { x: 5, y: ROWS - 6 }
+        { x: COLS - Math.floor(COLS * 0.15), y: Math.floor(ROWS * 0.17) },
+        { x: COLS - Math.floor(COLS * 0.15), y: ROWS - Math.floor(ROWS * 0.2) },
+        { x: Math.floor(COLS * 0.12), y: ROWS - Math.floor(ROWS * 0.2) }
     ];
 
-    for (let i = 0; i < 3; i++) {
-        const snakeConfig = SNAKE_NAMES[i];
-        const pos = level7Positions[i];
+    const enemyCount7 = getScaledEnemyCount(3);
+    for (let i = 0; i < enemyCount7; i++) {
+        const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
+        const pos = level7Positions[i % level7Positions.length];
         const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name, false);
         enemies.push(enemy);
         enemyAIs.push(new EnemyAI(enemy));
@@ -7679,17 +7703,18 @@ function initLevel8TestMode() {
     enemies = [];
     enemyAIs = [];
 
-    // 4 regular snakes for Level 8 testing
+    // 4 regular snakes for Level 8 testing - proportional positions
     const level8Positions = [
-        { x: COLS - 6, y: 5 },
-        { x: COLS - 6, y: ROWS - 6 },
-        { x: 5, y: ROWS - 6 },
-        { x: Math.floor(COLS / 2), y: 3 }
+        { x: COLS - Math.floor(COLS * 0.15), y: Math.floor(ROWS * 0.17) },
+        { x: COLS - Math.floor(COLS * 0.15), y: ROWS - Math.floor(ROWS * 0.2) },
+        { x: Math.floor(COLS * 0.12), y: ROWS - Math.floor(ROWS * 0.2) },
+        { x: Math.floor(COLS / 2), y: Math.floor(ROWS * 0.1) }
     ];
 
-    for (let i = 0; i < 4; i++) {
-        const snakeConfig = SNAKE_NAMES[i];
-        const pos = level8Positions[i];
+    const enemyCount8 = getScaledEnemyCount(4);
+    for (let i = 0; i < enemyCount8; i++) {
+        const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
+        const pos = level8Positions[i % level8Positions.length];
         const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name, false);
         enemies.push(enemy);
         enemyAIs.push(new EnemyAI(enemy));
@@ -7747,25 +7772,26 @@ function stopAttractMode() {
 }
 
 function resetGameForAttract() {
-    // Reset player
-    player.body = [{ x: 5, y: Math.floor(ROWS / 2) }];
+    // Reset player - proportional position
+    player.body = [{ x: Math.floor(COLS * 0.12), y: Math.floor(ROWS / 2) }];
     player.direction = DIRECTIONS.RIGHT;
     player.nextDirection = DIRECTIONS.RIGHT;
     player.alive = true;
     player.growing = 0;
 
-    // Reset enemies
+    // Reset enemies - proportional positions
     const level1Positions = [
-        { x: COLS - 6, y: 5 },
-        { x: COLS - 6, y: ROWS - 6 },
-        { x: 5, y: ROWS - 6 }
+        { x: COLS - Math.floor(COLS * 0.15), y: Math.floor(ROWS * 0.17) },
+        { x: COLS - Math.floor(COLS * 0.15), y: ROWS - Math.floor(ROWS * 0.2) },
+        { x: Math.floor(COLS * 0.12), y: ROWS - Math.floor(ROWS * 0.2) }
     ];
 
     enemies = [];
     enemyAIs = [];
-    for (let i = 0; i < 3; i++) {
-        const snakeConfig = SNAKE_NAMES[i];
-        const pos = level1Positions[i];
+    const enemyCount = getScaledEnemyCount(3);
+    for (let i = 0; i < enemyCount; i++) {
+        const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
+        const pos = level1Positions[i % level1Positions.length];
         const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name);
         enemies.push(enemy);
         enemyAIs.push(new EnemyAI(enemy));
@@ -7829,7 +7855,7 @@ function updateAttractMode() {
         // Respawn player in attract mode for continuous demo
         setTimeout(() => {
             if (gameState === GAME_STATE.ATTRACT) {
-                player.body = [{ x: 5, y: Math.floor(ROWS / 2) }];
+                player.body = [{ x: Math.floor(COLS * 0.12), y: Math.floor(ROWS / 2) }];
                 player.direction = DIRECTIONS.RIGHT;
                 player.nextDirection = DIRECTIONS.RIGHT;
                 player.alive = true;
@@ -7846,8 +7872,10 @@ function updateAttractMode() {
             // Respawn enemy in attract mode
             setTimeout(() => {
                 if (gameState === GAME_STATE.ATTRACT && !enemy.alive) {
-                    const newX = Math.floor(Math.random() * (COLS - 10)) + 5;
-                    const newY = Math.floor(Math.random() * (ROWS - 10)) + 5;
+                    const marginX = Math.floor(COLS * 0.12);
+                    const marginY = Math.floor(ROWS * 0.17);
+                    const newX = Math.floor(Math.random() * Math.max(1, COLS - marginX * 2)) + marginX;
+                    const newY = Math.floor(Math.random() * Math.max(1, ROWS - marginY * 2)) + marginY;
                     enemy.body = [{ x: newX, y: newY }];
                     enemy.direction = DIRECTIONS.RIGHT;
                     enemy.nextDirection = DIRECTIONS.RIGHT;
@@ -8097,19 +8125,19 @@ function startNextLevel() {
         enemies = [];
         enemyAIs = [];
 
-        // Get positions for new enemies (use level 1 positions as base)
+        // Get positions for new enemies - proportional to grid size
         const positions = [
-            { x: COLS - 6, y: 5 },
-            { x: COLS - 6, y: ROWS - 6 },
-            { x: 5, y: ROWS - 6 },
-            { x: COLS - 8, y: Math.floor(ROWS / 2) },
-            { x: Math.floor(COLS / 2), y: ROWS - 4 },
-            { x: 8, y: 8 },
-            { x: COLS - 8, y: ROWS - 8 }
+            { x: COLS - Math.floor(COLS * 0.15), y: Math.floor(ROWS * 0.17) },
+            { x: COLS - Math.floor(COLS * 0.15), y: ROWS - Math.floor(ROWS * 0.2) },
+            { x: Math.floor(COLS * 0.12), y: ROWS - Math.floor(ROWS * 0.2) },
+            { x: COLS - Math.floor(COLS * 0.2), y: Math.floor(ROWS / 2) },
+            { x: Math.floor(COLS / 2), y: ROWS - Math.floor(ROWS * 0.13) },
+            { x: Math.floor(COLS * 0.2), y: Math.floor(ROWS * 0.17) },
+            { x: COLS - Math.floor(COLS * 0.2), y: ROWS - Math.floor(ROWS * 0.17) }
         ];
 
-        // Spawn correct number of enemies for this level
-        const enemyCount = settings.enemies;
+        // Spawn correct number of enemies for this level (scaled to grid size)
+        const enemyCount = getScaledEnemyCount(settings.enemies);
         for (let i = 0; i < enemyCount; i++) {
             const pos = positions[i % positions.length];
             const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
@@ -8199,13 +8227,15 @@ function startNextLevel() {
 }
 
 function calculateEnemySpawnPosition() {
-    // Find position away from player
+    // Find position away from player - proportional margins
     let attempts = 0;
-    let pos = { x: COLS - 6, y: 5 };
+    const marginX = Math.floor(COLS * 0.12);
+    const marginY = Math.floor(ROWS * 0.17);
+    let pos = { x: COLS - marginX, y: marginY };
 
     while (attempts < 50) {
-        pos.x = Math.floor(Math.random() * (COLS - 10)) + 5;
-        pos.y = Math.floor(Math.random() * (ROWS - 10)) + 5;
+        pos.x = Math.floor(Math.random() * Math.max(1, COLS - marginX * 2)) + marginX;
+        pos.y = Math.floor(Math.random() * Math.max(1, ROWS - marginY * 2)) + marginY;
 
         // Check distance from player
         const playerHead = player.body[0];
@@ -8387,8 +8417,8 @@ function drawBanner(ctx) {
     ctx.lineWidth = 3;
     ctx.globalAlpha = alpha * 0.5;
     ctx.beginPath();
-    ctx.moveTo(CANVAS_WIDTH / 2 - 200, 95);
-    ctx.lineTo(CANVAS_WIDTH / 2 + 200, 95);
+    ctx.moveTo(CANVAS_WIDTH * 0.25, 95);
+    ctx.lineTo(CANVAS_WIDTH * 0.75, 95);
     ctx.stroke();
 
     ctx.restore();
@@ -8690,38 +8720,64 @@ function cycleGameSpeed() {
     }
 }
 
-function resizeCanvas() {
-    const canvasEl = document.getElementById('gameCanvas');
-    if (!canvasEl) return;
-
-    // Measure HUD and controls heights
+function calculateGridDimensions() {
     const hudEl = document.querySelector('.hud');
     const controlsEl = document.querySelector('.controls');
-    const hudHeight = hudEl ? hudEl.offsetHeight : 0;
-    const controlsHeight = controlsEl ? controlsEl.offsetHeight : 0;
 
-    // Available space between HUD and controls
-    const availableHeight = window.innerHeight - hudHeight - controlsHeight;
-    const viewportWidth = window.innerWidth;
+    // Detect landscape compact mode (HUD/controls become overlays)
+    const isLandscapeCompact = window.innerWidth > window.innerHeight && window.innerHeight <= 500;
 
-    // Canvas native aspect ratio is 800:600 (4:3)
-    const nativeWidth = 800;
-    const nativeHeight = 600;
-    const nativeAspect = nativeWidth / nativeHeight;
+    let hudHeight = hudEl ? hudEl.offsetHeight : 0;
+    let controlsHeight = controlsEl ? controlsEl.offsetHeight : 0;
 
-    // Fit within available space while maintaining aspect ratio
-    let displayWidth = viewportWidth;
-    let displayHeight = displayWidth / nativeAspect;
-
-    // If height exceeds available space, scale down proportionally
-    if (displayHeight > availableHeight) {
-        displayHeight = availableHeight;
-        displayWidth = displayHeight * nativeAspect;
+    // In landscape compact mode, HUD/controls are absolute overlays — don't subtract their height
+    if (isLandscapeCompact) {
+        hudHeight = 0;
+        controlsHeight = 0;
     }
 
-    // Apply size via CSS
-    canvasEl.style.width = displayWidth + 'px';
-    canvasEl.style.height = displayHeight + 'px';
+    const availableWidth = window.innerWidth;
+    const availableHeight = window.innerHeight - hudHeight - controlsHeight;
+
+    // Minimum playable grid size
+    const MIN_COLS = 20;
+    const MIN_ROWS = 15;
+
+    let newCols = Math.floor(availableWidth / GRID_SIZE);
+    let newRows = Math.floor(availableHeight / GRID_SIZE);
+
+    // Enforce minimums
+    newCols = Math.max(newCols, MIN_COLS);
+    newRows = Math.max(newRows, MIN_ROWS);
+
+    COLS = newCols;
+    ROWS = newRows;
+    CANVAS_WIDTH = COLS * GRID_SIZE;
+    CANVAS_HEIGHT = ROWS * GRID_SIZE;
+
+    // Update canvas element
+    const canvasEl = document.getElementById('gameCanvas');
+    if (canvasEl) {
+        canvasEl.width = CANVAS_WIDTH;
+        canvasEl.height = CANVAS_HEIGHT;
+        canvasEl.style.width = CANVAS_WIDTH + 'px';
+        canvasEl.style.height = CANVAS_HEIGHT + 'px';
+    }
+}
+
+function resizeCanvas() {
+    // Grid dimensions are calculated at game start.
+    // Changing grid mid-game would break snake/wall positions,
+    // so we only recalculate if the game is in READY state.
+    if (gameState === GAME_STATE.READY) {
+        const oldCols = COLS;
+        const oldRows = ROWS;
+        calculateGridDimensions();
+        // If grid actually changed, reset game to regenerate positions
+        if (COLS !== oldCols || ROWS !== oldRows) {
+            resetGame();
+        }
+    }
 }
 
 function updateMobileStartButton() {
@@ -8788,21 +8844,22 @@ function resetGame() {
         timerEl.textContent = 'LEVEL 1 | 4:00';
     }
 
-    player = new Snake(5, Math.floor(ROWS / 2), COLORS.PLAYER, COLORS.PLAYER_GLOW, true);
+    player = new Snake(Math.floor(COLS * 0.12), Math.floor(ROWS / 2), COLORS.PLAYER, COLORS.PLAYER_GLOW, true);
 
-    // Create only Level 1 enemies (first 3 snakes)
+    // Create only Level 1 enemies (first 3 snakes) - proportional positions
     enemies = [];
     enemyAIs = [];
 
     const level1Positions = [
-        { x: COLS - 6, y: 5 },
-        { x: COLS - 6, y: ROWS - 6 },
-        { x: 5, y: ROWS - 6 }
+        { x: COLS - Math.floor(COLS * 0.15), y: Math.floor(ROWS * 0.17) },
+        { x: COLS - Math.floor(COLS * 0.15), y: ROWS - Math.floor(ROWS * 0.2) },
+        { x: Math.floor(COLS * 0.12), y: ROWS - Math.floor(ROWS * 0.2) }
     ];
 
-    for (let i = 0; i < 3; i++) {
-        const snakeConfig = SNAKE_NAMES[i];
-        const pos = level1Positions[i];
+    const enemyCount = getScaledEnemyCount(3);
+    for (let i = 0; i < enemyCount; i++) {
+        const snakeConfig = SNAKE_NAMES[i % SNAKE_NAMES.length];
+        const pos = level1Positions[i % level1Positions.length];
         const enemy = new Snake(pos.x, pos.y, snakeConfig.color, snakeConfig.color, false, snakeConfig.name);
         enemies.push(enemy);
         enemyAIs.push(new EnemyAI(enemy));
@@ -9019,8 +9076,8 @@ function respawnEnemy(enemy, enemyIndex) {
     let newX, newY;
 
     while (!validPosition && attempts < 100) {
-        newX = Math.floor(Math.random() * (COLS - 2)) + 1;
-        newY = Math.floor(Math.random() * (ROWS - 2)) + 1;
+        newX = Math.floor(Math.random() * Math.max(1, COLS - 2)) + 1;
+        newY = Math.floor(Math.random() * Math.max(1, ROWS - 2)) + 1;
 
         validPosition = true;
 
@@ -9185,16 +9242,18 @@ function gameOver() {
 function respawnPlayer() {
     if (gameState === GAME_STATE.GAME_OVER) return;
 
-    // Create new player at safe position
-    let newX = 5;
+    // Create new player at safe position - proportional margins
+    const marginX = Math.floor(COLS * 0.12);
+    const marginY = Math.floor(ROWS * 0.17);
+    let newX = marginX;
     let newY = Math.floor(ROWS / 2);
 
     // Find position away from enemies
     let attempts = 0;
     let safe = false;
     while (!safe && attempts < 50) {
-        newX = Math.floor(Math.random() * (COLS - 10)) + 5;
-        newY = Math.floor(Math.random() * (ROWS - 10)) + 5;
+        newX = Math.floor(Math.random() * Math.max(1, COLS - marginX * 2)) + marginX;
+        newY = Math.floor(Math.random() * Math.max(1, ROWS - marginY * 2)) + marginY;
         safe = true;
 
         // Check distance from all enemies
@@ -10149,8 +10208,8 @@ function drawLevelTransitionScreen() {
     ctx.shadowBlur = 10;
     ctx.shadowColor = '#ffffff';
     ctx.beginPath();
-    ctx.moveTo(CANVAS_WIDTH / 2 - 200, 160);
-    ctx.lineTo(CANVAS_WIDTH / 2 + 200, 160);
+    ctx.moveTo(CANVAS_WIDTH * 0.25, 160);
+    ctx.lineTo(CANVAS_WIDTH * 0.75, 160);
     ctx.stroke();
     ctx.restore();
 
@@ -10178,8 +10237,8 @@ function drawLevelTransitionScreen() {
 
     // Layout: Picture and Text CENTERED
     const picSize = 140;
-    const picX = CANVAS_WIDTH / 2 - 220; // Moved more to the left
-    const picY = 215;
+    const picX = CANVAS_WIDTH * 0.225; // Left of center
+    const picY = CANVAS_HEIGHT * 0.36;
 
     // Snake picture placeholder box with animated border
     ctx.save();
@@ -10268,14 +10327,14 @@ function drawLevelTransitionScreen() {
 
         // Warning box background
         ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
-        ctx.fillRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+        ctx.fillRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
 
         // Warning border
         ctx.strokeStyle = '#ff6600';
         ctx.lineWidth = 3;
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#ff6600';
-        ctx.strokeRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+        ctx.strokeRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
 
         // Warning title
         ctx.fillStyle = '#ff6600';
@@ -10307,14 +10366,14 @@ function drawLevelTransitionScreen() {
 
         // Success box background
         ctx.fillStyle = 'rgba(255, 102, 0, 0.15)';
-        ctx.fillRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+        ctx.fillRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
 
         // Success border
         ctx.strokeStyle = '#ff6600';
         ctx.lineWidth = 3;
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#ff6600';
-        ctx.strokeRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+        ctx.strokeRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
 
         // Success title
         ctx.fillStyle = '#ff6600';
@@ -10346,14 +10405,14 @@ function drawLevelTransitionScreen() {
 
         // Success box background
         ctx.fillStyle = 'rgba(128, 0, 255, 0.15)';
-        ctx.fillRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+        ctx.fillRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
 
         // Success border
         ctx.strokeStyle = '#ff00ff';
         ctx.lineWidth = 3;
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#ff00ff';
-        ctx.strokeRect(CANVAS_WIDTH / 2 - 280, 385, 560, 90);
+        ctx.strokeRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
 
         // Success title
         ctx.fillStyle = '#ff00ff';

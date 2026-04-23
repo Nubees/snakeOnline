@@ -158,6 +158,10 @@ body::after {
     font-weight: bold;
 }
 
+.music-track-number {
+    display: none;
+}
+
 .music-change-btn {
     background: rgba(0, 255, 255, 0.2);
     border: 2px solid #00ffff;
@@ -268,8 +272,7 @@ body::after {
     border-radius: 0;
     box-shadow: var(--canvas-glow), inset 0 0 20px rgba(0, 0, 0, 0.5);
     background-color: rgba(0, 0, 0, 0.8);
-    width: 100vw;
-    height: auto;
+    flex-shrink: 0;
 }
 
 /* Controls Info */
@@ -916,5 +919,94 @@ canvas, #gameCanvas {
 
     .controls p {
         margin-bottom: 8px;
+    }
+}
+
+/* Landscape phone compact HUD mode */
+@media (orientation: landscape) and (max-height: 500px) {
+    .hud {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 4px 12px;
+        background: rgba(15, 15, 15, 0.5);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        z-index: 50;
+        font-size: 9px;
+    }
+
+    .score, .high-score {
+        font-size: 16px;
+    }
+
+    .center-hud {
+        flex-direction: row;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .level-timer {
+        font-size: 14px;
+        order: -1;
+    }
+
+    .lives {
+        font-size: 18px;
+        order: 1;
+    }
+
+    .music-track-container {
+        flex-direction: row;
+        font-size: 11px;
+        gap: 6px;
+        margin-top: 0;
+        order: 2;
+    }
+
+    .volume-slider {
+        width: 60px;
+        height: 6px;
+    }
+
+    .music-change-btn {
+        font-size: 11px;
+        padding: 2px 6px;
+    }
+
+    .music-icon {
+        font-size: 13px;
+    }
+
+    /* Hide full track name, show only track number */
+    #musicTrack {
+        display: none;
+    }
+
+    .music-track-number {
+        display: inline;
+        color: #00ffff;
+        font-weight: bold;
+    }
+
+    /* Bottom controls as compact overlay */
+    .controls {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 4px 8px;
+        background: rgba(15, 15, 15, 0.5);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        z-index: 50;
+        font-size: 12px;
+        line-height: 1.3;
+    }
+
+    .achievements-btn {
+        font-size: 12px;
+        padding: 4px 8px;
     }
 }
