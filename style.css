@@ -290,11 +290,11 @@ body::after {
     border-radius: 6px;
     color: #ffd700;
     font-family: var(--font-primary);
-    font-size: 28px;
+    font-size: 27px;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 2px;
-    padding: 10px 24px;
+    padding: 10px 23px;
     cursor: pointer;
     touch-action: manipulation;
     transition: all 0.3s ease;
@@ -313,6 +313,71 @@ body::after {
     background: rgba(255, 215, 0, 0.4);
     transform: scale(0.95);
     box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+}
+
+/* Achievements Screen */
+#achievementsScreen {
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: rgba(15, 15, 15, 0.98);
+    border-color: #ffd700;
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
+    z-index: 3000;
+    padding: var(--spacing-md);
+}
+
+#achievementsScreen h1 {
+    color: #ffd700;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    font-size: var(--font-size-large);
+    margin-bottom: var(--spacing-md);
+}
+
+.achievements-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: var(--spacing-md);
+}
+
+.achievement-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 6px;
+    font-size: var(--font-size-small);
+    text-align: left;
+}
+
+.achievement-item.locked {
+    opacity: 0.4;
+    background: rgba(100, 100, 100, 0.1);
+    border-color: rgba(100, 100, 100, 0.3);
+}
+
+.achievement-item.unlocked {
+    background: rgba(255, 215, 0, 0.15);
+    border-color: rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+}
+
+.achievement-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.achievement-name {
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.achievement-item.locked .achievement-name {
+    color: #666;
 }
 
 /* Overlay Screens (Game Over, Pause) */
@@ -496,8 +561,8 @@ body::after {
     }
 
     .achievements-btn {
-        font-size: 22px;
-        padding: 8px 16px;
+        font-size: 21px;
+        padding: 8px 15px;
         border-width: 2px;
         margin-bottom: 6px;
     }

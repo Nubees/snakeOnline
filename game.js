@@ -8045,19 +8045,27 @@ function togglePause() {
     }
 }
 
+let achievementsOpen = false;
+
 function showAchievements() {
-    // Placeholder: toggle a visual indicator that achievements are coming
-    // For now, flash the button and log to console
-    const btn = document.getElementById('achievementsBtn');
-    if (btn) {
-        btn.style.transform = 'scale(1.1)';
-        btn.style.boxShadow = '0 0 40px rgba(255, 215, 0, 0.9)';
-        setTimeout(() => {
-            btn.style.transform = '';
-            btn.style.boxShadow = '';
-        }, 300);
+    const screen = document.getElementById('achievementsScreen');
+    if (!screen) return;
+
+    if (achievementsOpen) {
+        // Close
+        screen.classList.add('hidden');
+        achievementsOpen = false;
+    } else {
+        // Open
+        screen.classList.remove('hidden');
+        achievementsOpen = true;
     }
-    console.log('[Achievements] Menu coming soon!');
+}
+
+function closeAchievements() {
+    const screen = document.getElementById('achievementsScreen');
+    if (screen) screen.classList.add('hidden');
+    achievementsOpen = false;
 }
 
 // ============================================================================
@@ -8283,6 +8291,16 @@ function initMobileButtons() {
             }
             showAchievements();
         });
+    }
+
+    // Close achievements button
+    const closeAchievementsBtn = document.getElementById('closeAchievementsBtn');
+    if (closeAchievementsBtn) {
+        closeAchievementsBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            closeAchievements();
+        });
+        closeAchievementsBtn.addEventListener('click', closeAchievements);
     }
 }
 
