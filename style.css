@@ -268,7 +268,7 @@ body::after {
     border-radius: 4px;
     box-shadow: var(--canvas-glow), inset 0 0 20px rgba(0, 0, 0, 0.5);
     background-color: rgba(0, 0, 0, 0.8);
-    width: var(--canvas-width);
+    width: 95vw;
     height: auto;
 }
 
