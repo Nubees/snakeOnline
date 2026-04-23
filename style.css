@@ -608,6 +608,64 @@ canvas, #gameCanvas {
     display: none;
 }
 
+/* Mobile Ready Screen Controls (Announcer + Boss) */
+.mobile-ready-controls {
+    position: fixed;
+    top: 62%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    gap: 20px;
+    pointer-events: auto;
+}
+
+.mobile-ready-controls.hidden {
+    display: none;
+}
+
+.mobile-option-btn {
+    width: 50px;
+    height: 50px;
+    pointer-events: auto;
+    background: rgba(255, 215, 0, 0.2);
+    border: 2px solid #ffd700;
+    border-radius: 50%;
+    color: #ffd700;
+    font-size: 22px;
+    touch-action: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+.mobile-option-btn:active {
+    background: rgba(255, 215, 0, 0.5);
+    transform: scale(0.95);
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+}
+
+/* Boss button specific styling */
+#mobileBoss {
+    background: rgba(255, 0, 64, 0.2);
+    border-color: #ff0040;
+    color: #ff0040;
+    box-shadow: 0 0 15px rgba(255, 0, 64, 0.3);
+}
+
+#mobileBoss:active {
+    box-shadow: 0 0 25px rgba(255, 0, 64, 0.6);
+}
+
+#mobileBoss.active {
+    background: rgba(255, 0, 64, 0.5);
+    box-shadow: 0 0 25px rgba(255, 0, 64, 0.6);
+}
+
 /* Responsive: Always show mobile controls on small screens */
 @media (max-width: 850px) {
     .mobile-controls {
