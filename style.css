@@ -127,7 +127,7 @@ body::after {
 
 .score, .high-score {
     text-shadow: 0 0 8px var(--text-glow);
-    font-size: 28px;
+    font-size: 56px;
     font-weight: bold;
 }
 
@@ -138,8 +138,8 @@ body::after {
 .music-track-container {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 18px;
+    gap: 16px;
+    font-size: 36px;
     color: #00ff88;
     text-shadow: 0 0 8px rgba(0, 255, 136, 0.7);
     letter-spacing: 1.5px;
@@ -149,7 +149,7 @@ body::after {
 
 .music-icon {
     color: #00ffff;
-    font-size: 22px;
+    font-size: 44px;
 }
 
 #musicTrack {
@@ -162,10 +162,10 @@ body::after {
     border: 2px solid #00ffff;
     border-radius: 4px;
     color: #00ffff;
-    font-size: 16px;
+    font-size: 32px;
     font-family: var(--font-primary);
     font-weight: bold;
-    padding: 6px 10px;
+    padding: 12px 20px;
     cursor: pointer;
     touch-action: none;
     transition: all 0.2s ease;
@@ -181,8 +181,8 @@ body::after {
 }
 
 .volume-slider {
-    width: 160px;
-    height: 8px;
+    width: 320px;
+    height: 10px;
     -webkit-appearance: none;
     appearance: none;
     background: rgba(0, 255, 255, 0.2);
@@ -232,7 +232,7 @@ body::after {
 
 .level-timer {
     color: #00ffff;
-    font-size: 26px;
+    font-size: 52px;
     font-weight: bold;
     text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
     letter-spacing: 1px;
@@ -246,7 +246,7 @@ body::after {
 
 .lives {
     color: #ff0040;
-    font-size: 36px;
+    font-size: 72px;
     text-shadow: 0 0 8px rgba(255, 0, 64, 0.8);
     letter-spacing: 2px;
 }
