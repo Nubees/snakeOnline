@@ -109,6 +109,7 @@ body::after {
     justify-content: center;
     min-height: 100vh;
     padding: var(--spacing-md);
+    position: relative; /* For absolute positioning of mobile buttons */
 }
 
 /* HUD - Heads Up Display */
@@ -597,8 +598,8 @@ canvas, #gameCanvas {
 
 /* Mobile Start Button */
 .mobile-start-btn {
-    position: fixed;
-    top: 55%;
+    position: absolute;
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 9999;
@@ -637,8 +638,8 @@ canvas, #gameCanvas {
 
 /* Mobile Ready Screen Controls (Announcer + Boss) */
 .mobile-ready-controls {
-    position: fixed;
-    top: 68%;
+    position: absolute;
+    top: 58%;
     left: 50%;
     transform: translateX(-50%);
     z-index: 9999;
