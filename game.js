@@ -8713,7 +8713,7 @@ function resizeCanvas() {
     let displayWidth = viewportWidth;
     let displayHeight = displayWidth / nativeAspect;
 
-    // If height exceeds available space, scale down
+    // If height exceeds available space, scale down proportionally
     if (displayHeight > availableHeight) {
         displayHeight = availableHeight;
         displayWidth = displayHeight * nativeAspect;
