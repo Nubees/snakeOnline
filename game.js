@@ -9399,20 +9399,20 @@ function drawReadyScreen() {
     ctx.fillText('Press 3 to start on PC', CANVAS_WIDTH / 2, 450);
 
     // Rainbow glow helper for name prompt
-    const rainbowHue = (Date.now() / 300) % 360;
+    const rainbowHue = (Date.now() / 80) % 360; // Faster colour cycling
     const rainbowColor = `hsl(${rainbowHue}, 100%, 60%)`;
     const rainbowColor2 = `hsl(${(rainbowHue + 180) % 360}, 100%, 60%)`;
 
     const namePromptText = 'Type name before starting (max 6 chars)';
-    ctx.font = "14px 'Courier New', monospace";
+    ctx.font = "bold 16px 'Courier New', monospace";
     ctx.fillStyle = '#ffffff';
-    ctx.shadowBlur = 15;
+    ctx.shadowBlur = 18;
     ctx.shadowColor = rainbowColor;
     ctx.fillText(namePromptText, CANVAS_WIDTH / 2, 485);
 
     // Rainbow underline
     const promptWidth = ctx.measureText(namePromptText).width;
-    const underlineY = 488;
+    const underlineY = 489;
     const underlineGrad = ctx.createLinearGradient(
         CANVAS_WIDTH / 2 - promptWidth / 2, 0,
         CANVAS_WIDTH / 2 + promptWidth / 2, 0
@@ -9421,7 +9421,7 @@ function drawReadyScreen() {
     underlineGrad.addColorStop(0.5, rainbowColor2);
     underlineGrad.addColorStop(1, rainbowColor);
     ctx.strokeStyle = underlineGrad;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(CANVAS_WIDTH / 2 - promptWidth / 2, underlineY);
     ctx.lineTo(CANVAS_WIDTH / 2 + promptWidth / 2, underlineY);
