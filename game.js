@@ -4700,8 +4700,8 @@ function updateProjectiles() {
 
         // Check collision with player
         if (proj.owner !== player && proj.checkCollision(player)) {
-            // Player hit by projectile!
-            if (!isPowerPillActive() && !isGhostMode()) {
+            // Player hit by projectile! Spawn protected players are immune
+            if (!isPowerPillActive() && !isGhostMode() && !player.isInSpawnProtection()) {
                 player.alive = false;
                 createExplosion(player.body[0].x, player.body[0].y, COLORS.PLAYER, 20);
                 triggerScreenShake(14);
@@ -6153,9 +6153,9 @@ function drawGravityWells(ctx) {
 function checkGravityWellCollisions() {
     if (currentLevel < 8) return;
 
-    // Check player collision with gravity well center
+    // Check player collision with gravity well center (spawn protected players are immune)
     for (const well of gravityWells) {
-        if (well.checkCollision(player)) {
+        if (!player.isInSpawnProtection() && well.checkCollision(player)) {
             console.log('[LEVEL 8] Player sucked into gravity well!');
             player.alive = false;
             createExplosion(player.body[0].x, player.body[0].y, COLORS.PLAYER, 20);
@@ -6299,8 +6299,8 @@ function checkDebrisCollisions() {
 
         // First pass: Check all debris for collisions and near-misses
         for (const debris of driftingDebris) {
-            // Check collision (death) - but ghost mode and POWERPILL are immune
-            if (!isGhostMode() && !isPowerPillActive() && debris.checkCollision(player)) {
+            // Check collision (death) - but ghost mode, POWERPILL, and spawn protection are immune
+            if (!isGhostMode() && !isPowerPillActive() && !player.isInSpawnProtection() && debris.checkCollision(player)) {
                 hitDebris = debris;
                 break; // Player died, stop checking
             }
@@ -6557,8 +6557,8 @@ function updateWalls() {
 }
 
 function checkWallCollisions() {
-    // Check player collision with walls (skip if in Ghost Mode or POWERPILL)
-    if (!isGhostMode() && !isPowerPillActive()) {
+    // Check player collision with walls (skip if in Ghost Mode, POWERPILL, or spawn protected)
+    if (!isGhostMode() && !isPowerPillActive() && !player.isInSpawnProtection()) {
         for (let i = 0; i < walls.length; i++) {
             const wall = walls[i];
             if (wall.checkCollision(player)) {
@@ -8800,9 +8800,9 @@ function update(deltaTime) {
         }
     }
 
-    // Check player collisions (skip if in Ghost Mode)
-    // Self collision - POWERPILL makes player indestructible
-    if (!isGhostMode() && !isPowerPillActive() && player.checkSelfCollision()) {
+    // Check player collisions (skip if in Ghost Mode or spawn protected)
+    // Self collision - POWERPILL makes player indestructible, spawn protection also prevents death
+    if (!isGhostMode() && !isPowerPillActive() && !player.isInSpawnProtection() && player.checkSelfCollision()) {
         player.alive = false;
         console.log('Player died: self collision');
         createExplosion(player.body[0].x, player.body[0].y, COLORS.PLAYER, 20);
@@ -8812,8 +8812,8 @@ function update(deltaTime) {
         return;
     }
 
-    // Check player collision with enemies (skip if Ghost Mode or POWERPILL)
-    if (!isGhostMode() && !isPowerPillActive()) {
+    // Check player collision with enemies (skip if Ghost Mode, POWERPILL, or spawn protected)
+    if (!isGhostMode() && !isPowerPillActive() && !player.isInSpawnProtection()) {
         for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i];
             // Skip dead enemies or those in spawn protection (they can't kill or be killed)
