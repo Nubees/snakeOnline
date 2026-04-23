@@ -8051,6 +8051,13 @@ function initTouchControls() {
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 
+    // Click/tap on canvas to exit attract mode (desktop + mobile fallback)
+    canvas.addEventListener('click', () => {
+        if (gameState === GAME_STATE.ATTRACT) {
+            stopAttractMode();
+        }
+    });
+
     // Prevent browser defaults globally
     document.addEventListener('touchmove', preventDefaultTouch, { passive: false });
     document.addEventListener('dblclick', preventDefaultTouch, { passive: false });
@@ -8066,6 +8073,12 @@ function preventDefaultTouch(e) {
 function handleTouchStart(e) {
     if (!touchEnabled) return;
     e.preventDefault();
+
+    // Tap anywhere in attract mode to exit demo immediately
+    if (gameState === GAME_STATE.ATTRACT) {
+        stopAttractMode();
+        return;
+    }
 
     const touch = e.touches[0];
     touchStartX = touch.clientX;

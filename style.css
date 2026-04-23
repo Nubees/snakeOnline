@@ -711,7 +711,12 @@ canvas, #gameCanvas {
     }
 
     .controls {
-        font-size: 12px;
+        font-size: 16px;
         padding: 0 10px;
+        line-height: 1.6;
+    }
+
+    .controls p {
+        margin-bottom: 8px;
     }
 }
