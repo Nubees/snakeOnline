@@ -264,8 +264,8 @@ body::after {
 
 /* Canvas with Glowing Border */
 #gameCanvas {
-    border: var(--canvas-border) solid var(--grid-glow);
-    border-radius: 4px;
+    border: 1px solid var(--grid-glow);
+    border-radius: 0;
     box-shadow: var(--canvas-glow), inset 0 0 20px rgba(0, 0, 0, 0.5);
     background-color: rgba(0, 0, 0, 0.8);
     width: 100vw;
