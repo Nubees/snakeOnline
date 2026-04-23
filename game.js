@@ -4203,6 +4203,10 @@ async function initAudioOnFirstInteraction() {
 let masterVolume = 0.7; // Default 70%
 
 function initVolumeControl() {
+    // Prevent duplicate listener registration
+    if (window._volumeControlInitialized) return;
+    window._volumeControlInitialized = true;
+
     const volumeSlider = document.getElementById('musicVolume');
     if (!volumeSlider) return;
 
@@ -4229,8 +4233,8 @@ function initVolumeControl() {
                 musicSystem.nextTrack();
             }
         };
+        // Use click only - works on both desktop and mobile without double-firing
         musicChangeBtn.addEventListener('click', handleMusicChange);
-        musicChangeBtn.addEventListener('touchend', handleMusicChange);
     }
 }
 
@@ -7041,7 +7045,7 @@ function initGame() {
     initTouchControls();
     initMobileButtons();
 
-    // Initialize volume control (music button handlers)
+    // Initialize volume control (music button + slider)
     initVolumeControl();
 
     // Start game loop
@@ -8096,16 +8100,26 @@ function handleTouchMove(e) {
 }
 
 function initMobileButtons() {
+    // Prevent duplicate listener registration
+    if (window._mobileButtonsInitialized) return;
+    window._mobileButtonsInitialized = true;
+
     // Start button - critical for mobile since no keyboard
     const startBtn = document.getElementById('mobileStartBtn');
     if (startBtn) {
         startBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
+            if (typeof initAudioOnFirstInteraction === 'function') {
+                initAudioOnFirstInteraction();
+            }
             if (gameState === GAME_STATE.READY) {
                 startCountdown();
             }
         });
         startBtn.addEventListener('click', () => {
+            if (typeof initAudioOnFirstInteraction === 'function') {
+                initAudioOnFirstInteraction();
+            }
             if (gameState === GAME_STATE.READY) {
                 startCountdown();
             }
@@ -8137,9 +8151,17 @@ function initMobileButtons() {
     if (announcerBtn) {
         announcerBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
+            if (typeof initAudioOnFirstInteraction === 'function') {
+                initAudioOnFirstInteraction();
+            }
             toggleAnnouncerMode();
         });
-        announcerBtn.addEventListener('click', toggleAnnouncerMode);
+        announcerBtn.addEventListener('click', () => {
+            if (typeof initAudioOnFirstInteraction === 'function') {
+                initAudioOnFirstInteraction();
+            }
+            toggleAnnouncerMode();
+        });
     }
 
     // Boss battle mode button (replaces '2' key)

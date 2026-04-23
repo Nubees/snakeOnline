@@ -42,10 +42,10 @@
             <button class="mobile-btn speed-btn" id="mobileSpeed">⚡</button>
         </div>
         <!-- Mobile ready screen buttons positioned over canvas -->
-        <button id="mobileStartBtn" class="mobile-start-btn" onclick="if(typeof initAudioOnFirstInteraction==='function')initAudioOnFirstInteraction();if(typeof startCountdown==='function')startCountdown();">START GAME</button>
+        <button id="mobileStartBtn" class="mobile-start-btn">START GAME</button>
         <div id="mobile-ready-controls" class="mobile-ready-controls">
-            <button class="mobile-option-btn" id="mobileAnnouncer" onclick="if(typeof initAudioOnFirstInteraction==='function')initAudioOnFirstInteraction();if(typeof toggleAnnouncerMode==='function')toggleAnnouncerMode();">🔊</button>
-            <button class="mobile-option-btn" id="mobileBoss" onclick="bossBattleMode=!bossBattleMode;this.classList.toggle('active',bossBattleMode);">👹</button>
+            <button class="mobile-option-btn" id="mobileAnnouncer">🔊</button>
+            <button class="mobile-option-btn" id="mobileBoss">👹</button>
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>

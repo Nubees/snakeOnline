@@ -459,27 +459,6 @@ body::after {
     opacity: 1;
     animation: wallFlash 0.25s infinite;
 }
-    font-weight: bold;
-    color: #ff0000;
-    text-shadow:
-        2px 2px 0 #000,
-        -2px -2px 0 #000,
-        2px -2px 0 #000,
-        -2px 2px 0 #000,
-        0 0 20px #ff0000,
-        0 0 40px #ff0000;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-    z-index: 100;
-    letter-spacing: 3px;
-    white-space: nowrap;
-    pointer-events: none;
-}
-
-.wall-info.active {
-    opacity: 1;
-    animation: wallFlash 0.25s infinite;
-}
 
 @keyframes wallFlash {
     0%, 100% {
@@ -599,7 +578,7 @@ canvas, #gameCanvas {
 /* Mobile Start Button */
 .mobile-start-btn {
     position: absolute;
-    top: 50%;
+    top: 52%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 9999;
@@ -618,8 +597,13 @@ canvas, #gameCanvas {
     touch-action: none;
     text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
     box-shadow: 0 0 30px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.2);
-    animation: pulse 2s infinite;
+    animation: pulse-start 2s infinite;
     transition: all 0.3s ease;
+}
+
+@keyframes pulse-start {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.05); }
 }
 
 .mobile-start-btn:active {
