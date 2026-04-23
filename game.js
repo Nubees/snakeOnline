@@ -7078,9 +7078,9 @@ function handleInput(e) {
         return;
     }
 
-    // READY state: C key starts countdown, allow typing name
+    // READY state: 3 key starts countdown, allow typing name
     if (gameState === GAME_STATE.READY) {
-        if (e.key === 'c' || e.key === 'C') {
+        if (e.key === '3') {
             startCountdown();
         } else if (e.key === '1') {
             toggleAnnouncerMode();
@@ -7113,9 +7113,9 @@ function handleInput(e) {
         return;
     }
 
-    // LEVEL_TRANSITION state: C key starts next level
+    // LEVEL_TRANSITION state: 3 key starts next level
     if (gameState === GAME_STATE.LEVEL_TRANSITION) {
-        if (e.key === 'c' || e.key === 'C') {
+        if (e.key === '3') {
             startNextLevel();
         }
         return;
@@ -9365,7 +9365,7 @@ function drawReadyScreen() {
     ctx.font = "bold 20px 'Courier New', monospace";
     ctx.shadowBlur = 10;
     ctx.shadowColor = '#ffffff';
-    ctx.fillText('Press C to Start', CANVAS_WIDTH / 2, 420);
+    ctx.fillText('Press 3 to Start', CANVAS_WIDTH / 2, 420);
 
     ctx.font = "14px 'Courier New', monospace";
     ctx.fillStyle = '#aaaaaa';
@@ -9796,7 +9796,7 @@ function drawLevelTransitionScreen() {
     ctx.textAlign = 'center';
     ctx.shadowBlur = 25;
     ctx.shadowColor = '#ffffff';
-    ctx.fillText('PRESS C TO CONTINUE', 0, 0);
+    ctx.fillText('PRESS 3 TO CONTINUE', 0, 0);
     ctx.restore();
 }
 
