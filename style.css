@@ -578,9 +578,9 @@ canvas, #gameCanvas {
 
 /* Mobile Start Button */
 .mobile-start-btn {
-    padding: 20px 50px;
+    padding: 18px 45px;
     font-family: var(--font-primary);
-    font-size: 24px;
+    font-size: 26px;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 3px;
