@@ -6990,6 +6990,7 @@ function initGame() {
     score = 0;
     playerLives = MAX_LIVES;
     gameState = GAME_STATE.READY;
+    updateMobileStartButton(); // Show mobile start button if on touch device
 
     // Reset power-up system
     activePowerUps = [];
@@ -7174,6 +7175,9 @@ function startCountdown() {
     gameState = GAME_STATE.COUNTDOWN;
     countdownValue = 3;
 
+    // Hide mobile start button
+    updateMobileStartButton();
+
     // Play first beep
     soundSystem.playCountdown();
 
@@ -7342,6 +7346,7 @@ function startAttractMode() {
 
 function stopAttractMode() {
     gameState = GAME_STATE.READY;
+    updateMobileStartButton();
     attractAI = null;
 
     // Reset game to clean state
@@ -8061,6 +8066,22 @@ function handleTouchMove(e) {
 }
 
 function initMobileButtons() {
+    // Start button - critical for mobile since no keyboard
+    const startBtn = document.getElementById('mobileStartBtn');
+    if (startBtn) {
+        startBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameState === GAME_STATE.READY) {
+                startCountdown();
+            }
+        });
+        startBtn.addEventListener('click', () => {
+            if (gameState === GAME_STATE.READY) {
+                startCountdown();
+            }
+        });
+    }
+
     // Pause button
     const pauseBtn = document.getElementById('mobilePause');
     if (pauseBtn) {
@@ -8088,6 +8109,17 @@ function cycleGameSpeed() {
         speedUpGame();
     } else {
         slowDownGame();
+    }
+}
+
+function updateMobileStartButton() {
+    const startBtn = document.getElementById('mobileStartBtn');
+    if (!startBtn || !touchEnabled) return;
+
+    if (gameState === GAME_STATE.READY) {
+        startBtn.classList.remove('hidden');
+    } else {
+        startBtn.classList.add('hidden');
     }
 }
 
@@ -8184,6 +8216,7 @@ function resetGame() {
     playerLives = MAX_LIVES;
     gameSpeed = baseGameSpeed;
     gameState = GAME_STATE.READY;
+    updateMobileStartButton(); // Show mobile start button if on touch device
 
     // Reset power-up system
     activePowerUps = [];

@@ -572,6 +572,42 @@ canvas, #gameCanvas {
     box-shadow: 0 0 25px rgba(255, 0, 64, 0.6);
 }
 
+/* Mobile Start Button */
+.mobile-start-btn {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+    padding: 20px 50px;
+    font-family: var(--font-primary);
+    font-size: 24px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    background: rgba(0, 255, 255, 0.2);
+    border: 3px solid #00ffff;
+    border-radius: 8px;
+    color: #00ffff;
+    cursor: pointer;
+    pointer-events: auto;
+    touch-action: none;
+    text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.1);
+    animation: pulse 2s infinite;
+    transition: all 0.3s ease;
+}
+
+.mobile-start-btn:active {
+    background: rgba(0, 255, 255, 0.4);
+    transform: translate(-50%, -50%) scale(0.95);
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.6), inset 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.mobile-start-btn.hidden {
+    display: none;
+}
+
 /* Responsive: Always show mobile controls on small screens */
 @media (max-width: 850px) {
     .mobile-controls {
