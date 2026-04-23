@@ -9343,7 +9343,7 @@ function drawReadyScreen() {
     ctx.font = "12px 'Courier New', monospace";
     ctx.fillStyle = '#aaaaaa';
     ctx.shadowBlur = 5;
-    ctx.fillText('Press V to Change', CANVAS_WIDTH / 2, 342);
+    ctx.fillText('Press 1 to Change', CANVAS_WIDTH / 2, 342);
 
     // BOSS BATTLE MODE TOGGLE
     const bossBattleColor = bossBattleMode ? '#ff0040' : '#888888';
@@ -9358,7 +9358,7 @@ function drawReadyScreen() {
     ctx.font = "12px 'Courier New', monospace";
     ctx.fillStyle = '#aaaaaa';
     ctx.shadowBlur = 5;
-    ctx.fillText('Press B to Toggle', CANVAS_WIDTH / 2, 387);
+    ctx.fillText('Press 2 to Toggle', CANVAS_WIDTH / 2, 387);
 
     // Instructions
     ctx.fillStyle = '#ffffff';
