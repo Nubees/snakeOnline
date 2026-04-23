@@ -9359,10 +9359,10 @@ function drawReadyScreen() {
 
     // Instructions
     ctx.fillStyle = '#ffffff';
-    ctx.font = "bold 20px 'Courier New', monospace";
+    ctx.font = "bold 16px 'Courier New', monospace";
     ctx.shadowBlur = 10;
     ctx.shadowColor = '#ffffff';
-    ctx.fillText('Press 3 to Start', CANVAS_WIDTH / 2, 450);
+    ctx.fillText('Press 3 to start on PC', CANVAS_WIDTH / 2, 450);
 
     ctx.font = "14px 'Courier New', monospace";
     ctx.fillStyle = '#aaaaaa';
