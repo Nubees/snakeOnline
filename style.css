@@ -283,6 +283,38 @@ body::after {
     line-height: 1.5;
 }
 
+/* Achievements Button - Gold */
+.achievements-btn {
+    background: transparent;
+    border: 3px solid #ffd700;
+    border-radius: 6px;
+    color: #ffd700;
+    font-family: var(--font-primary);
+    font-size: 28px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 10px 24px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    margin-bottom: 8px;
+}
+
+.achievements-btn:hover {
+    background: rgba(255, 215, 0, 0.2);
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+    transform: scale(1.05);
+}
+
+.achievements-btn:active {
+    background: rgba(255, 215, 0, 0.4);
+    transform: scale(0.95);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+}
+
 /* Overlay Screens (Game Over, Pause) */
 .overlay {
     position: absolute;
@@ -461,6 +493,13 @@ body::after {
 
     .controls p {
         margin: 2px 0;
+    }
+
+    .achievements-btn {
+        font-size: 22px;
+        padding: 8px 16px;
+        border-width: 2px;
+        margin-bottom: 6px;
     }
 }
 

@@ -7179,6 +7179,12 @@ function handleInput(e) {
         return;
     }
 
+    // A key - Show achievements (works in any state)
+    if (e.key === 'A') {
+        showAchievements();
+        return;
+    }
+
     if (gameState !== GAME_STATE.PLAYING) return;
 
     switch(e.key) {
@@ -8039,6 +8045,21 @@ function togglePause() {
     }
 }
 
+function showAchievements() {
+    // Placeholder: toggle a visual indicator that achievements are coming
+    // For now, flash the button and log to console
+    const btn = document.getElementById('achievementsBtn');
+    if (btn) {
+        btn.style.transform = 'scale(1.1)';
+        btn.style.boxShadow = '0 0 40px rgba(255, 215, 0, 0.9)';
+        setTimeout(() => {
+            btn.style.transform = '';
+            btn.style.boxShadow = '';
+        }, 300);
+    }
+    console.log('[Achievements] Menu coming soon!');
+}
+
 // ============================================================================
 // MOBILE TOUCH CONTROL FUNCTIONS
 // ============================================================================
@@ -8243,6 +8264,24 @@ function initMobileButtons() {
             } else {
                 bossBtn.classList.remove('active');
             }
+        });
+    }
+
+    // Achievements button (replaces 'A' key)
+    const achievementsBtn = document.getElementById('achievementsBtn');
+    if (achievementsBtn) {
+        achievementsBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (typeof initAudioOnFirstInteraction === 'function') {
+                initAudioOnFirstInteraction();
+            }
+            showAchievements();
+        });
+        achievementsBtn.addEventListener('click', () => {
+            if (typeof initAudioOnFirstInteraction === 'function') {
+                initAudioOnFirstInteraction();
+            }
+            showAchievements();
         });
     }
 }
