@@ -290,11 +290,11 @@ body::after {
     border-radius: 6px;
     color: #ffd700;
     font-family: var(--font-primary);
-    font-size: 27px;
+    font-size: 26px;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 2px;
-    padding: 10px 23px;
+    padding: 10px 22px;
     cursor: pointer;
     touch-action: manipulation;
     transition: all 0.3s ease;
@@ -338,20 +338,24 @@ body::after {
 .achievements-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 10px;
     margin-bottom: var(--spacing-md);
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
 .achievement-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
+    gap: 8px;
+    padding: 8px 10px;
     background: rgba(0, 255, 255, 0.1);
     border: 1px solid rgba(0, 255, 255, 0.3);
     border-radius: 6px;
-    font-size: var(--font-size-small);
+    font-size: 13px;
     text-align: left;
+    min-height: 44px;
 }
 
 .achievement-item.locked {
@@ -561,10 +565,30 @@ body::after {
     }
 
     .achievements-btn {
-        font-size: 21px;
-        padding: 8px 15px;
+        font-size: 20px;
+        padding: 8px 14px;
         border-width: 2px;
         margin-bottom: 6px;
+    }
+
+    #achievementsScreen {
+        width: 95%;
+        padding: var(--spacing-sm);
+    }
+
+    #achievementsScreen h1 {
+        font-size: 22px;
+    }
+
+    .achievements-list {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        max-height: 60vh;
+    }
+
+    .achievement-item {
+        font-size: 12px;
+        padding: 6px 8px;
     }
 }
 

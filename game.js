@@ -108,6 +108,256 @@ const COMBO_TIERS = [
     { threshold: 7, multiplier: 4, label: 'COMBO x4!!' }
 ];
 
+// ============================================================================
+// ACHIEVEMENT SYSTEM - 20 Unlockable Milestones
+// ============================================================================
+const ACHIEVEMENTS = {
+    // Category 1: Level Mastery (5)
+    lvl1_complete:  { id: 'lvl1_complete',  name: 'First Blood',      description: 'Complete Level 1',                         category: 'level',   icon: '🏆', tier: 'bronze' },
+    lvl7_complete:  { id: 'lvl7_complete',  name: 'Void Survivor',    description: 'Complete Level 7 (first hazard)',          category: 'level',   icon: '☠️', tier: 'silver' },
+    lvl8_complete:  { id: 'lvl8_complete',  name: 'Gravity Walker',   description: 'Complete Level 8',                         category: 'level',   icon: '🌀', tier: 'silver' },
+    lvl9_complete:  { id: 'lvl9_complete',  name: 'Void Walker',      description: 'Complete Level 9 (combined hazards)',    category: 'level',   icon: '🔥', tier: 'gold'   },
+    lvl10_complete: { id: 'lvl10_complete', name: 'Feast Master',     description: 'Complete Level 10 with 20+ food eaten',    category: 'level',   icon: '👑', tier: 'gold'   },
+
+    // Category 2: Score Milestones (4)
+    score_1000:     { id: 'score_1000',     name: 'Point Collector',   description: 'Reach 1,000 points',   category: 'score', icon: '💰', tier: 'bronze' },
+    score_5000:     { id: 'score_5000',     name: 'Score Hunter',      description: 'Reach 5,000 points',   category: 'score', icon: '💎', tier: 'silver' },
+    score_10000:    { id: 'score_10000',    name: 'Point Millionaire', description: 'Reach 10,000 points',  category: 'score', icon: '💵', tier: 'gold'   },
+    score_25000:    { id: 'score_25000',    name: 'Legendary',         description: 'Reach 25,000 points',  category: 'score', icon: '👑', tier: 'gold'   },
+
+    // Category 3: Survival Challenges (4)
+    no_damage_level:{ id: 'no_damage_level', name: 'Untouchable',      description: 'Complete any level without taking damage', category: 'survival', icon: '🛡️', tier: 'silver' },
+    boss_no_death:  { id: 'boss_no_death',   name: 'Immortal',         description: 'Complete Level 6 without dying',           category: 'survival', icon: '💀', tier: 'gold'   },
+    ghost_10_enemies:{ id: 'ghost_10_enemies', name: 'Ghost Walker',    description: 'Phase through 10 enemies with Ghost Mode', category: 'survival', icon: '👻', tier: 'silver' },
+    survive_3min:   { id: 'survive_3min',    name: 'Marathon Runner',  description: 'Survive 3 minutes on any hazard level',   category: 'survival', icon: '⏱️', tier: 'gold'   },
+
+    // Category 4: Collection / Lifetime (4)
+    food_100_lifetime:    { id: 'food_100_lifetime',    name: 'Snake Feast',   description: 'Eat 100 food items total',              category: 'collection', icon: '🍎', tier: 'bronze' },
+    powerups_50_lifetime: { id: 'powerups_50_lifetime', name: 'Power Hungry',  description: 'Collect 50 power-ups total',            category: 'collection', icon: '⚡', tier: 'silver' },
+    pill_destroy_20:      { id: 'pill_destroy_20',      name: 'Pill Popper',   description: 'Destroy 20 enemies with POWERPILL',   category: 'collection', icon: '💊', tier: 'silver' },
+    ghost_25_uses:        { id: 'ghost_25_uses',        name: 'Ghostly',       description: 'Use Ghost Mode 25 times',               category: 'collection', icon: '👻', tier: 'gold'   },
+
+    // Category 5: Combat Mastery (3)
+    headhunter_10:  { id: 'headhunter_10', name: 'Headhunter',  description: 'Kill 10 enemies with head-on collisions', category: 'combat', icon: '🎯', tier: 'silver' },
+    boss_speedkill: { id: 'boss_speedkill', name: 'Boss Slayer', description: 'Kill boss in under 30 seconds',           category: 'combat', icon: '⚔️', tier: 'gold'   },
+    combo_5x:       { id: 'combo_5x',       name: 'Combo King',  description: 'Get a 5x combo multiplier',               category: 'combat', icon: '🔥', tier: 'gold'   }
+};
+
+// Achievement progress (loaded from localStorage)
+let achievementProgress = {
+    unlocked: [],
+    progress: {},
+    stats: {
+        lifetimeFoodEaten: 0,
+        lifetimePowerUps: 0,
+        lifetimePillKills: 0,
+        lifetimeGhostUses: 0,
+        lifetimeHeadhunterKills: 0,
+        lifetimeDeaths: 0,
+        lifetimeGhostEnemyPasses: 0,
+        maxComboReached: 1
+    }
+};
+
+// Run-level tracking (resets each game)
+let runStats = {
+    levelStartLives: MAX_LIVES,
+    foodEatenThisLevel: 0,
+    enemiesKilledThisRun: 0,
+    levelStartTime: 0,
+    bossStartTime: 0
+};
+
+// Toast notification queue
+let achievementToasts = [];
+let toastEndTime = 0;
+
+function loadAchievementProgress() {
+    try {
+        const saved = localStorage.getItem('snakeAchievementProgress');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            achievementProgress = {
+                unlocked: parsed.unlocked || [],
+                progress: parsed.progress || {},
+                stats: { ...achievementProgress.stats, ...(parsed.stats || {}) }
+            };
+        }
+    } catch (e) {
+        console.warn('Failed to load achievement progress:', e);
+    }
+}
+
+function saveAchievementProgress() {
+    try {
+        localStorage.setItem('snakeAchievementProgress', JSON.stringify(achievementProgress));
+    } catch (e) {
+        console.warn('Failed to save achievement progress:', e);
+    }
+}
+
+function resetAchievementProgress() {
+    achievementProgress = {
+        unlocked: [],
+        progress: {},
+        stats: {
+            lifetimeFoodEaten: 0,
+            lifetimePowerUps: 0,
+            lifetimePillKills: 0,
+            lifetimeGhostUses: 0,
+            lifetimeHeadhunterKills: 0,
+            lifetimeDeaths: 0,
+            lifetimeGhostEnemyPasses: 0,
+            maxComboReached: 1
+        }
+    };
+    saveAchievementProgress();
+}
+
+function unlockAchievement(id) {
+    if (achievementProgress.unlocked.includes(id)) return;
+    if (!ACHIEVEMENTS[id]) return;
+
+    achievementProgress.unlocked.push(id);
+    saveAchievementProgress();
+
+    // Queue toast
+    const ach = ACHIEVEMENTS[id];
+    achievementToasts.push({
+        name: ach.name,
+        icon: ach.icon,
+        description: ach.description,
+        endTime: Date.now() + 3000
+    });
+    toastEndTime = Date.now() + 3000;
+
+    console.log(`🏆 Achievement unlocked: ${ach.name}`);
+}
+
+function checkAchievement(id) {
+    if (achievementProgress.unlocked.includes(id)) return;
+    const ach = ACHIEVEMENTS[id];
+    if (!ach) return;
+
+    const stats = achievementProgress.stats;
+
+    switch (id) {
+        // Level Mastery
+        case 'lvl1_complete':
+            if (level >= 1 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
+            break;
+        case 'lvl7_complete':
+            if (level >= 7 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
+            break;
+        case 'lvl8_complete':
+            if (level >= 8 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
+            break;
+        case 'lvl9_complete':
+            if (level >= 9 && gameState === GAME_STATE.LEVEL_TRANSITION) unlockAchievement(id);
+            break;
+        case 'lvl10_complete':
+            if (level >= 10 && gameState === GAME_STATE.LEVEL_TRANSITION && runStats.foodEatenThisLevel >= 20) unlockAchievement(id);
+            break;
+
+        // Score Milestones
+        case 'score_1000':
+            if (score >= 1000) unlockAchievement(id);
+            break;
+        case 'score_5000':
+            if (score >= 5000) unlockAchievement(id);
+            break;
+        case 'score_10000':
+            if (score >= 10000) unlockAchievement(id);
+            break;
+        case 'score_25000':
+            if (score >= 25000) unlockAchievement(id);
+            break;
+
+        // Survival
+        case 'no_damage_level':
+            if (gameState === GAME_STATE.LEVEL_TRANSITION && playerLives === MAX_LIVES) unlockAchievement(id);
+            break;
+        case 'boss_no_death':
+            if (level === 6 && gameState === GAME_STATE.LEVEL_TRANSITION && playerLives === MAX_LIVES) unlockAchievement(id);
+            break;
+        case 'ghost_10_enemies':
+            if (stats.lifetimeGhostEnemyPasses >= 10) unlockAchievement(id);
+            break;
+        case 'survive_3min':
+            if (level >= 7 && gameState === GAME_STATE.LEVEL_TRANSITION && (Date.now() - runStats.levelStartTime) >= 180000) unlockAchievement(id);
+            break;
+
+        // Collection / Lifetime
+        case 'food_100_lifetime':
+            if (stats.lifetimeFoodEaten >= 100) unlockAchievement(id);
+            break;
+        case 'powerups_50_lifetime':
+            if (stats.lifetimePowerUps >= 50) unlockAchievement(id);
+            break;
+        case 'pill_destroy_20':
+            if (stats.lifetimePillKills >= 20) unlockAchievement(id);
+            break;
+        case 'ghost_25_uses':
+            if (stats.lifetimeGhostUses >= 25) unlockAchievement(id);
+            break;
+
+        // Combat
+        case 'headhunter_10':
+            if (stats.lifetimeHeadhunterKills >= 10) unlockAchievement(id);
+            break;
+        case 'boss_speedkill':
+            if (level === 6 && gameState === GAME_STATE.LEVEL_TRANSITION && runStats.bossStartTime > 0 && (Date.now() - runStats.bossStartTime) <= 30000) unlockAchievement(id);
+            break;
+        case 'combo_5x':
+            if (stats.maxComboReached >= 5) unlockAchievement(id);
+            break;
+    }
+}
+
+function checkAllAchievements() {
+    Object.keys(ACHIEVEMENTS).forEach(checkAchievement);
+}
+
+function drawAchievementToast(ctx) {
+    if (achievementToasts.length === 0 || Date.now() > toastEndTime) {
+        achievementToasts = [];
+        return;
+    }
+
+    const toast = achievementToasts[achievementToasts.length - 1];
+    const progress = Math.max(0, 1 - (Date.now() - (toastEndTime - 3000)) / 3000);
+
+    const w = 320;
+    const h = 70;
+    const x = (CANVAS_WIDTH - w) / 2;
+    const y = 20 + (1 - progress) * 20;
+
+    // Background
+    ctx.save();
+    ctx.globalAlpha = progress;
+    ctx.fillStyle = 'rgba(15, 15, 15, 0.95)';
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Text
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 16px Courier New';
+    ctx.textAlign = 'left';
+    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+    ctx.shadowBlur = 10;
+    ctx.fillText('🏆 ACHIEVEMENT UNLOCKED!', x + 15, y + 25);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px Courier New';
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+    ctx.fillText(`${toast.icon} ${toast.name}`, x + 15, y + 52);
+    ctx.restore();
+}
+
 // POWER-UP SYSTEM
 const POWERUP_TYPES = {
     GHOST: 'ghost',
@@ -6732,6 +6982,15 @@ function collectPowerUp() {
         }
         showFloatingText(player.body[0].x, player.body[0].y, text, color, 0.02);
 
+        // Track achievement stats
+        achievementProgress.stats.lifetimePowerUps++;
+        if (type === POWERUP_TYPES.GHOST) {
+            achievementProgress.stats.lifetimeGhostUses++;
+            checkAchievement('ghost_25_uses');
+        }
+        saveAchievementProgress();
+        checkAchievement('powerups_50_lifetime');
+
         console.log(`Power-up collected: ${type}, duration: ${duration}ms`);
         powerUpItem = null;
     }
@@ -6905,6 +7164,24 @@ function announceKill(killer, victim, method = 'normal') {
     if (method === 'POWERPILL') {
         announcement = 'POWER DESTROYED!';
         color = '#0088ff';
+        // Track POWERPILL kills for achievements
+        if (killer.isPlayer) {
+            achievementProgress.stats.lifetimePillKills++;
+            saveAchievementProgress();
+            checkAchievement('pill_destroy_20');
+        }
+    }
+
+    // Track head-on kills for achievements
+    if (method === 'head-on' && killer.isPlayer) {
+        achievementProgress.stats.lifetimeHeadhunterKills++;
+        saveAchievementProgress();
+        checkAchievement('headhunter_10');
+    }
+
+    // Track total enemies killed this run
+    if (killer.isPlayer) {
+        runStats.enemiesKilledThisRun++;
     }
 
     // Only show kill announcements 50% of the time for non-player kills (reduce clutter)
@@ -6936,12 +7213,50 @@ function updateCombo() {
     }
 }
 
+function loadTestAccount() {
+    achievementProgress = {
+        unlocked: [
+            'lvl1_complete', 'lvl7_complete', 'lvl8_complete', 'lvl9_complete',
+            'score_1000', 'score_5000', 'score_10000',
+            'food_100_lifetime', 'powerups_50_lifetime', 'pill_destroy_20',
+            'ghost_25_uses', 'headhunter_10', 'boss_speedkill', 'combo_5x',
+            'no_damage_level', 'ghost_10_enemies', 'survive_3min', 'boss_no_death'
+        ],
+        progress: {
+            'food_100_lifetime': 95,
+            'powerups_50_lifetime': 48
+        },
+        stats: {
+            lifetimeFoodEaten: 95,
+            lifetimePowerUps: 48,
+            lifetimePillKills: 18,
+            lifetimeGhostUses: 23,
+            lifetimeHeadhunterKills: 9,
+            lifetimeDeaths: 12,
+            lifetimeGhostEnemyPasses: 8,
+            maxComboReached: 5
+        }
+    };
+    saveAchievementProgress();
+    console.log('[Test Account] Loaded with 18/20 achievements unlocked');
+}
+
 function onFoodEaten() {
     const now = Date.now();
 
     // Increment combo
     comboCount++;
     lastEatTime = now;
+
+    // Track achievements
+    achievementProgress.stats.lifetimeFoodEaten++;
+    runStats.foodEatenThisLevel++;
+    saveAchievementProgress();
+    checkAchievement('food_100_lifetime');
+    checkAchievement('score_1000');
+    checkAchievement('score_5000');
+    checkAchievement('score_10000');
+    checkAchievement('score_25000');
 
     // Calculate multiplier based on combo count
     let newMultiplier = 1;
@@ -6959,6 +7274,12 @@ function onFoodEaten() {
     // Check for milestone reached
     if (milestoneText && newMultiplier > comboMultiplier) {
         comboMultiplier = newMultiplier;
+        // Track max combo for achievements
+        if (comboMultiplier > achievementProgress.stats.maxComboReached) {
+            achievementProgress.stats.maxComboReached = comboMultiplier;
+            saveAchievementProgress();
+        }
+        checkAchievement('combo_5x');
         soundSystem.playCombo(comboMultiplier);
         showFloatingText(player.body[0].x, player.body[0].y - 2, milestoneText, '#ff0040', 0.025);
         // GREEN flash for combo milestone
@@ -6975,6 +7296,9 @@ function onFoodEaten() {
 async function initGame() {
     canvas = document.getElementById('gameCanvas');
     ctx = canvas.getContext('2d');
+
+    // Load achievement progress from localStorage
+    loadAchievementProgress();
 
     // Update high score and lives display
     document.getElementById('highScore').textContent = highScore;
@@ -7107,6 +7431,9 @@ function handleInput(e) {
             toggleAnnouncerMode();
         } else if (e.key === '2') {
             bossBattleMode = !bossBattleMode;
+        } else if (e.key === 't' || e.key === 'T') {
+            loadTestAccount();
+            showFloatingText(player.body[0].x, player.body[0].y - 2, 'TEST ACCOUNT LOADED!', '#ffd700', 0.03);
         } else if (e.key === 'Backspace') {
             e.preventDefault();
             playerName = playerName.slice(0, -1);
@@ -7552,6 +7879,13 @@ async function startGame() {
     soundSystem.playStart();
     initLevelTimer();
 
+    // Reset run-level stats
+    runStats.levelStartLives = playerLives;
+    runStats.foodEatenThisLevel = 0;
+    runStats.enemiesKilledThisRun = 0;
+    runStats.levelStartTime = Date.now();
+    runStats.bossStartTime = (currentLevel === 6) ? Date.now() : 0;
+
     // Start music based on selected track
     if (musicSystem.currentTrack !== 6 && !musicSystem.usingMP3) {
         proceduralMusic.setLevel(currentLevel);
@@ -7646,6 +7980,17 @@ function stopLevelWarningEffects() {
 }
 
 function completeLevel() {
+    // Check level completion achievements BEFORE any state changes
+    checkAchievement('lvl1_complete');
+    checkAchievement('lvl7_complete');
+    checkAchievement('lvl8_complete');
+    checkAchievement('lvl9_complete');
+    checkAchievement('lvl10_complete');
+    checkAchievement('no_damage_level');
+    checkAchievement('boss_no_death');
+    checkAchievement('survive_3min');
+    checkAchievement('boss_speedkill');
+
     if (currentLevel >= MAX_LEVELS) {
         // Victory! Game complete - defeated the boss!
         triggerVictory();
@@ -7703,6 +8048,14 @@ function completeLevel() {
 function startNextLevel() {
     currentLevel++;
     const settings = LEVEL_SETTINGS[currentLevel - 1] || { powerUpInterval: 6000 };
+
+    // Reset per-level run stats
+    runStats.levelStartLives = playerLives;
+    runStats.foodEatenThisLevel = 0;
+    runStats.levelStartTime = Date.now();
+    if (currentLevel === 6) {
+        runStats.bossStartTime = Date.now();
+    }
 
     // Update spawn intervals based on level
     POWERUP_SPAWN_INTERVAL_MS = settings.powerUpInterval;
@@ -7894,6 +8247,12 @@ function triggerVictory() {
         }
     }, 0);
 
+    // Check final score achievements
+    checkAchievement('score_1000');
+    checkAchievement('score_5000');
+    checkAchievement('score_10000');
+    checkAchievement('score_25000');
+
     // Save high score
     if (score > 0) {
         addHighScore(playerName || 'ANON', score);
@@ -8052,14 +8411,32 @@ function showAchievements() {
     if (!screen) return;
 
     if (achievementsOpen) {
-        // Close
         screen.classList.add('hidden');
         achievementsOpen = false;
-    } else {
-        // Open
-        screen.classList.remove('hidden');
-        achievementsOpen = true;
+        return;
     }
+
+    // Build achievement list dynamically
+    const listEl = document.getElementById('achievementsList');
+    if (listEl) {
+        listEl.innerHTML = '';
+        Object.values(ACHIEVEMENTS).forEach(ach => {
+            const isUnlocked = achievementProgress.unlocked.includes(ach.id);
+            const div = document.createElement('div');
+            div.className = `achievement-item ${isUnlocked ? 'unlocked' : 'locked'}`;
+            div.innerHTML = `
+                <span class="achievement-icon">${isUnlocked ? ach.icon : '❓'}</span>
+                <div style="display:flex;flex-direction:column;gap:2px;"
+                    <span class="achievement-name">${isUnlocked ? ach.name : '???'}</span>
+                    ${isUnlocked ? `<span style="font-size:11px;color:#888;">${ach.description}</span>` : ''}
+                </div>
+            `;
+            listEl.appendChild(div);
+        });
+    }
+
+    screen.classList.remove('hidden');
+    achievementsOpen = true;
 }
 
 function closeAchievements() {
@@ -8750,6 +9127,16 @@ function gameOver() {
     // No lives remaining - actual game over
     gameState = GAME_STATE.GAME_OVER;
 
+    // Track death for achievements
+    achievementProgress.stats.lifetimeDeaths++;
+    saveAchievementProgress();
+
+    // Check final score achievements
+    checkAchievement('score_1000');
+    checkAchievement('score_5000');
+    checkAchievement('score_10000');
+    checkAchievement('score_25000');
+
     // Stop any playing sounds
     soundSystem.stopPowerPillAmbient();
 
@@ -9006,6 +9393,26 @@ function update(deltaTime) {
                 soundSystem.playEnemyKill(); // Satisfying kill sound
                 showFloatingText(playerHead.x, playerHead.y, `GHOST KILL! +${growthAmount}`, '#9d00ff', 0.03);
                 announceKill(player, enemy);
+            } else {
+                // Track ghost mode pass-through for achievements
+                // Only count if player body overlaps enemy body (not just head)
+                const playerBody = player.body;
+                const enemyBody = enemy.body;
+                let passedThrough = false;
+                for (const pSeg of playerBody) {
+                    for (const eSeg of enemyBody) {
+                        if (pSeg.x === eSeg.x && pSeg.y === eSeg.y) {
+                            passedThrough = true;
+                            break;
+                        }
+                    }
+                    if (passedThrough) break;
+                }
+                if (passedThrough) {
+                    achievementProgress.stats.lifetimeGhostEnemyPasses++;
+                    saveAchievementProgress();
+                    checkAchievement('ghost_10_enemies');
+                }
             }
         }
     }
@@ -9420,6 +9827,9 @@ function draw() {
     if (gameState === GAME_STATE.GAME_OVER && currentLevel === MAX_LEVELS) {
         drawVictoryScreen();
     }
+
+    // Draw achievement toast notifications
+    drawAchievementToast(ctx);
 
     // End screen shake if active
     endScreenShake();
