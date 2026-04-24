@@ -5929,7 +5929,7 @@ class PowerUpItem {
 
     checkCollision(snake) {
         const head = snake.body[0];
-        return head.x === this.x && head.y === this.y;
+        return head.x === Math.round(this.x) && head.y === Math.round(this.y);
     }
 }
 
