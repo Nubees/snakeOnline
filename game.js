@@ -10222,16 +10222,16 @@ function drawReadyScreen() {
     const rainbowColor = `hsl(${rainbowHue}, 100%, 60%)`;
     const rainbowColor2 = `hsl(${(rainbowHue + 180) % 360}, 100%, 60%)`;
 
-    const namePromptText = 'Type name before starting (max 6 chars)';
+    const namePromptText = 'Type Your name in before starting a Game!!';
     ctx.font = "bold 16px 'Courier New', monospace";
     ctx.fillStyle = '#ffffff';
     ctx.shadowBlur = 18;
     ctx.shadowColor = rainbowColor;
-    ctx.fillText(namePromptText, CANVAS_WIDTH / 2, 485);
+    ctx.fillText(namePromptText, CANVAS_WIDTH / 2, 479);
 
     // Rainbow underline
     const promptWidth = ctx.measureText(namePromptText).width;
-    const underlineY = 489;
+    const underlineY = 483;
     const underlineGrad = ctx.createLinearGradient(
         CANVAS_WIDTH / 2 - promptWidth / 2, 0,
         CANVAS_WIDTH / 2 + promptWidth / 2, 0
