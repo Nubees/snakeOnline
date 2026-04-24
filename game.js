@@ -1,7 +1,14 @@
 // Game Constants - Dynamic grid dimensions (set at initialization)
 let CANVAS_WIDTH = 800;
 let CANVAS_HEIGHT = 600;
-const GRID_SIZE = 20;
+// Grid Size Presets - dynamic cell size for better mobile visibility
+const GRID_SIZE_PRESETS = {
+    large:  20,  // Maximum play area (PC default)
+    medium: 30,  // 1.5x bigger entities (phone default)
+    small:  40   // 2x bigger entities (small phone)
+};
+let GRID_SIZE = GRID_SIZE_PRESETS.large;
+let currentGridSizePreset = 'large';
 let COLS = CANVAS_WIDTH / GRID_SIZE;
 let ROWS = CANVAS_HEIGHT / GRID_SIZE;
 
@@ -11,6 +18,45 @@ function getMaxEnemyCount() {
     const baseCellCount = 40 * 30; // Original 800x600 grid
     const sizeFactor = Math.floor((gridCellCount - baseCellCount) / 400);
     return 3 + Math.max(0, sizeFactor);
+}
+
+// Grid size preference load/save
+function loadGridSizePreference() {
+    const saved = localStorage.getItem('snakeGridSize');
+    if (saved && GRID_SIZE_PRESETS[saved]) {
+        currentGridSizePreset = saved;
+        GRID_SIZE = GRID_SIZE_PRESETS[saved];
+    } else if (window.innerWidth < 500) {
+        // First visit on small screen: default to medium
+        currentGridSizePreset = 'medium';
+        GRID_SIZE = GRID_SIZE_PRESETS.medium;
+    }
+}
+
+function saveGridSizePreference(preset) {
+    localStorage.setItem('snakeGridSize', preset);
+}
+
+function cycleGridSize() {
+    const presets = ['large', 'medium', 'small'];
+    const idx = presets.indexOf(currentGridSizePreset);
+    const next = presets[(idx + 1) % presets.length];
+    currentGridSizePreset = next;
+    GRID_SIZE = GRID_SIZE_PRESETS[next];
+    saveGridSizePreference(next);
+    // Recalculate grid and reset
+    calculateGridDimensions();
+    resetGame();
+    // Update button visual
+    updateGridSizeButton();
+}
+
+function updateGridSizeButton() {
+    const btn = document.getElementById('mobileGridSize');
+    if (!btn) return;
+    const icons = { large: '⬜', medium: '◼', small: '◾' };
+    btn.textContent = icons[currentGridSizePreset] || '⬜';
+    btn.title = `Grid: ${currentGridSizePreset.toUpperCase()} (${GRID_SIZE}px)`;
 }
 
 // Staggered enemy spawn system
@@ -7399,6 +7445,9 @@ async function initGame() {
     canvas = document.getElementById('gameCanvas');
     ctx = canvas.getContext('2d');
 
+    // Load grid size preference before calculating dimensions
+    loadGridSizePreference();
+
     // Calculate dynamic grid dimensions FIRST — all spawn logic depends on correct COLS/ROWS
     calculateGridDimensions();
 
@@ -7495,6 +7544,7 @@ async function initGame() {
     // Initialize mobile touch controls
     initTouchControls();
     initMobileButtons();
+    updateGridSizeButton(); // Set initial grid size button icon
 
     // Initialize volume control (music button + slider)
     initVolumeControl();
@@ -7538,6 +7588,8 @@ function handleInput(e) {
             toggleAnnouncerMode();
         } else if (e.key === '2') {
             bossBattleMode = !bossBattleMode;
+        } else if (e.key === 'g' || e.key === 'G') {
+            cycleGridSize();
         } else if (e.key === 't' || e.key === 'T') {
             loadTestAccount();
             showFloatingText(player.body[0].x, player.body[0].y - 2, 'TEST ACCOUNT LOADED!', '#ffd700', 0.03);
@@ -8758,6 +8810,24 @@ function initMobileButtons() {
         });
     }
 
+    // Grid size toggle button (replaces 'G' key)
+    const gridSizeBtn = document.getElementById('mobileGridSize');
+    if (gridSizeBtn) {
+        gridSizeBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameState === GAME_STATE.READY) {
+                cycleGridSize();
+            }
+        });
+        gridSizeBtn.addEventListener('click', () => {
+            if (gameState === GAME_STATE.READY) {
+                cycleGridSize();
+            }
+        });
+        // Set initial icon
+        updateGridSizeButton();
+    }
+
     // Boss battle mode button (replaces '2' key)
     const bossBtn = document.getElementById('mobileBoss');
     if (bossBtn) {
@@ -8908,6 +8978,9 @@ function toggleAnnouncerMode() {
 }
 
 function resetGame() {
+    // Ensure grid size preference is loaded (in case it changed externally)
+    loadGridSizePreference();
+
     document.getElementById('gameOverScreen').classList.add('hidden');
     document.getElementById('pauseScreen').classList.add('hidden');
 

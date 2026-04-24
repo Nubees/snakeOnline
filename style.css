@@ -870,6 +870,20 @@ canvas, #gameCanvas {
     box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
 }
 
+/* Grid size button specific styling */
+#mobileGridSize {
+    background: rgba(0, 200, 255, 0.2);
+    border-color: #00c8ff;
+    color: #00c8ff;
+    box-shadow: 0 0 15px rgba(0, 200, 255, 0.3);
+    font-size: 18px;
+}
+
+#mobileGridSize:active {
+    background: rgba(0, 200, 255, 0.5);
+    box-shadow: 0 0 25px rgba(0, 200, 255, 0.6);
+}
+
 /* Boss button specific styling */
 #mobileBoss {
     background: rgba(255, 0, 64, 0.2);
