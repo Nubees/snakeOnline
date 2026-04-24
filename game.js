@@ -66,7 +66,7 @@ function cycleGridSize() {
         textX = btnCenterX / GRID_SIZE;
         textY = btnTopY / GRID_SIZE;
     }
-    showFloatingText(textX, textY, `GRID-Size: ${label}`, color, 0.02, 1.2);
+    showFloatingText(textX, textY, `GRID-Size: ${label} (${GRID_SIZE}px)`, color, 0.02, 1.2);
 }
 
 const GRID_SIZE_COLORS = {
