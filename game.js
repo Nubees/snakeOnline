@@ -54,6 +54,7 @@ function cycleGridSize() {
     // Must be AFTER resetGame() because resetGame() clears floatingTexts[]
     // Decay 0.02 = ~3 second lifetime (accounts for frame throttling)
     const label = next.toUpperCase();
+    const color = GRID_SIZE_COLORS[next] || '#00ffff';
     const gridSizeBtn = document.getElementById('mobileGridSize');
     let textX = Math.floor(COLS / 2);
     let textY = Math.floor(ROWS * 0.45);
@@ -65,15 +66,35 @@ function cycleGridSize() {
         textX = btnCenterX / GRID_SIZE;
         textY = btnTopY / GRID_SIZE;
     }
-    showFloatingText(textX, textY, `GRID: ${label} (${GRID_SIZE}px)`, '#00c8ff', 0.02, 1.2);
+    showFloatingText(textX, textY, `GRID-Size: ${label}`, color, 0.02, 1.2);
 }
+
+const GRID_SIZE_COLORS = {
+    large:  '#00ffff', // Cyan - default, bright
+    medium: '#00ff88', // Green - balanced
+    small:  '#ffaa00', // Orange - caution, getting tight
+    tiny:   '#ff44aa'  // Pink - extreme zoom
+};
 
 function updateGridSizeButton() {
     const btn = document.getElementById('mobileGridSize');
     if (!btn) return;
     const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T' };
+    const color = GRID_SIZE_COLORS[currentGridSizePreset] || '#00ffff';
     btn.textContent = labels[currentGridSizePreset] || 'L';
     btn.title = `Grid: ${currentGridSizePreset.toUpperCase()} (${GRID_SIZE}px)`;
+    // Dynamic button color to match preset
+    btn.style.background = hexToRgba(color, 0.2);
+    btn.style.borderColor = color;
+    btn.style.color = color;
+    btn.style.boxShadow = `0 0 15px ${hexToRgba(color, 0.3)}`;
+}
+
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 // Staggered enemy spawn system
