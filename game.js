@@ -7313,19 +7313,19 @@ function createExplosion(x, y, color, count = 10) {
     }
 }
 
-// Pixel burst explosion for power-up collection — small square pixels flying outward
-function createPixelExplosion(x, y, color, count = 12) {
-    const pixelColors = [color, '#ffffff', color]; // Mix of theme color and white sparkles
+// Pixel burst explosion for power-up collection — square pixels flying outward
+function createPixelExplosion(x, y, color, count = 18) {
+    const pixelColors = [color, '#ffffff', color]; // Mix of snake color and white sparkles
     for (let i = 0; i < count; i++) {
         const angle = (Math.PI * 2 * i) / count + (Math.random() * 0.5);
-        const speed = 2 + Math.random() * 4;
+        const speed = 3 + Math.random() * 5;
         const pixelColor = pixelColors[Math.floor(Math.random() * pixelColors.length)];
         const p = new Particle(x, y, pixelColor);
         // Override for pixel style
         p.vx = Math.cos(angle) * speed;
         p.vy = Math.sin(angle) * speed;
-        p.decay = 0.04 + Math.random() * 0.03; // Faster decay
-        p.size = 2 + Math.random() * 3; // Small squares
+        p.decay = 0.03 + Math.random() * 0.02; // Slower decay for bigger burst
+        p.size = 5 + Math.random() * 6; // Bigger squares
         p.isPixel = true; // Flag for square drawing
         particles.push(p);
     }
@@ -7421,7 +7421,7 @@ function collectPowerUp() {
 
         // Handle BAND_AID instantly (no duration)
         if (type === POWERUP_TYPES.BAND_AID) {
-            createPixelExplosion(p.x, p.y, '#ff0040', 12); // Red pixel burst
+            createPixelExplosion(p.x, p.y, player.color, 18); // Pixel burst in player color
             collectBandAid();
             powerUpItems.splice(i, 1);
             break;
@@ -7429,7 +7429,7 @@ function collectPowerUp() {
 
         // Handle FROZEN curse instantly (no duration in activePowerUps, applies directly to snake)
         if (type === POWERUP_TYPES.FROZEN) {
-            createPixelExplosion(p.x, p.y, '#00d4ff', 12); // Cyan pixel burst
+            createPixelExplosion(p.x, p.y, player.color, 18); // Pixel burst in player color
             player.frozenUntil = Date.now() + FROZEN_DURATION_MS;
             soundSystem.playPowerUpCollect();
             showFloatingText(player.body[0].x, player.body[0].y, 'FROZEN!', '#00d4ff', 0.025);
@@ -7454,14 +7454,8 @@ function collectPowerUp() {
         // Add to active power-ups
         activePowerUps.push({ type, endTime });
 
-        // Pixel explosion burst at power-up location (theme color)
-        let burstColor = '#ffffff';
-        if (type === POWERUP_TYPES.GHOST) burstColor = '#9d00ff';
-        else if (type === POWERUP_TYPES.MAGNET) burstColor = '#00d4ff';
-        else if (type === POWERUP_TYPES.POWERPILL) burstColor = '#0088ff';
-        else if (type === POWERUP_TYPES.SLOW_DOWN) burstColor = '#9d00ff';
-        else if (type === POWERUP_TYPES.COFFEE_BEAN) burstColor = '#ffaa00';
-        createPixelExplosion(p.x, p.y, burstColor, 12);
+        // Pixel explosion burst at power-up location in the player's snake color
+        createPixelExplosion(p.x, p.y, player.color, 18);
 
         // Play sound
         soundSystem.playPowerUpCollect();
@@ -7529,7 +7523,7 @@ function collectEnemyPowerUps() {
 
                 // Enemies ignore most power-ups, but FROZEN and COFFEE_BEAN affect them
                 if (type === POWERUP_TYPES.FROZEN) {
-                    createPixelExplosion(p.x, p.y, '#00d4ff', 12); // Cyan pixel burst
+                    createPixelExplosion(p.x, p.y, enemy.color, 18); // Pixel burst in enemy color
                     enemy.frozenUntil = Date.now() + FROZEN_DURATION_MS;
                     showFloatingText(enemy.body[0].x, enemy.body[0].y, 'FROZEN!', '#00d4ff', 0.025);
                     powerUpItems.splice(i, 1);
@@ -7538,7 +7532,7 @@ function collectEnemyPowerUps() {
                 }
 
                 if (type === POWERUP_TYPES.COFFEE_BEAN) {
-                    createPixelExplosion(p.x, p.y, '#ffaa00', 12); // Amber pixel burst
+                    createPixelExplosion(p.x, p.y, enemy.color, 18); // Pixel burst in enemy color
                     enemy.coffeeBoostUntil = Date.now() + COFFEE_BEAN_DURATION_MS;
                     showFloatingText(enemy.body[0].x, enemy.body[0].y, 'SPEED BOOST!!', '#ffaa00', 0.025);
                     powerUpItems.splice(i, 1);
