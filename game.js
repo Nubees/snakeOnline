@@ -580,8 +580,26 @@ let bandAidFlashEndTime = 0; // Timestamp when flash effect ends
 const FROZEN_DURATION_MS = 6000; // 6 seconds frozen
 
 // COFFEE BEAN SYSTEM
-const COFFEE_BEAN_DURATION_MS = 4000; // 4 seconds speed boost
+const COFFEE_BEAN_DURATION_MIN_MS = 4000;  // 4 seconds minimum
+const COFFEE_BEAN_DURATION_MAX_MS = 10000; // 10 seconds maximum
 const COFFEE_BEAN_SPEED_FACTOR = 0.2; // 5x faster (20% of normal delay)
+
+function getCoffeeBeanDuration() {
+    return Math.floor(Math.random() * (COFFEE_BEAN_DURATION_MAX_MS - COFFEE_BEAN_DURATION_MIN_MS + 1)) + COFFEE_BEAN_DURATION_MIN_MS;
+}
+
+const COFFEE_COLLECT_MESSAGES = [
+    { text: 'Coffee Time !!', color: '#ffaa00' },
+    { text: 'Drink up !!!', color: '#ffcc00' },
+    { text: 'Buzzing on Coffee..', color: '#ffdd44' }
+];
+
+const COFFEE_EXPIRE_MESSAGES = [
+    { text: 'Best coffee ever !!', color: '#ffaa00' },
+    { text: 'Expresssso !!', color: '#ffcc00' },
+    { text: 'Want More Coffee !!', color: '#ffdd44' },
+    { text: 'Another Coffee Please !!!', color: '#ffaa00' }
+];
 
 // ANNOUNCER SYSTEM (Mortal Kombat Style)
 const ANNOUNCER_TIERS = [
@@ -7443,7 +7461,7 @@ function collectPowerUp() {
         let duration = POWERUP_DURATION_MS; // default 8 seconds
         if (type === POWERUP_TYPES.POWERPILL) duration = POWERPILL_DURATION_MS;
         else if (type === POWERUP_TYPES.SLOW_DOWN) duration = SLOW_DOWN_DURATION_MS;
-        else if (type === POWERUP_TYPES.COFFEE_BEAN) duration = COFFEE_BEAN_DURATION_MS;
+        else if (type === POWERUP_TYPES.COFFEE_BEAN) duration = getCoffeeBeanDuration(); // 4–10 seconds random
         const endTime = Date.now() + duration;
 
         // Coffee Bean: also set player's per-snake boost timestamp for visual effects
@@ -7490,8 +7508,9 @@ function collectPowerUp() {
             text = 'SLOW MOTION!';
             color = '#9d00ff';
         } else if (type === POWERUP_TYPES.COFFEE_BEAN) {
-            text = 'SPEED BOOST!!';
-            color = '#ffaa00';
+            const msg = COFFEE_COLLECT_MESSAGES[Math.floor(Math.random() * COFFEE_COLLECT_MESSAGES.length)];
+            text = msg.text;
+            color = msg.color;
         }
         showFloatingText(player.body[0].x, player.body[0].y, text, color, 0.02);
 
@@ -7533,10 +7552,12 @@ function collectEnemyPowerUps() {
 
                 if (type === POWERUP_TYPES.COFFEE_BEAN) {
                     createPixelExplosion(p.x, p.y, enemy.color, 18); // Pixel burst in enemy color
-                    enemy.coffeeBoostUntil = Date.now() + COFFEE_BEAN_DURATION_MS;
-                    showFloatingText(enemy.body[0].x, enemy.body[0].y, 'SPEED BOOST!!', '#ffaa00', 0.025);
+                    const coffeeDur = getCoffeeBeanDuration();
+                    enemy.coffeeBoostUntil = Date.now() + coffeeDur;
+                    const msg = COFFEE_COLLECT_MESSAGES[Math.floor(Math.random() * COFFEE_COLLECT_MESSAGES.length)];
+                    showFloatingText(enemy.body[0].x, enemy.body[0].y, msg.text, msg.color, 0.025);
                     powerUpItems.splice(i, 1);
-                    console.log(`Enemy ${enemy.name} coffee boosted for 4 seconds`);
+                    console.log(`Enemy ${enemy.name} coffee boosted for ${coffeeDur}ms`);
                     break; // Only one enemy per power-up
                 }
                 // Enemies ignore other power-ups (they don't benefit from them)
@@ -7602,8 +7623,9 @@ function updatePowerUps() {
                 color = '#9d00ff';
                 enemySpeedMultiplier = 1.0; // Reset enemy speed
             } else if (expired.type === POWERUP_TYPES.COFFEE_BEAN) {
-                text = 'COFFEE WORE OFF!';
-                color = '#ffaa00';
+                const msg = COFFEE_EXPIRE_MESSAGES[Math.floor(Math.random() * COFFEE_EXPIRE_MESSAGES.length)];
+                text = msg.text;
+                color = msg.color;
             }
             showFloatingText(player.body[0].x, player.body[0].y, text, color, 0.02);
         }
