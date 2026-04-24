@@ -52,10 +52,11 @@ function cycleGridSize() {
     updateGridSizeButton();
     // Show floating text feedback at center of screen
     // Must be AFTER resetGame() because resetGame() clears floatingTexts[]
+    // Decay 0.1 + gameSpeed 100ms (10 ticks/sec) = ~1 second lifetime
     const label = next.toUpperCase();
     const centerX = Math.floor(COLS / 2);
     const centerY = Math.floor(ROWS / 2);
-    showFloatingText(centerX, centerY, `GRID: ${label} (${GRID_SIZE}px)`, '#00c8ff', 0.012, 1.5);
+    showFloatingText(centerX, centerY, `GRID: ${label} (${GRID_SIZE}px)`, '#00c8ff', 0.1, 1.5);
 }
 
 function updateGridSizeButton() {
@@ -9811,13 +9812,7 @@ function update(deltaTime) {
         }
     }
 
-    // Update floating texts
-    for (let i = floatingTexts.length - 1; i >= 0; i--) {
-        floatingTexts[i].update();
-        if (floatingTexts[i].life <= 0) {
-            floatingTexts.splice(i, 1);
-        }
-    }
+    // Floating texts are updated in draw() every frame for smooth animation in all states
 
     // Check for enemy respawns (7 second delay, increasing size)
     checkEnemyRespawns();
@@ -10055,9 +10050,14 @@ function draw() {
         particle.draw(ctx);
     }
 
-    // Draw floating texts
-    for (const text of floatingTexts) {
-        text.draw(ctx);
+    // Update and draw floating texts (run every frame for smooth fade regardless of game state)
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        floatingTexts[i].update();
+        if (floatingTexts[i].life <= 0) {
+            floatingTexts.splice(i, 1);
+        } else {
+            floatingTexts[i].draw(ctx);
+        }
     }
 
     // Draw READY screen
