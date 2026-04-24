@@ -5765,6 +5765,47 @@ class PowerUpItem {
         this.type = type;
         this.pulsePhase = 0;
         this.spawnTime = Date.now();
+
+        // Ghost-specific: scale pulse animation
+        this.ghostScale = 1.0;
+        this.ghostScaleDir = 1; // 1 = growing, -1 = shrinking
+
+        // Ghost-specific: random drift timer
+        this.nextGhostMoveTime = Date.now() + 4000;
+    }
+
+    update() {
+        // Ghost-specific behaviors
+        if (this.type === POWERUP_TYPES.GHOST) {
+            // Scale pulse: grow 1.0 → 1.3 → 1.0 loop
+            this.ghostScale += 0.008 * this.ghostScaleDir;
+            if (this.ghostScale >= 1.3) {
+                this.ghostScale = 1.3;
+                this.ghostScaleDir = -1;
+            } else if (this.ghostScale <= 1.0) {
+                this.ghostScale = 1.0;
+                this.ghostScaleDir = 1;
+            }
+
+            // Random drift: move 1–5 blocks in a random direction every 4 seconds
+            const now = Date.now();
+            if (now >= this.nextGhostMoveTime) {
+                const directions = [
+                    { x: 0, y: -1 },  // UP
+                    { x: 0, y: 1 },   // DOWN
+                    { x: -1, y: 0 },  // LEFT
+                    { x: 1, y: 0 }    // RIGHT
+                ];
+                const dir = directions[Math.floor(Math.random() * directions.length)];
+                const distance = Math.floor(Math.random() * 5) + 1; // 1 to 5 blocks
+                this.x += dir.x * distance;
+                this.y += dir.y * distance;
+                // Clamp to grid bounds
+                this.x = Math.max(0, Math.min(COLS - 1, this.x));
+                this.y = Math.max(0, Math.min(ROWS - 1, this.y));
+                this.nextGhostMoveTime = now + 4000;
+            }
+        }
     }
 
     draw(ctx) {
@@ -5779,7 +5820,12 @@ class PowerUpItem {
         ctx.shadowBlur = 20 * pulse;
 
         if (this.type === POWERUP_TYPES.GHOST) {
-            // Ghost power-up: 👻 Ghost emoji
+            // Ghost power-up: 👻 Ghost emoji with scale pulse
+            ctx.save();
+            ctx.translate(px + center, py + center);
+            ctx.scale(this.ghostScale, this.ghostScale);
+            ctx.translate(-(px + center), -(py + center));
+
             ctx.shadowColor = '#9d00ff';
             ctx.shadowBlur = 25 * pulse;
             ctx.font = `bold ${GRID_SIZE * 1.2}px Arial`;
@@ -5787,6 +5833,8 @@ class PowerUpItem {
             ctx.textBaseline = 'middle';
             ctx.fillStyle = '#ffffff';
             ctx.fillText('👻', px + center, py + center + 2);
+
+            ctx.restore();
 
         } else if (this.type === POWERUP_TYPES.MAGNET) {
             // Magnet power-up: 🧲 Magnet emoji
@@ -10425,6 +10473,7 @@ function draw() {
 
     // Draw power-up items
     for (const p of powerUpItems) {
+        p.update();
         p.draw(ctx);
     }
 
