@@ -5787,23 +5787,45 @@ class PowerUpItem {
                 this.ghostScaleDir = 1;
             }
 
-            // Random drift: move 1–5 blocks in a random direction every 4 seconds
-            const now = Date.now();
-            if (now >= this.nextGhostMoveTime) {
-                const directions = [
-                    { x: 0, y: -1 },  // UP
-                    { x: 0, y: 1 },   // DOWN
-                    { x: -1, y: 0 },  // LEFT
-                    { x: 1, y: 0 }    // RIGHT
-                ];
-                const dir = directions[Math.floor(Math.random() * directions.length)];
-                const distance = Math.floor(Math.random() * 5) + 1; // 1 to 5 blocks
-                this.x += dir.x * distance;
-                this.y += dir.y * distance;
+            // Flee behavior: slowly move away from any snake that gets close
+            const FLEE_RANGE = 5;       // cells within which ghost starts fleeing
+            const FLEE_SPEED = 0.04;    // cells per frame (slow drift)
+            let nearestDist = Infinity;
+            let fleeX = 0;
+            let fleeY = 0;
+
+            // Check distance to player
+            const pHead = player.body[0];
+            const pDist = Math.abs(this.x - pHead.x) + Math.abs(this.y - pHead.y);
+            if (pDist < nearestDist) {
+                nearestDist = pDist;
+                fleeX = this.x - pHead.x;
+                fleeY = this.y - pHead.y;
+            }
+
+            // Check distance to all enemies
+            for (const enemy of enemies) {
+                if (!enemy.alive) continue;
+                const eHead = enemy.body[0];
+                const eDist = Math.abs(this.x - eHead.x) + Math.abs(this.y - eHead.y);
+                if (eDist < nearestDist) {
+                    nearestDist = eDist;
+                    fleeX = this.x - eHead.x;
+                    fleeY = this.y - eHead.y;
+                }
+            }
+
+            // If a snake is within range, drift away slowly
+            if (nearestDist < FLEE_RANGE && nearestDist > 0) {
+                // Normalize flee vector
+                const len = Math.sqrt(fleeX * fleeX + fleeY * fleeY);
+                fleeX /= len;
+                fleeY /= len;
+                this.x += fleeX * FLEE_SPEED;
+                this.y += fleeY * FLEE_SPEED;
                 // Clamp to grid bounds
                 this.x = Math.max(0, Math.min(COLS - 1, this.x));
                 this.y = Math.max(0, Math.min(ROWS - 1, this.y));
-                this.nextGhostMoveTime = now + 4000;
             }
         }
     }
