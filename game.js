@@ -50,13 +50,22 @@ function cycleGridSize() {
     resetGame();
     // Update button visual
     updateGridSizeButton();
-    // Show floating text feedback at center of screen
+    // Show floating text feedback just above the grid size button
     // Must be AFTER resetGame() because resetGame() clears floatingTexts[]
-    // Decay 0.1 + gameSpeed 100ms (10 ticks/sec) = ~1 second lifetime
+    // Decay 0.02 = ~3 second lifetime (accounts for frame throttling)
     const label = next.toUpperCase();
-    const centerX = Math.floor(COLS / 2);
-    const centerY = Math.floor(ROWS / 2);
-    showFloatingText(centerX, centerY, `GRID: ${label} (${GRID_SIZE}px)`, '#00c8ff', 0.1, 1.5);
+    const gridSizeBtn = document.getElementById('mobileGridSize');
+    let textX = Math.floor(COLS / 2);
+    let textY = Math.floor(ROWS * 0.45);
+    if (gridSizeBtn && canvas) {
+        const btnRect = gridSizeBtn.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        const btnCenterX = btnRect.left + btnRect.width / 2 - canvasRect.left;
+        const btnTopY = btnRect.top - canvasRect.top - 8;
+        textX = btnCenterX / GRID_SIZE;
+        textY = btnTopY / GRID_SIZE;
+    }
+    showFloatingText(textX, textY, `GRID: ${label} (${GRID_SIZE}px)`, '#00c8ff', 0.02, 1.2);
 }
 
 function updateGridSizeButton() {
