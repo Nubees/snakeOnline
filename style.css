@@ -831,8 +831,8 @@ canvas, #gameCanvas {
 /* Mobile Ready Screen Controls (Announcer + Boss + Start) */
 .mobile-ready-controls {
     position: absolute;
-    top: 49%;
-    left: 50%;
+    top: 37%;   /* shifted up 12% from 49% */
+    left: 44%;  /* shifted left 6% from 50% */
     transform: translate(-50%, -50%);
     z-index: 9999;
     display: flex;
