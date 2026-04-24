@@ -8,8 +8,8 @@ const GRID_SIZE_PRESETS = {
     small:  40,  // 2x bigger entities (small phone)
     tiny:   50   // 2.5x bigger entities (tiny phone / max zoom)
 };
-let GRID_SIZE = GRID_SIZE_PRESETS.large;
-let currentGridSizePreset = 'large';
+let GRID_SIZE = GRID_SIZE_PRESETS.tiny;
+let currentGridSizePreset = 'tiny';
 let COLS = CANVAS_WIDTH / GRID_SIZE;
 let ROWS = CANVAS_HEIGHT / GRID_SIZE;
 
@@ -27,11 +27,21 @@ function loadGridSizePreference() {
     if (saved && GRID_SIZE_PRESETS[saved]) {
         currentGridSizePreset = saved;
         GRID_SIZE = GRID_SIZE_PRESETS[saved];
-    } else if (window.innerWidth < 500) {
-        // First visit on small screen: default to medium
-        currentGridSizePreset = 'medium';
-        GRID_SIZE = GRID_SIZE_PRESETS.medium;
+    } else {
+        // Default to tiny for all new games
+        currentGridSizePreset = 'tiny';
+        GRID_SIZE = GRID_SIZE_PRESETS.tiny;
     }
+}
+
+function getAvailablePowerUpTypes() {
+    const available = [];
+    for (const [type, unlockLevel] of Object.entries(POWERUP_UNLOCK_LEVELS)) {
+        if (currentLevel >= unlockLevel) {
+            available.push(type);
+        }
+    }
+    return available;
 }
 
 function saveGridSizePreference(preset) {
@@ -552,7 +562,31 @@ const POWERUP_TYPES = {
     SLOW_DOWN: 'slowdown',
     BAND_AID: 'bandaid',
     FROZEN: 'frozen',
-    COFFEE_BEAN: 'coffeebean'
+    COFFEE_BEAN: 'coffeebean',
+    ASTEROID_STORM: 'asteroid_storm'
+};
+
+// Power-up unlock levels — each power-up becomes available from this level onward
+const POWERUP_UNLOCK_LEVELS = {
+    [POWERUP_TYPES.GHOST]:          1,
+    [POWERUP_TYPES.MAGNET]:         2,
+    [POWERUP_TYPES.POWERPILL]:      3,
+    [POWERUP_TYPES.SLOW_DOWN]:      4,
+    [POWERUP_TYPES.BAND_AID]:       5,
+    [POWERUP_TYPES.FROZEN]:         6,
+    [POWERUP_TYPES.COFFEE_BEAN]:    7,
+    [POWERUP_TYPES.ASTEROID_STORM]: 8
+};
+
+// Power-up intro descriptions shown on Well Done screen
+const POWERUP_INTROS = {
+    [POWERUP_TYPES.MAGNET]:         { icon: '🧲',  name: 'MAGNET',          desc: 'Pulls all food from 10 cells away!' },
+    [POWERUP_TYPES.POWERPILL]:      { icon: '💊',  name: 'POWERPILL',       desc: 'Become indestructible and destroy enemies!' },
+    [POWERUP_TYPES.SLOW_DOWN]:      { icon: '⏱️',  name: 'SLOW DOWN',       desc: 'Slows all enemies to a crawl!' },
+    [POWERUP_TYPES.BAND_AID]:       { icon: '✚',  name: 'BAND-AID',        desc: 'Restores 1 lost life instantly!' },
+    [POWERUP_TYPES.FROZEN]:         { icon: '🧊',  name: 'FROZEN CURSE',    desc: 'Freeze any snake that touches it!' },
+    [POWERUP_TYPES.COFFEE_BEAN]:    { icon: '☕',  name: 'COFFEE BEAN',     desc: '5x speed boost for the player!' },
+    [POWERUP_TYPES.ASTEROID_STORM]: { icon: '☄️',  name: 'ASTEROID STORM',  desc: 'Spawns drifting space debris!' }
 };
 
 let activePowerUps = []; // Array of { type, endTime }
@@ -601,6 +635,18 @@ const COFFEE_EXPIRE_MESSAGES = [
     { text: 'Another Coffee Please !!!', color: '#ffaa00' }
 ];
 
+const GHOST_CATCH_MESSAGES = [
+    { text: 'gotcha !!!', color: '#ff0040' },
+    { text: 'GhostBusters!!', color: '#ff0040' },
+    { text: 'Who you gonna call?', color: '#ff0040' }
+];
+
+const GHOST_TAUNT_MESSAGES = [
+    { text: "You can't touch this!!", color: '#ffffff' },
+    { text: "you can't see me..", color: '#ffffff' },
+    { text: 'boo !! ..', color: '#ffffff' }
+];
+
 // ANNOUNCER SYSTEM (Mortal Kombat Style)
 const ANNOUNCER_TIERS = [
     { threshold: 2, text: 'DOUBLE KILL!', color: '#ff6600', voice: 'double kill', file: 'double_kill.mp3' },
@@ -647,7 +693,7 @@ let mkVoice = null; // Selected voice for announcements
 
 // LEVEL SYSTEM
 const MAX_LEVELS = 8;
-const LEVEL_DURATION_MS = 4 * 60 * 1000; // 4 minutes per level (240 seconds)
+const LEVEL_DURATION_MS = 2 * 60 * 1000; // 2 minutes per level (120 seconds)
 const BONUS_LEVEL_DURATION_MS = 2 * 60 * 1000; // 2 minutes for bonus levels (Level 10)
 const LEVEL_WARNING_MS = 10000; // 10 seconds warning
 
@@ -5389,7 +5435,11 @@ function updateProjectiles() {
                     enemy.deathTime = Date.now();
                     createExplosion(enemy.body[0].x, enemy.body[0].y, enemy.color, 15);
                     soundSystem.playEnemyKill();
-                    announceKill(player, enemy, 'PROJECTILE');
+                    const killPoints = announceKill(player, enemy, 'PROJECTILE');
+                    setTimeout(() => {
+                        const pHead = player.body[0];
+                        showFloatingText(pHead.x, pHead.y - 1, `+${killPoints}`, '#ff6600', 0.03);
+                    }, 500);
                     proj.active = false;
                     break;
                 }
@@ -5468,7 +5518,17 @@ function updateBossShooting() {
 }
 
 // Food Class with Fruit Graphics
-const FOOD_TYPES = ['cherry', 'strawberry', 'grapes', 'pineapple'];
+const FOOD_TYPES = ['cherry', 'strawberry', 'grapes', 'pineapple', 'apple', 'banana', 'orange', 'watermelon'];
+const FOOD_SCORES = {
+    cherry:     80,
+    strawberry: 70,
+    grapes:     60,
+    pineapple:  50,
+    apple:      40,
+    banana:     30,
+    orange:     20,
+    watermelon: 10
+};
 
 class Food {
     constructor() {
@@ -5532,7 +5592,7 @@ class Food {
         const x = this.position.x * GRID_SIZE;
         const y = this.position.y * GRID_SIZE;
         const center = GRID_SIZE / 2;
-        const size = (GRID_SIZE + 6) * pulse;
+        const size = (GRID_SIZE + 6) * pulse * 1.1;
         const offset = (GRID_SIZE - size) / 2;
         const cx = x + center;
         const cy = y + center;
@@ -5554,6 +5614,18 @@ class Food {
                 break;
             case 'pineapple':
                 this.drawPineapple(ctx, cx, cy, size);
+                break;
+            case 'apple':
+                this.drawApple(ctx, cx, cy, size);
+                break;
+            case 'banana':
+                this.drawBanana(ctx, cx, cy, size);
+                break;
+            case 'orange':
+                this.drawOrange(ctx, cx, cy, size);
+                break;
+            case 'watermelon':
+                this.drawWatermelon(ctx, cx, cy, size);
                 break;
         }
 
@@ -5751,6 +5823,131 @@ class Food {
         ctx.fill();
     }
 
+    drawApple(ctx, cx, cy, size) {
+        const scale = size / 16;
+
+        // Apple body (heart shape)
+        ctx.fillStyle = '#ff3b30';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - size * 0.1);
+        ctx.bezierCurveTo(cx - size * 0.5, cy - size * 0.6, cx - size * 0.5, cy + size * 0.2, cx, cy + size * 0.35);
+        ctx.bezierCurveTo(cx + size * 0.5, cy + size * 0.2, cx + size * 0.5, cy - size * 0.6, cx, cy - size * 0.1);
+        ctx.fill();
+
+        // Stem
+        ctx.strokeStyle = '#5d4037';
+        ctx.lineWidth = 2 * scale;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - size * 0.35);
+        ctx.quadraticCurveTo(cx + size * 0.1, cy - size * 0.5, cx + size * 0.15, cy - size * 0.45);
+        ctx.stroke();
+
+        // Leaf
+        ctx.fillStyle = '#4caf50';
+        ctx.beginPath();
+        ctx.ellipse(cx + size * 0.18, cy - size * 0.45, size * 0.12, size * 0.06, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Highlight
+        ctx.fillStyle = 'rgba(255, 255, 200, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(cx - size * 0.12, cy - size * 0.1, size * 0.1, size * 0.15, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    drawBanana(ctx, cx, cy, size) {
+        const scale = size / 16;
+
+        // Banana body (curved crescent)
+        ctx.fillStyle = '#ffeb3b';
+        ctx.beginPath();
+        ctx.moveTo(cx - size * 0.35, cy - size * 0.2);
+        ctx.quadraticCurveTo(cx, cy - size * 0.6, cx + size * 0.35, cy - size * 0.1);
+        ctx.quadraticCurveTo(cx + size * 0.45, cy + size * 0.2, cx + size * 0.3, cy + size * 0.25);
+        ctx.quadraticCurveTo(cx, cy + size * 0.1, cx - size * 0.3, cy + size * 0.15);
+        ctx.quadraticCurveTo(cx - size * 0.4, cy, cx - size * 0.35, cy - size * 0.2);
+        ctx.fill();
+
+        // Banana tip
+        ctx.fillStyle = '#3e2723';
+        ctx.beginPath();
+        ctx.arc(cx + size * 0.33, cy - size * 0.08, size * 0.04, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Highlight
+        ctx.fillStyle = 'rgba(255, 255, 200, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(cx - size * 0.05, cy - size * 0.15, size * 0.08, size * 0.2, -Math.PI / 6, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    drawOrange(ctx, cx, cy, size) {
+        const scale = size / 16;
+
+        // Orange body
+        ctx.fillStyle = '#ff9800';
+        ctx.beginPath();
+        ctx.arc(cx, cy, size * 0.38, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Texture dots
+        ctx.fillStyle = '#f57c00';
+        for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2;
+            const rx = cx + Math.cos(angle) * size * 0.2;
+            const ry = cy + Math.sin(angle) * size * 0.2;
+            ctx.beginPath();
+            ctx.arc(rx, ry, size * 0.03, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Small leaf on top
+        ctx.fillStyle = '#4caf50';
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - size * 0.38, size * 0.08, size * 0.04, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Highlight
+        ctx.fillStyle = 'rgba(255, 255, 200, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(cx - size * 0.1, cy - size * 0.1, size * 0.1, size * 0.12, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    drawWatermelon(ctx, cx, cy, size) {
+        const scale = size / 16;
+
+        // Watermelon body (half-circle slice)
+        ctx.fillStyle = '#2e7d32';
+        ctx.beginPath();
+        ctx.arc(cx, cy, size * 0.42, 0, Math.PI, false);
+        ctx.closePath();
+        ctx.fill();
+
+        // Inner pink flesh
+        ctx.fillStyle = '#ff5252';
+        ctx.beginPath();
+        ctx.arc(cx, cy + size * 0.02, size * 0.35, 0, Math.PI, false);
+        ctx.closePath();
+        ctx.fill();
+
+        // Seeds
+        ctx.fillStyle = '#1a1a1a';
+        for (let i = -2; i <= 2; i++) {
+            const sx = cx + i * size * 0.1;
+            const sy = cy - size * 0.05 + Math.abs(i) * size * 0.03;
+            ctx.beginPath();
+            ctx.ellipse(sx, sy, size * 0.025, size * 0.04, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Highlight
+        ctx.fillStyle = 'rgba(255, 255, 200, 0.3)';
+        ctx.beginPath();
+        ctx.ellipse(cx - size * 0.1, cy - size * 0.05, size * 0.08, size * 0.06, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
     checkCollision(snake) {
         const head = snake.body[0];
         return head.x === this.position.x && head.y === this.position.y;
@@ -5772,6 +5969,9 @@ class PowerUpItem {
 
         // Ghost-specific: random drift timer
         this.nextGhostMoveTime = Date.now() + 4000;
+
+        // Ghost-specific: taunt cooldown so it doesn't spam text
+        this.ghostLastTauntTime = 0;
     }
 
     update() {
@@ -5826,6 +6026,16 @@ class PowerUpItem {
                 // Clamp to grid bounds
                 this.x = Math.max(0, Math.min(COLS - 1, this.x));
                 this.y = Math.max(0, Math.min(ROWS - 1, this.y));
+
+                // Taunt when a snake gets close but misses (distance 1-3 cells)
+                if (nearestDist <= 3) {
+                    const now = Date.now();
+                    if (now - this.ghostLastTauntTime > 2500) {
+                        this.ghostLastTauntTime = now;
+                        const msg = GHOST_TAUNT_MESSAGES[Math.floor(Math.random() * GHOST_TAUNT_MESSAGES.length)];
+                        showFloatingText(this.x, this.y, msg.text, msg.color, 0.010, 1.3);
+                    }
+                }
             }
         }
     }
@@ -5922,6 +6132,15 @@ class PowerUpItem {
             ctx.textBaseline = 'middle';
             ctx.fillStyle = '#ffffff';
             ctx.fillText('☕', px + center, py + center + 2);
+        } else if (this.type === POWERUP_TYPES.ASTEROID_STORM) {
+            // ASTEROID STORM: ☄️ comet with orange/red glow
+            ctx.shadowColor = '#ff6600';
+            ctx.shadowBlur = 30 * pulse;
+            ctx.font = `bold ${GRID_SIZE * 1.3}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('☄️', px + center, py + center + 2);
         }
 
         ctx.shadowBlur = 0;
@@ -6252,22 +6471,30 @@ class Particle {
 
 // Floating Text Class for "Yummy!" etc.
 class FloatingText {
-    constructor(x, y, text, color = '#ffffff', decay = 0.015, baseScale = 1) {
+    constructor(x, y, text, color = '#ffffff', decay = 0.015, baseScale = 1, shake = false, flow = false) {
         this.x = x * GRID_SIZE + GRID_SIZE / 2;
         this.y = y * GRID_SIZE;
         this.text = text;
         this.color = color;
         this.life = 1.0;
         this.decay = decay;
-        this.vy = -1; // Float upward
+        this.vy = -0.6; // Float upward slowly
         this.scale = 1;
         this.baseScale = baseScale; // Starting scale multiplier
+        this.shake = shake;
+        this.flow = flow;
+        this.flowPhase = Math.random() * Math.PI * 2; // Random start phase for varied motion
+        this.flowX = 0;
     }
 
     update() {
         this.y += this.vy;
         this.life -= this.decay;
-        this.scale = this.baseScale * (1 + (1 - this.life) * 0.3); // Grow slightly as it fades
+        this.scale = this.baseScale * (1 + (1 - this.life) * 1.0); // Grow dramatically as it fades
+        if (this.flow) {
+            this.flowPhase += 0.04; // Advance sine wave
+            this.flowX = Math.sin(this.flowPhase) * (GRID_SIZE * 0.8); // Smooth horizontal wave, gentle sway
+        }
     }
 
     draw(ctx) {
@@ -6278,7 +6505,14 @@ class FloatingText {
         ctx.textAlign = 'center';
         ctx.shadowBlur = 15 * this.baseScale;
         ctx.shadowColor = this.color;
-        ctx.fillText(this.text, this.x, this.y);
+        let drawX = this.x + this.flowX;
+        let drawY = this.y;
+        if (this.shake) {
+            const shakeAmt = 2 * this.baseScale;
+            drawX += (Math.random() - 0.5) * shakeAmt;
+            drawY += (Math.random() - 0.5) * shakeAmt;
+        }
+        ctx.fillText(this.text, drawX, drawY);
         ctx.restore();
     }
 }
@@ -6401,7 +6635,7 @@ class Wall {
 // ============================================
 
 class DriftingDebris {
-    constructor(x, y, width, height, color, speed, direction, image = null) {
+    constructor(x, y, width, height, color, speed, direction, image = null, expiryTime = null) {
         this.x = x;              // Float position for smooth movement
         this.y = y;
         this.width = width;      // In grid cells
@@ -6412,6 +6646,7 @@ class DriftingDebris {
         this.image = image;      // Debris artwork image
         this.active = true;
         this.spawnTime = Date.now();
+        this.expiryTime = expiryTime; // If set, debris will explode and disappear when reached
         this.rotation = 0;       // For visual rotation effect
         this.rotationSpeed = (Math.random() - 0.5) * 0.1; // Random rotation
     }
@@ -7043,20 +7278,27 @@ function spawnDriftingDebris() {
 }
 
 function updateDriftingDebris() {
-    // Only update for Level 7+
-    if (currentLevel < 7) return;
-
-    // Spawn new debris periodically
-    if (Math.random() < 0.01) { // ~1% chance per frame
+    // Spawn new hazard debris periodically (Level 7+ only)
+    if (currentLevel >= 7 && Math.random() < 0.01) {
         spawnDriftingDebris();
     }
 
-    // Update all debris
+    // Update all debris (including temporary ones from power-ups on any level)
     for (let i = driftingDebris.length - 1; i >= 0; i--) {
         const debris = driftingDebris[i];
         debris.update();
 
-        // Remove if inactive (shouldn't happen with screen wrapping, but just in case)
+        // Check if temporary debris has expired
+        if (debris.expiryTime && Date.now() >= debris.expiryTime) {
+            const center = debris.getCenter();
+            createPixelExplosion(center.x, center.y, '#ff6600', 35); // Big orange explosion
+            createPixelExplosion(center.x, center.y, '#ff0000', 20); // Secondary red burst
+            showFloatingText(center.x, center.y, 'BOOM!', '#ff6600', 0.025, 1.2);
+            driftingDebris.splice(i, 1);
+            continue;
+        }
+
+        // Remove if inactive
         if (!debris.active) {
             driftingDebris.splice(i, 1);
         }
@@ -7070,8 +7312,9 @@ function drawDriftingDebris(ctx) {
 }
 
 function checkDebrisCollisions() {
-    // Only check for Level 7+
-    if (currentLevel < 7) return;
+    // Only check for Level 7+ OR if there is temporary debris from power-ups
+    const hasTemporaryDebris = driftingDebris.some(d => d.expiryTime !== null);
+    if (currentLevel < 7 && !hasTemporaryDebris) return;
 
     // Check player collision - Ghost mode players DON'T die but CAN get near-miss bonuses
     if (player.alive) {
@@ -7423,43 +7666,38 @@ function createPixelExplosion(x, y, color, count = 18) {
 function spawnPowerUp() {
     const now = Date.now();
     const targetCount = getTargetPowerUpCount();
+    const availableTypes = getAvailablePowerUpTypes();
 
-    // Handle POWERPILL spawning (every 40 seconds)
-    if (!nextPowerPillSpawnTime) {
-        // Initialize first spawn time (40 seconds from now)
-        nextPowerPillSpawnTime = now + POWERPILL_SPAWN_INTERVAL_MS;
-        console.log(`First PowerPill scheduled in 60s`);
-    }
-
-    // Check if it's time to spawn PowerPill
-    const hasPowerPill = powerUpItems.some(p => p.type === POWERUP_TYPES.POWERPILL);
-    if (now >= nextPowerPillSpawnTime && !hasPowerPill) {
-        const pos = findValidPowerUpPosition();
-        if (pos) {
-            powerUpItems.push(new PowerUpItem(pos.x, pos.y, POWERUP_TYPES.POWERPILL));
-            console.log(`*** POWERPILL SPAWNED at (${pos.x}, ${pos.y}) ***`);
-            // Schedule next spawn (every 40 seconds)
+    // Handle POWERPILL spawning (every 40 seconds) — only from Level 3+
+    if (currentLevel >= POWERUP_UNLOCK_LEVELS[POWERUP_TYPES.POWERPILL]) {
+        if (!nextPowerPillSpawnTime) {
             nextPowerPillSpawnTime = now + POWERPILL_SPAWN_INTERVAL_MS;
-            console.log(`Next PowerPill in 60s`);
-            return; // Don't spawn regular power-up this frame
+            console.log(`First PowerPill scheduled in 60s`);
+        }
+        const hasPowerPill = powerUpItems.some(p => p.type === POWERUP_TYPES.POWERPILL);
+        if (now >= nextPowerPillSpawnTime && !hasPowerPill) {
+            const pos = findValidPowerUpPosition();
+            if (pos) {
+                powerUpItems.push(new PowerUpItem(pos.x, pos.y, POWERUP_TYPES.POWERPILL));
+                console.log(`*** POWERPILL SPAWNED at (${pos.x}, ${pos.y}) ***`);
+                nextPowerPillSpawnTime = now + POWERPILL_SPAWN_INTERVAL_MS;
+                console.log(`Next PowerPill in 60s`);
+                return;
+            }
         }
     }
 
-    // Regular power-ups (Ghost/Magnet/SlowDown)
+    // Regular power-ups — only spawn types unlocked for current level
     if (now - lastPowerUpSpawn < POWERUP_SPAWN_INTERVAL_MS) return;
-    if (powerUpItems.length >= targetCount) return; // Don't spawn if at target count
+    if (powerUpItems.length >= targetCount) return;
+
+    // Exclude POWERPILL from random pool (it has its own timer)
+    const randomPool = availableTypes.filter(t => t !== POWERUP_TYPES.POWERPILL);
+    if (randomPool.length === 0) return; // Nothing unlocked yet
 
     const pos = findValidPowerUpPosition();
     if (pos) {
-        // Randomly choose power-up type (6 types, ~16.67% each)
-        const rand = Math.random();
-        let type;
-        if (rand < 0.1667) type = POWERUP_TYPES.GHOST;
-        else if (rand < 0.3334) type = POWERUP_TYPES.MAGNET;
-        else if (rand < 0.5001) type = POWERUP_TYPES.SLOW_DOWN;
-        else if (rand < 0.6668) type = POWERUP_TYPES.BAND_AID;
-        else if (rand < 0.8335) type = POWERUP_TYPES.FROZEN;
-        else type = POWERUP_TYPES.COFFEE_BEAN;
+        const type = randomPool[Math.floor(Math.random() * randomPool.length)];
         powerUpItems.push(new PowerUpItem(pos.x, pos.y, type));
         lastPowerUpSpawn = now;
         console.log(`Power-up spawned: ${type} at (${pos.x}, ${pos.y})`);
@@ -7527,6 +7765,39 @@ function collectPowerUp() {
             break;
         }
 
+        // Handle ASTEROID STORM instantly (spawns temporary drifting debris)
+        if (type === POWERUP_TYPES.ASTEROID_STORM) {
+            createPixelExplosion(p.x, p.y, player.color, 18);
+            const debrisCount = Math.floor(Math.random() * 3) + 1; // 1 to 3 debris
+            const minDuration = 60000;  // 1 minute
+            const maxDuration = 120000; // 2 minutes
+            for (let d = 0; d < debrisCount; d++) {
+                const sizeConfig = DEBRIS_SIZES[Math.floor(Math.random() * DEBRIS_SIZES.length)];
+                const color = DEBRIS_COLORS[Math.floor(Math.random() * DEBRIS_COLORS.length)];
+                const x = Math.floor(Math.random() * (COLS - sizeConfig.w));
+                const y = Math.floor(Math.random() * (ROWS - sizeConfig.h));
+                const side = Math.floor(Math.random() * 4);
+                const direction = side < 2 ? { x: side === 0 ? 1 : -1, y: 0 } : { x: 0, y: side === 2 ? 1 : -1 };
+                const duration = Math.floor(Math.random() * (maxDuration - minDuration + 1)) + minDuration;
+                // Load random debris artwork
+                const imagePath = DEBRIS_IMAGES[Math.floor(Math.random() * DEBRIS_IMAGES.length)];
+                let debrisImage = debrisImageCache[imagePath];
+                if (!debrisImage) {
+                    debrisImage = new Image();
+                    debrisImage.src = imagePath;
+                    debrisImageCache[imagePath] = debrisImage;
+                }
+                const debris = new DriftingDebris(x, y, sizeConfig.w, sizeConfig.h, color, sizeConfig.speed, direction, debrisImage, Date.now() + duration);
+                driftingDebris.push(debris);
+            }
+            soundSystem.playPowerUpCollect();
+            showFloatingText(player.body[0].x, player.body[0].y, `ASTEROID STORM! ${debrisCount} ROCKS`, '#ff6600', 0.025);
+            triggerScreenFlash('#ff6600', 0.4);
+            powerUpItems.splice(i, 1);
+            console.log(`Player spawned ${debrisCount} temporary debris`);
+            break;
+        }
+
         // Different durations for different power-ups
         let duration = POWERUP_DURATION_MS; // default 8 seconds
         if (type === POWERUP_TYPES.POWERPILL) duration = POWERPILL_DURATION_MS;
@@ -7564,10 +7835,13 @@ function collectPowerUp() {
         }
 
         // Show floating text
-        let text, color;
+        let text, color, floatDecay = 0.02, floatScale = 1;
         if (type === POWERUP_TYPES.GHOST) {
-            text = 'GHOST MODE!';
-            color = '#9d00ff';
+            const msg = GHOST_CATCH_MESSAGES[Math.floor(Math.random() * GHOST_CATCH_MESSAGES.length)];
+            text = msg.text;
+            color = msg.color;
+            floatDecay = 0.010; // last longer
+            floatScale = 1.3;   // bigger like taunts
         } else if (type === POWERUP_TYPES.MAGNET) {
             text = 'MAGNET ACTIVE!';
             color = '#00d4ff';
@@ -7582,13 +7856,15 @@ function collectPowerUp() {
             text = msg.text;
             color = msg.color;
         }
-        showFloatingText(player.body[0].x, player.body[0].y, text, color, 0.02);
+        showFloatingText(player.body[0].x, player.body[0].y, text, color, floatDecay, floatScale);
 
         // Track achievement stats
         achievementProgress.stats.lifetimePowerUps++;
         if (type === POWERUP_TYPES.GHOST) {
             achievementProgress.stats.lifetimeGhostUses++;
             checkAchievement('ghost_25_uses');
+            score += 10;
+            updateScore();
         }
         saveAchievementProgress();
         checkAchievement('powerups_50_lifetime');
@@ -7629,6 +7905,37 @@ function collectEnemyPowerUps() {
                     powerUpItems.splice(i, 1);
                     console.log(`Enemy ${enemy.name} coffee boosted for ${coffeeDur}ms`);
                     break; // Only one enemy per power-up
+                }
+
+                // Enemies can also trigger asteroid storms
+                if (type === POWERUP_TYPES.ASTEROID_STORM) {
+                    createPixelExplosion(p.x, p.y, enemy.color, 18);
+                    const debrisCount = Math.floor(Math.random() * 3) + 1;
+                    const minDuration = 60000;
+                    const maxDuration = 120000;
+                    for (let d = 0; d < debrisCount; d++) {
+                        const sizeConfig = DEBRIS_SIZES[Math.floor(Math.random() * DEBRIS_SIZES.length)];
+                        const color = DEBRIS_COLORS[Math.floor(Math.random() * DEBRIS_COLORS.length)];
+                        const x = Math.floor(Math.random() * (COLS - sizeConfig.w));
+                        const y = Math.floor(Math.random() * (ROWS - sizeConfig.h));
+                        const side = Math.floor(Math.random() * 4);
+                        const direction = side < 2 ? { x: side === 0 ? 1 : -1, y: 0 } : { x: 0, y: side === 2 ? 1 : -1 };
+                        const duration = Math.floor(Math.random() * (maxDuration - minDuration + 1)) + minDuration;
+                        // Load random debris artwork
+                        const imagePath = DEBRIS_IMAGES[Math.floor(Math.random() * DEBRIS_IMAGES.length)];
+                        let debrisImage = debrisImageCache[imagePath];
+                        if (!debrisImage) {
+                            debrisImage = new Image();
+                            debrisImage.src = imagePath;
+                            debrisImageCache[imagePath] = debrisImage;
+                        }
+                        const debris = new DriftingDebris(x, y, sizeConfig.w, sizeConfig.h, color, sizeConfig.speed, direction, debrisImage, Date.now() + duration);
+                        driftingDebris.push(debris);
+                    }
+                    showFloatingText(enemy.body[0].x, enemy.body[0].y, `ASTEROID STORM! ${debrisCount} ROCKS`, '#ff6600', 0.025);
+                    powerUpItems.splice(i, 1);
+                    console.log(`Enemy ${enemy.name} spawned ${debrisCount} temporary debris`);
+                    break;
                 }
                 // Enemies ignore other power-ups (they don't benefit from them)
             }
@@ -7757,17 +8064,23 @@ function applyPowerPillDestruction() {
             if (playerHead.x === segment.x && playerHead.y === segment.y) {
                 enemy.alive = false;
                 enemy.deathTime = Date.now();
+
                 createExplosion(enemy.body[0].x, enemy.body[0].y, enemy.color, 20);
                 soundSystem.playEnemyKill(); // Satisfying kill sound
                 if (enemy.isBoss) {
-                    console.log(`*** BOSS ${enemy.name} DESTROYED BY POWERPILL! ***`);
+                    const killPoints = announceKill(player, enemy, 'POWERPILL');
+                    console.log(`*** BOSS ${enemy.name} DESTROYED BY POWERPILL! Scored ${killPoints} points! ***`);
                     showBanner('BOSS DEFEATED!', `${enemy.name} DESTROYED!`, '#00ff00');
                     triggerScreenFlash('gold', 0.8);
                     // BIG RED floating text for boss kill!
                     showFloatingText(enemy.body[0].x, enemy.body[0].y - 2, 'BOSS DESTROYED!', '#ff0000', 0.02, 2.5);
                 } else {
-                    console.log(`POWERPILL DESTRUCTION! Enemy ${i} destroyed!`);
-                    announceKill(player, enemy, 'POWERPILL');
+                    const killPoints = announceKill(player, enemy, 'POWERPILL');
+                    console.log(`POWERPILL DESTRUCTION! Enemy ${i} destroyed! Scored ${killPoints} points!`);
+                    setTimeout(() => {
+                        const pHead = player.body[0];
+                        showFloatingText(pHead.x, pHead.y - 1, `+${killPoints}`, '#0088ff', 0.03);
+                    }, 500);
                 }
                 // Subtle flash on POWERPILL kill
                 triggerScreenFlash('blue', 0.15);
@@ -7806,6 +8119,16 @@ function announceKill(killer, victim, method = 'normal') {
 
     streak.kills++;
     snakeKillStreaks.set(killer, streak);
+
+    // Calculate kill score: base 10, doubles with each consecutive kill
+    // Boss kills are always worth 100 points (no streak multiplier)
+    const killPoints = victim.isBoss ? 100 : (10 * Math.pow(2, streak.kills - 1));
+
+    // Award score to player
+    if (killer.isPlayer) {
+        score += killPoints;
+        updateScore();
+    }
 
     // Create kill announcement
     const victimName = victim.name || 'SNAKE';
@@ -7873,6 +8196,8 @@ function announceKill(killer, victim, method = 'normal') {
     if (streak.kills >= 2) {
         soundSystem.playCombo(Math.min(streak.kills, 5));
     }
+
+    return killPoints;
 }
 
 // COMBO SYSTEM FUNCTIONS
@@ -8576,6 +8901,19 @@ async function startGame() {
     soundSystem.playStart();
     initLevelTimer();
 
+    // Introductory spooky message for first-time players (stacked lines)
+    const introLines = [
+        { text: "Your first power awaits... The Ghost.", yOff: 0 },
+        { text: "Grab it to phase through walls and enemies alike.", yOff: 2.5 },
+        { text: "A bonus score also rewards those that catch the old Ghost ..", yOff: 5 }
+    ];
+    const centerX = Math.floor(COLS / 2);
+    const centerY = Math.floor(ROWS / 2);
+    window._introTextEndTime = Date.now() + 10000; // 10 seconds
+    for (const line of introLines) {
+        showFloatingText(centerX, centerY + line.yOff, line.text, '#9d00ff', 0.0025, 2.4, true, true);
+    }
+
     // Reset run-level stats
     runStats.levelStartLives = playerLives;
     runStats.foodEatenThisLevel = 0;
@@ -8595,7 +8933,7 @@ function initLevelTimer() {
     levelStartTime = Date.now();
     levelWarningActive = false;
     levelComplete = false;
-    // Level 10 (Bonus): 2 minutes, Level 6: unlimited, others: 4 minutes
+    // Level 10 (Bonus): 2 minutes, Level 6: unlimited, others: 2 minutes
     const levelDuration = (currentLevel === 10) ? BONUS_LEVEL_DURATION_MS : LEVEL_DURATION_MS;
     levelTimeRemaining = levelDuration;
 
@@ -8604,8 +8942,8 @@ function initLevelTimer() {
     if (timerEl) {
         timerEl.classList.remove('warning');
         timerEl.style.color = ''; // Reset color
-        const initialMinutes = currentLevel === 10 ? 2 : 4;
-        timerEl.textContent = `LEVEL ${currentLevel} | ${initialMinutes}:00`;
+        const initialMinutes = currentLevel === 10 ? 2 : (currentLevel === 6 ? '-' : 2);
+        timerEl.textContent = currentLevel === 6 ? `LEVEL ${currentLevel} | ∞` : `LEVEL ${currentLevel} | ${initialMinutes}:00`;
     }
 }
 
@@ -8619,7 +8957,7 @@ function updateLevelTimer() {
     }
 
     const elapsed = Date.now() - levelStartTime;
-    // Level 10 (Bonus): 2 minutes, all others: 4 minutes
+    // Level 10 (Bonus): 2 minutes, all others: 2 minutes
     const levelDuration = (currentLevel === 10) ? BONUS_LEVEL_DURATION_MS : LEVEL_DURATION_MS;
     levelTimeRemaining = levelDuration - elapsed;
 
@@ -8643,8 +8981,9 @@ function updateHTMLTimer() {
     const timerEl = document.getElementById('levelTimer');
     if (!timerEl) return;
 
-    const minutes = Math.floor(levelTimeRemaining / 60000);
-    const seconds = Math.floor((levelTimeRemaining % 60000) / 1000);
+    const clamped = Math.max(0, levelTimeRemaining);
+    const minutes = Math.floor(clamped / 60000);
+    const seconds = Math.floor((clamped % 60000) / 1000);
     const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
     // Level 6: Show boss count instead of timer
@@ -9038,8 +9377,8 @@ function drawVictoryScreen() {
     ctx.restore();
 }
 
-function showFloatingText(x, y, text, color, decay = 0.015, baseScale = 1) {
-    floatingTexts.push(new FloatingText(x, y, text, color, decay, baseScale));
+function showFloatingText(x, y, text, color, decay = 0.015, baseScale = 1, shake = false, flow = false) {
+    floatingTexts.push(new FloatingText(x, y, text, color, decay, baseScale, shake, flow));
 }
 
 function showBanner(text, subText = '', color = '#00ff00') {
@@ -9173,10 +9512,24 @@ function initTouchControls() {
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 
-    // Click/tap on canvas to exit attract mode (desktop + mobile fallback)
-    canvas.addEventListener('click', () => {
+    // Click/tap on canvas to exit attract mode or level transition
+    canvas.addEventListener('click', (e) => {
         if (gameState === GAME_STATE.ATTRACT) {
             stopAttractMode();
+            return;
+        }
+        if (gameState === GAME_STATE.LEVEL_TRANSITION) {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            const btnW = 340;
+            const btnH = 50;
+            const btnX = CANVAS_WIDTH / 2 - btnW / 2;
+            const btnY = CANVAS_HEIGHT - 50 - btnH / 2;
+            if (clickX >= btnX && clickX <= btnX + btnW &&
+                clickY >= btnY && clickY <= btnY + btnH) {
+                startNextLevel();
+            }
         }
     });
 
@@ -9218,6 +9571,24 @@ function handleTouchEnd(e) {
     // Handle attract mode - tap anywhere to stop demo
     if (gameState === GAME_STATE.ATTRACT) {
         stopAttractMode();
+        return;
+    }
+
+    // Handle tap on continue button during level transition
+    if (gameState === GAME_STATE.LEVEL_TRANSITION) {
+        if (Math.abs(deltaX) < SWIPE_THRESHOLD && Math.abs(deltaY) < SWIPE_THRESHOLD) {
+            const rect = canvas.getBoundingClientRect();
+            const tapX = touch.clientX - rect.left;
+            const tapY = touch.clientY - rect.top;
+            const btnW = 340;
+            const btnH = 50;
+            const btnX = CANVAS_WIDTH / 2 - btnW / 2;
+            const btnY = CANVAS_HEIGHT - 50 - btnH / 2;
+            if (tapX >= btnX && tapX <= btnX + btnW &&
+                tapY >= btnY && tapY <= btnY + btnH) {
+                startNextLevel();
+            }
+        }
         return;
     }
 
@@ -9535,7 +9906,7 @@ function resetGame() {
     // Reset level system
     currentLevel = 1;
     levelStartTime = 0;
-    levelTimeRemaining = LEVEL_DURATION_MS; // Level 1 starts with 4 minutes
+    levelTimeRemaining = LEVEL_DURATION_MS; // Level 1 starts with 2 minutes (Level 6 unlimited, Level 10 bonus 2 min)
     levelWarningActive = false;
     levelComplete = false;
     secondBossSpawnTime = null;
@@ -10011,6 +10382,14 @@ function update(deltaTime) {
 
     if (gameState !== GAME_STATE.PLAYING && gameState !== GAME_STATE.RESPAWNING) return;
 
+    // Pause game logic during intro text display (8 seconds)
+    if (window._introTextEndTime && Date.now() < window._introTextEndTime) {
+        // Only update floating texts (drawn every frame anyway)
+        return;
+    } else {
+        window._introTextEndTime = null;
+    }
+
     // Staggered enemy spawn (adds 3 snakes every 5 seconds until max reached)
     processStaggeredSpawns();
 
@@ -10052,9 +10431,9 @@ function update(deltaTime) {
     // Move all snakes
     player.move();
     for (const enemy of enemies) {
-        // Apply coffee bean speed boost (5x faster = 5 moves per frame)
+        // Apply coffee bean speed boost (enemies: 2x faster = 2 moves per frame)
         if (enemy.isCoffeeBoosted()) {
-            const coffeeMoves = 5;
+            const coffeeMoves = 2;
             for (let m = 0; m < coffeeMoves; m++) {
                 if (enemy.alive) enemy.move();
             }
@@ -10108,7 +10487,7 @@ function update(deltaTime) {
                         enemy.deathTime = Date.now();
                         const growthAmount = Math.floor(enemyLength * 0.5); // Grow by 50% of enemy length
                         player.grow(growthAmount);
-                        console.log(`Player wins head-on! Enemy ${i} destroyed. Player grew by ${growthAmount}!`);
+
                         createExplosion(enemyHead.x, enemyHead.y, enemy.color, 15);
                         soundSystem.playEnemyKill(); // Satisfying kill sound
 
@@ -10118,9 +10497,15 @@ function update(deltaTime) {
                             showFloatingText(enemyHead.x, enemyHead.y - 2, 'BOSS DESTROYED!', '#ff0000', 0.02, 2.5);
                             showBanner('BOSS DEFEATED!', `${enemy.name} DESTROYED!`, '#00ff00');
                             triggerScreenFlash('gold', 0.8);
+                            const killPoints = announceKill(player, enemy, 'head-on');
+                            console.log(`Player wins head-on! Enemy ${i} destroyed. Player grew by ${growthAmount}, scored ${killPoints} points!`);
                         } else {
-                            showFloatingText(playerHead.x, playerHead.y, `+${growthAmount}`, '#00ff00', 0.03);
-                            announceKill(player, enemy);
+                            const killPoints = announceKill(player, enemy, 'head-on');
+                            console.log(`Player wins head-on! Enemy ${i} destroyed. Player grew by ${growthAmount}, scored ${killPoints} points!`);
+                            setTimeout(() => {
+                                const pHead = player.body[0];
+                                showFloatingText(pHead.x, pHead.y - 1, `+${killPoints}`, '#00ff00', 0.03);
+                            }, 500);
                         }
                     } else if (enemyLength > playerLength) {
                         // Enemy wins, player dies
@@ -10173,11 +10558,15 @@ function update(deltaTime) {
                 enemy.deathTime = Date.now();
                 const growthAmount = Math.floor(enemyLength * 0.5); // Grow by 50% of enemy length
                 player.grow(growthAmount);
-                console.log(`Ghost mode kill! Enemy ${i} destroyed. Player grew by ${growthAmount}!`);
+
+                const killPoints = announceKill(player, enemy);
+                console.log(`Ghost mode kill! Enemy ${i} destroyed. Player grew by ${growthAmount}, scored ${killPoints} points!`);
                 createExplosion(enemyHead.x, enemyHead.y, enemy.color, 15);
                 soundSystem.playEnemyKill(); // Satisfying kill sound
-                showFloatingText(playerHead.x, playerHead.y, `GHOST KILL! +${growthAmount}`, '#9d00ff', 0.03);
-                announceKill(player, enemy);
+                setTimeout(() => {
+                    const pHead = player.body[0];
+                    showFloatingText(pHead.x, pHead.y - 1, `GHOST KILL! +${killPoints}`, '#9d00ff', 0.03);
+                }, 500);
             } else {
                 // Track ghost mode pass-through for achievements
                 // Only count if player body overlaps enemy body (not just head)
@@ -10228,7 +10617,11 @@ function update(deltaTime) {
             console.log(`Enemy ${i} died: hit player`);
             createExplosion(enemy.body[0].x, enemy.body[0].y, enemy.color, 15);
             soundSystem.playEnemyKill(); // Satisfying kill sound
-            announceKill(player, enemy); // Announcement and MK announcer
+            const killPoints = announceKill(player, enemy); // Announcement, MK announcer, and streak scoring
+            setTimeout(() => {
+                const pHead = player.body[0];
+                showFloatingText(pHead.x, pHead.y - 1, `+${killPoints}`, '#00ff00', 0.03);
+            }, 500);
         }
 
         for (const other of enemies) {
@@ -10291,8 +10684,9 @@ function update(deltaTime) {
     for (let fi = 0; fi < foods.length; fi++) {
         const f = foods[fi];
         if (f.checkCollision(player)) {
-            // Calculate base points
-            let points = f.isBonus ? 30 : 10;
+            // Calculate base points from fruit type
+            let points = FOOD_SCORES[f.foodType] || 10;
+            if (f.isBonus) points *= 2; // Bonus food doubles the base score
 
             // Apply combo multiplier
             onFoodEaten();
@@ -10314,10 +10708,12 @@ function update(deltaTime) {
             const textColor = f.isBonus ? '#ffd700' : '#00ffff';
             showFloatingText(f.position.x, f.position.y, phrase, textColor, 0.025);
 
-            // Show points gained with multiplier
-            if (comboMultiplier > 1) {
-                showFloatingText(f.position.x, f.position.y - 1, `+${points}`, '#ff0040', 0.025);
-            }
+            // Show points gained above player's head after 0.5s delay
+            setTimeout(() => {
+                const pHead = player.body[0];
+                const ptsColor = comboMultiplier > 1 ? '#ff0040' : (f.isBonus ? '#ffd700' : '#00ffff');
+                showFloatingText(pHead.x, pHead.y - 1, `+${points}`, ptsColor, 0.025);
+            }, 500);
 
             updateScore();
             f.respawn([player, ...enemies.filter(e => e.alive)]);
@@ -10892,8 +11288,9 @@ function drawLives() {
 
 function drawLevelTimer() {
     // Calculate time remaining
-    const minutes = Math.floor(levelTimeRemaining / 60000);
-    const seconds = Math.floor((levelTimeRemaining % 60000) / 1000);
+    const clamped = Math.max(0, levelTimeRemaining);
+    const minutes = Math.floor(clamped / 60000);
+    const seconds = Math.floor((clamped % 60000) / 1000);
     const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
     // Determine color based on time remaining
@@ -11021,10 +11418,11 @@ function drawLevelTransitionScreen() {
     }
     ctx.restore();
 
-    // Layout: Picture and Text CENTERED
+    // Layout: Picture on left, Text on right, never overlapping
     const picSize = 140;
-    const picX = CANVAS_WIDTH * 0.225; // Left of center
-    const picY = CANVAS_HEIGHT * 0.36;
+    const gap = 40; // px gap between picture right edge and text left edge
+    const picX = CANVAS_WIDTH / 2 - picSize - gap; // picture left of center
+    const picY = CANVAS_HEIGHT * 0.38;
 
     // Snake picture placeholder box with animated border
     ctx.save();
@@ -11041,57 +11439,57 @@ function drawLevelTransitionScreen() {
     // Draw actual snake portrait based on snake type
     drawSnakePortrait(ctx, newSnake.name, newSnake.color, picX, picY, picSize);
 
-    // Snake info - CENTERED on the right side
-    const textCenterX = CANVAS_WIDTH / 2 + 80; // Right of center
-    const textStartY = picY + 35;
+    // Snake info - LEFT-ALIGNED on the right side
+    const textX = CANVAS_WIDTH / 2 + 20; // starts just right of center
+    const textStartY = picY + 5; // align text block top with picture top
 
-    // Snake name - CENTERED
+    // Snake name - LEFT-ALIGNED
     ctx.save();
     ctx.font = "bold 44px 'Courier New', monospace";
     ctx.fillStyle = newSnake.color;
-    ctx.textAlign = 'center';
+    ctx.textAlign = 'left';
     ctx.shadowBlur = 30;
     ctx.shadowColor = newSnake.color;
-    ctx.fillText(newSnake.name, textCenterX, textStartY);
+    ctx.fillText(newSnake.name, textX, textStartY);
     ctx.restore();
 
-    // Personality - CENTERED
+    // Personality - LEFT-ALIGNED
     ctx.save();
     ctx.font = "bold 18px 'Courier New', monospace";
     ctx.fillStyle = '#aaaaaa';
-    ctx.textAlign = 'center';
+    ctx.textAlign = 'left';
     ctx.shadowBlur = 10;
     ctx.shadowColor = '#ffffff';
-    ctx.fillText(`PERSONALITY: ${newSnake.personality}`, textCenterX, textStartY + 35);
+    ctx.fillText(`PERSONALITY: ${newSnake.personality}`, textX, textStartY + 35);
     ctx.restore();
 
-    // Difficulty changes - CENTERED
+    // Difficulty changes - LEFT-ALIGNED
     ctx.save();
     ctx.font = "bold 17px 'Courier New', monospace";
-    ctx.textAlign = 'center';
+    ctx.textAlign = 'left';
 
     // Change 1
     ctx.fillStyle = '#00ff00';
     ctx.shadowBlur = 10;
     ctx.shadowColor = '#00ff00';
-    ctx.fillText(`⚡ ${settings.enemies} TOTAL ENEMIES`, textCenterX, textStartY + 65);
+    ctx.fillText(`⚡ ${settings.enemies} TOTAL ENEMIES`, textX, textStartY + 65);
 
     // Change 2
     ctx.fillStyle = '#00d4ff';
     ctx.shadowColor = '#00d4ff';
     if (settings.bossLevel) {
-        ctx.fillText(`⚡ BOSS: 2x WIDTH, 4x LENGTH`, textCenterX, textStartY + 88);
+        ctx.fillText(`⚡ BOSS: 2x WIDTH, 4x LENGTH`, textX, textStartY + 88);
     } else {
-        ctx.fillText(`⚡ FASTER POWER-UPS`, textCenterX, textStartY + 88);
+        ctx.fillText(`⚡ FASTER POWER-UPS`, textX, textStartY + 88);
     }
 
     // Change 3
     ctx.fillStyle = '#ffd700';
     ctx.shadowColor = '#ffd700';
     if (settings.bossLevel) {
-        ctx.fillText(`⚡ SHOOTS PROJECTILES!`, textCenterX, textStartY + 111);
+        ctx.fillText(`⚡ SHOOTS PROJECTILES!`, textX, textStartY + 111);
     } else {
-        ctx.fillText(`⚡ ${settings.scoreMultiplier}x SCORE MULTIPLIER`, textCenterX, textStartY + 111);
+        ctx.fillText(`⚡ ${settings.scoreMultiplier}x SCORE MULTIPLIER`, textX, textStartY + 111);
     }
 
     // Boss warning text
@@ -11099,10 +11497,66 @@ function drawLevelTransitionScreen() {
         ctx.fillStyle = '#ff0000';
         ctx.shadowColor = '#ff0000';
         ctx.font = "bold 20px 'Courier New', monospace";
-        ctx.fillText(`⚠️ KILL TO WIN! ⚠️`, textCenterX, textStartY + 140);
+        ctx.fillText(`⚠️ KILL TO WIN! ⚠️`, textX, textStartY + 140);
     }
 
     ctx.restore();
+
+    // Determine if next level unlocks a new power-up
+    let unlockedPowerUp = null;
+    for (const [type, unlockLevel] of Object.entries(POWERUP_UNLOCK_LEVELS)) {
+        if (unlockLevel === nextLevel && POWERUP_INTROS[type]) {
+            unlockedPowerUp = POWERUP_INTROS[type];
+            break;
+        }
+    }
+
+    // Stack sections below snake info (ensure below picture + 8% gap)
+    let sectionY = Math.max(
+        textStartY + (settings.bossLevel ? 140 : 111) + 10,
+        picY + picSize + CANVAS_HEIGHT * 0.08
+    );
+
+    // NEW POWER-UP UNLOCKED display
+    if (unlockedPowerUp) {
+        ctx.save();
+        ctx.textAlign = 'center';
+
+        // Box background
+        ctx.fillStyle = 'rgba(0, 212, 255, 0.12)';
+        ctx.fillRect(CANVAS_WIDTH * 0.15, sectionY, CANVAS_WIDTH * 0.7, 65);
+
+        // Box border
+        ctx.strokeStyle = '#00d4ff';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#00d4ff';
+        ctx.strokeRect(CANVAS_WIDTH * 0.15, sectionY, CANVAS_WIDTH * 0.7, 65);
+
+        // Title
+        ctx.font = "bold 20px 'Courier New', monospace";
+        ctx.fillStyle = '#00d4ff';
+        ctx.shadowColor = '#00d4ff';
+        ctx.shadowBlur = 20;
+        ctx.fillText('🆕 NEW POWER-UP UNLOCKED!', CANVAS_WIDTH / 2, sectionY + 18);
+
+        // Icon + Name
+        ctx.font = "bold 24px 'Courier New', monospace";
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 15;
+        ctx.fillText(`${unlockedPowerUp.icon} ${unlockedPowerUp.name}`, CANVAS_WIDTH / 2, sectionY + 40);
+
+        // Description
+        ctx.font = "16px 'Courier New', monospace";
+        ctx.fillStyle = '#aaaaaa';
+        ctx.shadowColor = '#aaaaaa';
+        ctx.shadowBlur = 10;
+        ctx.fillText(unlockedPowerUp.desc, CANVAS_WIDTH / 2, sectionY + 58);
+
+        ctx.restore();
+        sectionY += 80;
+    }
 
     // ⚠️ LEVEL 7 HAZARD WARNING ⚠️
     // New danger warning when entering Level 7 (first hazard level with debris)
@@ -11113,32 +11567,32 @@ function drawLevelTransitionScreen() {
 
         // Warning box background
         ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
-        ctx.fillRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
+        ctx.fillRect(CANVAS_WIDTH * 0.15, sectionY, CANVAS_WIDTH * 0.7, 65);
 
         // Warning border
         ctx.strokeStyle = '#ff6600';
         ctx.lineWidth = 3;
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#ff6600';
-        ctx.strokeRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
+        ctx.strokeRect(CANVAS_WIDTH * 0.15, sectionY, CANVAS_WIDTH * 0.7, 65);
 
         // Warning title
         ctx.fillStyle = '#ff6600';
         ctx.shadowColor = '#ff6600';
         ctx.shadowBlur = 25;
-        ctx.fillText('⚠️ NEW DANGER DETECTED! ⚠️', CANVAS_WIDTH / 2, 410);
+        ctx.fillText('⚠️ NEW DANGER DETECTED! ⚠️', CANVAS_WIDTH / 2, sectionY + 18);
 
         // Warning details
         ctx.font = "bold 18px 'Courier New', monospace";
         ctx.fillStyle = '#ffaa00';
         ctx.shadowColor = '#ffaa00';
         ctx.shadowBlur = 15;
-        ctx.fillText('VOID SPACE: DRIFTING DEBRIS!', CANVAS_WIDTH / 2, 435);
+        ctx.fillText('VOID SPACE: DRIFTING DEBRIS!', CANVAS_WIDTH / 2, sectionY + 38);
 
         ctx.font = "16px 'Courier New', monospace";
         ctx.fillStyle = '#aaaaaa';
         ctx.shadowBlur = 10;
-        ctx.fillText('Space fragments will drift across the arena. Avoid collision!', CANVAS_WIDTH / 2, 460);
+        ctx.fillText('Space fragments will drift across the arena. Avoid collision!', CANVAS_WIDTH / 2, sectionY + 56);
 
         ctx.restore();
     }
@@ -11152,32 +11606,32 @@ function drawLevelTransitionScreen() {
 
         // Success box background
         ctx.fillStyle = 'rgba(255, 102, 0, 0.15)';
-        ctx.fillRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
+        ctx.fillRect(CANVAS_WIDTH * 0.15, sectionY, CANVAS_WIDTH * 0.7, 65);
 
         // Success border
         ctx.strokeStyle = '#ff6600';
         ctx.lineWidth = 3;
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#ff6600';
-        ctx.strokeRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
+        ctx.strokeRect(CANVAS_WIDTH * 0.15, sectionY, CANVAS_WIDTH * 0.7, 65);
 
         // Success title
         ctx.fillStyle = '#ff6600';
         ctx.shadowColor = '#ff6600';
         ctx.shadowBlur = 25;
-        ctx.fillText('✅ VOID SPACE SURVIVED! ✅', CANVAS_WIDTH / 2, 410);
+        ctx.fillText('✅ VOID SPACE SURVIVED! ✅', CANVAS_WIDTH / 2, sectionY + 18);
 
         // Success details
         ctx.font = "bold 18px 'Courier New', monospace";
         ctx.fillStyle = '#ffaa00';
         ctx.shadowColor = '#ffaa00';
         ctx.shadowBlur = 15;
-        ctx.fillText('DANGER: DRIFTING DEBRIS CLEARED!', CANVAS_WIDTH / 2, 435);
+        ctx.fillText('DANGER: DRIFTING DEBRIS CLEARED!', CANVAS_WIDTH / 2, sectionY + 38);
 
         ctx.font = "16px 'Courier New', monospace";
         ctx.fillStyle = '#aaaaaa';
         ctx.shadowBlur = 10;
-        ctx.fillText('You survived the void space debris field!', CANVAS_WIDTH / 2, 460);
+        ctx.fillText('You survived the void space debris field!', CANVAS_WIDTH / 2, sectionY + 56);
 
         ctx.restore();
     }
@@ -11191,47 +11645,71 @@ function drawLevelTransitionScreen() {
 
         // Success box background
         ctx.fillStyle = 'rgba(128, 0, 255, 0.15)';
-        ctx.fillRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
+        ctx.fillRect(CANVAS_WIDTH * 0.15, sectionY, CANVAS_WIDTH * 0.7, 65);
 
         // Success border
         ctx.strokeStyle = '#ff00ff';
         ctx.lineWidth = 3;
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#ff00ff';
-        ctx.strokeRect(CANVAS_WIDTH * 0.15, CANVAS_HEIGHT * 0.64, CANVAS_WIDTH * 0.7, 90);
+        ctx.strokeRect(CANVAS_WIDTH * 0.15, sectionY, CANVAS_WIDTH * 0.7, 65);
 
         // Success title
         ctx.fillStyle = '#ff00ff';
         ctx.shadowColor = '#ff00ff';
         ctx.shadowBlur = 25;
-        ctx.fillText('✅ COSMIC HAZARD SURVIVED! ✅', CANVAS_WIDTH / 2, 410);
+        ctx.fillText('✅ COSMIC HAZARD SURVIVED! ✅', CANVAS_WIDTH / 2, sectionY + 18);
 
         // Success details
         ctx.font = "bold 18px 'Courier New', monospace";
         ctx.fillStyle = '#aa66ff';
         ctx.shadowColor = '#aa66ff';
         ctx.shadowBlur = 15;
-        ctx.fillText('DANGER: GRAVITY WELLS CLEARED!', CANVAS_WIDTH / 2, 435);
+        ctx.fillText('DANGER: GRAVITY WELLS CLEARED!', CANVAS_WIDTH / 2, sectionY + 38);
 
         ctx.font = "16px 'Courier New', monospace";
         ctx.fillStyle = '#aaaaaa';
         ctx.shadowBlur = 10;
-        ctx.fillText('You survived the dark matter singularities!', CANVAS_WIDTH / 2, 460);
+        ctx.fillText('You survived the dark matter singularities!', CANVAS_WIDTH / 2, sectionY + 56);
 
         ctx.restore();
     }
 
-    // "Press C to continue" at BOTTOM CENTER
+    // "Press Here to continue.." button at BOTTOM CENTER
     ctx.save();
-    const pulse = 1 + Math.sin(Date.now() / 200) * 0.1;
-    ctx.translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 50);
+    const pulse = 1 + Math.sin(Date.now() / 200) * 0.08;
+    const btnW = 340;
+    const btnH = 50;
+    const btnX = CANVAS_WIDTH / 2;
+    const btnY = CANVAS_HEIGHT - 50;
+
+    ctx.translate(btnX, btnY);
     ctx.scale(pulse, pulse);
-    ctx.font = "bold 28px 'Courier New', monospace";
+
+    // Button background
+    ctx.fillStyle = 'rgba(0, 180, 255, 0.25)';
+    ctx.beginPath();
+    ctx.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 10);
+    ctx.fill();
+
+    // Button border
+    ctx.strokeStyle = '#00b4ff';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = '#00b4ff';
+    ctx.beginPath();
+    ctx.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 10);
+    ctx.stroke();
+
+    // Button text
+    ctx.font = "bold 22px 'Courier New', monospace";
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
-    ctx.shadowBlur = 25;
-    ctx.shadowColor = '#ffffff';
-    ctx.fillText('PRESS 3 TO CONTINUE', 0, 0);
+    ctx.textBaseline = 'middle';
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#00b4ff';
+    ctx.fillText('Press Here to continue..', 0, 1);
+
     ctx.restore();
 }
 
