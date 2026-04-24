@@ -6490,7 +6490,7 @@ class FloatingText {
     update() {
         this.y += this.vy;
         this.life -= this.decay;
-        this.scale = this.baseScale * (1 + (1 - this.life) * 1.0); // Grow dramatically as it fades
+        this.scale = this.baseScale * (1 + (1 - this.life) * 0.4); // Subtle growth, stays readable
         if (this.flow) {
             this.flowPhase += 0.04; // Advance sine wave
             this.flowX = Math.sin(this.flowPhase) * (GRID_SIZE * 0.8); // Smooth horizontal wave, gentle sway
@@ -8903,15 +8903,19 @@ async function startGame() {
 
     // Introductory spooky message for first-time players (stacked lines)
     const introLines = [
-        { text: "Your first power awaits... The Ghost.", yOff: 0 },
-        { text: "Grab it to phase through walls and enemies alike.", yOff: 2.5 },
-        { text: "A bonus score also rewards those that catch the old Ghost ..", yOff: 5 }
+        { text: "Your first power awaits...", yOff: 0 },
+        { text: "The Ghost.", yOff: 1.8 },
+        { text: "Grab it to phase through", yOff: 3.6 },
+        { text: "walls and enemies alike.", yOff: 5.4 },
+        { text: "A bonus score rewards", yOff: 7.2 },
+        { text: "those that catch the Ghost!", yOff: 9.0 }
     ];
     const centerX = Math.floor(COLS / 2);
     const centerY = Math.floor(ROWS / 2);
     window._introTextEndTime = Date.now() + 10000; // 10 seconds
     for (const line of introLines) {
-        showFloatingText(centerX, centerY + line.yOff, line.text, '#9d00ff', 0.0025, 2.4, true, true);
+        const introScale = GRID_SIZE / 10; // Scale text to grid size for readability on all devices
+        showFloatingText(centerX, centerY + line.yOff, line.text, '#9d00ff', 0.0025, introScale, true, true);
     }
 
     // Reset run-level stats
