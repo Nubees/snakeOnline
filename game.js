@@ -549,7 +549,9 @@ const POWERUP_TYPES = {
     GHOST: 'ghost',
     MAGNET: 'magnet',
     POWERPILL: 'powerpill',
-    SLOW_DOWN: 'slowdown'
+    SLOW_DOWN: 'slowdown',
+    BAND_AID: 'bandaid',
+    FROZEN: 'frozen'
 };
 
 let activePowerUps = []; // Array of { type, endTime }
@@ -568,6 +570,13 @@ let nextPowerPillSpawnTime = 0; // When next PowerPill will spawn
 const SLOW_DOWN_DURATION_MS = 10000; // 10 seconds
 const SLOW_DOWN_FACTOR = 2.5; // Enemies move 2.5x slower
 let enemySpeedMultiplier = 1.0; // Current speed multiplier for enemies
+
+// BAND-AID SYSTEM
+const BAND_AID_MAX_LIVES = 4;
+let bandAidFlashEndTime = 0; // Timestamp when flash effect ends
+
+// FROZEN CURSE SYSTEM
+const FROZEN_DURATION_MS = 6000; // 6 seconds frozen
 
 // ANNOUNCER SYSTEM (Mortal Kombat Style)
 const ANNOUNCER_TIERS = [
@@ -4732,6 +4741,13 @@ class Snake {
 
         // Gravity well pull accumulator
         this.gravityPull = { x: 0, y: 0 };
+
+        // Frozen curse state
+        this.frozenUntil = 0; // Timestamp when frozen effect ends
+    }
+
+    isFrozen() {
+        return Date.now() < this.frozenUntil;
     }
 
     isInSpawnProtection() {
@@ -4789,6 +4805,7 @@ class Snake {
 
     move() {
         if (!this.alive) return;
+        if (this.isFrozen()) return; // Frozen snakes cannot move
 
         this.direction = this.nextDirection;
 
@@ -4842,6 +4859,13 @@ class Snake {
         const inSpawnProtection = this.isInSpawnProtection();
         const visuals = inSpawnProtection ? this.getSpawnProtectionVisuals() : null;
 
+        // Check if band-aid flash effect is active (only for player)
+        const inBandAidFlash = this.isPlayer && Date.now() < bandAidFlashEndTime;
+        const bandAidPulse = inBandAidFlash ? (Math.sin(Date.now() / 100) * 0.5 + 0.5) : 0;
+
+        // Check if frozen
+        const isFrozen = this.isFrozen();
+
         if (inSpawnProtection) {
             // Apply flashing spawn protection visuals
             ctx.save();
@@ -4849,6 +4873,17 @@ class Snake {
             ctx.shadowBlur = visuals.glowBlur;
             ctx.shadowColor = visuals.glowColor;
             ctx.fillStyle = visuals.color;
+        } else if (inBandAidFlash) {
+            // Band-aid flash: alternate brighter and darker
+            const baseColor = this.getDisplayColor();
+            const baseGlow = this.getDisplayGlowColor();
+            // Pulse between bright and dark
+            const brightness = bandAidPulse > 0.5 ? 1.5 : 0.6;
+            ctx.save();
+            ctx.shadowBlur = 25 * brightness;
+            ctx.shadowColor = baseGlow;
+            ctx.fillStyle = baseColor;
+            ctx.globalAlpha = 0.7 + (bandAidPulse * 0.3);
         } else {
             // Normal appearance
             const displayColor = this.getDisplayColor();
@@ -4859,16 +4894,16 @@ class Snake {
         }
 
         // ALL snakes are drawn with cartoon style (like the reference image)
-        this.drawCartoonStyle(ctx, inSpawnProtection, visuals);
+        this.drawCartoonStyle(ctx, inSpawnProtection, visuals, isFrozen);
 
-        if (inSpawnProtection) {
+        if (inSpawnProtection || inBandAidFlash) {
             ctx.restore();
         }
         ctx.shadowBlur = 0;
     }
 
     // Draw snake in cartoon style (rounded pill with eyes) - used for ALL snakes
-    drawCartoonStyle(ctx, inSpawnProtection, visuals) {
+    drawCartoonStyle(ctx, inSpawnProtection, visuals, isFrozen) {
         // Use the snake's own color (or spawn protection color)
         const snakeColor = inSpawnProtection ? visuals.color : this.getDisplayColor();
 
@@ -4889,10 +4924,25 @@ class Snake {
         const segmentWidth = GRID_SIZE * sizeMultiplier;
         const segmentHeight = GRID_SIZE * (sizeMultiplier * 0.7);
 
+        // Calculate frozen shake offset (tiny vibration when frozen)
+        let shakeX = 0;
+        let shakeY = 0;
+        if (isFrozen) {
+            const shakeIntensity = 1.5; // pixels
+            shakeX = (Math.random() - 0.5) * shakeIntensity * 2;
+            shakeY = (Math.random() - 0.5) * shakeIntensity * 2;
+        }
+
         for (let i = 0; i < this.body.length; i++) {
             const segment = this.body[i];
-            const centerX = segment.x * GRID_SIZE + GRID_SIZE / 2;
-            const centerY = segment.y * GRID_SIZE + GRID_SIZE / 2;
+            let centerX = segment.x * GRID_SIZE + GRID_SIZE / 2;
+            let centerY = segment.y * GRID_SIZE + GRID_SIZE / 2;
+
+            // Apply shake to each segment when frozen
+            if (isFrozen) {
+                centerX += shakeX;
+                centerY += shakeY;
+            }
 
             if (i === 0) {
                 // HEAD - Draw rounded capsule shape
@@ -4902,12 +4952,23 @@ class Snake {
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = inSpawnProtection ? visuals.color : snakeColor;
 
+                // Frozen head is 1.5x bigger
+                const frozenHeadMult = isFrozen ? 1.5 : 1.0;
+                const finalHeadSize = headSizeMultiplier * frozenHeadMult;
+
                 // Draw rounded rectangle (pill shape) for head
-                const headWidth = GRID_SIZE * headSizeMultiplier;
-                const headHeight = GRID_SIZE * headSizeMultiplier;
+                const headWidth = GRID_SIZE * finalHeadSize;
+                const headHeight = GRID_SIZE * finalHeadSize;
                 const x = centerX - headWidth / 2;
                 const y = centerY - headHeight / 2;
                 const radius = headHeight / 2;
+
+                // Frozen head gets strobing light blue glow
+                if (isFrozen) {
+                    const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5;
+                    ctx.shadowBlur = 20 + (strobe * 25);
+                    ctx.shadowColor = `rgba(173, 216, 255, ${0.6 + strobe * 0.4})`;
+                }
 
                 ctx.beginPath();
                 ctx.roundRect(x, y, headWidth, headHeight, radius);
@@ -4962,12 +5023,19 @@ class Snake {
 
                 ctx.restore();
             } else if (i === this.body.length - 1) {
-                // TAIL - Draw pointy/rounded tail (2x for boss)
+                // TAIL - Draw pointy/rounded tail (2x for boss, 1.5x when frozen)
                 ctx.save();
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = inSpawnProtection ? visuals.color : snakeColor;
 
-                const bodySize = this.isBoss ? (GRID_SIZE * 2 - 1) : (GRID_SIZE - 1);
+                let bodySize;
+                if (this.isBoss) {
+                    bodySize = GRID_SIZE * 2 - 1;
+                } else if (isFrozen) {
+                    bodySize = GRID_SIZE * 1.5 - 1;
+                } else {
+                    bodySize = GRID_SIZE - 1;
+                }
 
                 // Get direction from previous segment to this tail segment
                 const prevSegment = this.body[i - 1];
@@ -5020,20 +5088,87 @@ class Snake {
 
                 ctx.restore();
             } else {
-                // BODY SEGMENTS - Draw square blocks (2x for boss, 1x for others)
+                // BODY SEGMENTS - Draw square blocks (2x for boss, 1x for others, 1.5x when frozen)
                 ctx.save();
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = inSpawnProtection ? visuals.color : snakeColor;
 
-                // Boss body is 2x size, normal snakes are 1x
-                const bodySize = this.isBoss ? (GRID_SIZE * 2 - 1) : (GRID_SIZE - 1);
+                // Boss body is 2x size, normal snakes are 1x, frozen snakes are 1.5x
+                let bodySize;
+                if (this.isBoss) {
+                    bodySize = GRID_SIZE * 2 - 1;
+                } else if (isFrozen) {
+                    bodySize = GRID_SIZE * 1.5 - 1;
+                } else {
+                    bodySize = GRID_SIZE - 1;
+                }
                 const x = centerX - bodySize / 2;
                 const y = centerY - bodySize / 2;
 
-                ctx.fillRect(x, y, bodySize, bodySize);
+                // Frozen body segments get a strobing light blue glow
+                if (isFrozen) {
+                    const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5; // Fast strobe
+                    ctx.shadowBlur = 15 + (strobe * 20);
+                    ctx.shadowColor = `rgba(173, 216, 255, ${0.5 + strobe * 0.5})`;
+                    ctx.strokeStyle = `rgba(173, 216, 255, ${0.3 + strobe * 0.4})`;
+                    ctx.lineWidth = 2;
+                    ctx.fillRect(x, y, bodySize, bodySize);
+                    ctx.strokeRect(x, y, bodySize, bodySize);
+                } else {
+                    ctx.fillRect(x, y, bodySize, bodySize);
+                }
 
                 ctx.restore();
             }
+        }
+
+        // FROZEN EFFECT: Draw ice crystals and blue glow on frozen snakes
+        if (isFrozen) {
+            const timeLeft = this.frozenUntil - Date.now();
+            const pulse = Math.sin(Date.now() / 200) * 0.5 + 0.5; // 0 to 1
+            // Glow pulses between light blue and dark blue
+            const lightBlue = { r: 173, g: 216, b: 255 }; // #add8ff
+            const darkBlue = { r: 0, g: 100, b: 200 };   // #0064c8
+            const glowR = Math.floor(lightBlue.r + (darkBlue.r - lightBlue.r) * pulse);
+            const glowG = Math.floor(lightBlue.g + (darkBlue.g - lightBlue.g) * pulse);
+            const glowB = Math.floor(lightBlue.b + (darkBlue.b - lightBlue.b) * pulse);
+            const glowColor = `rgb(${glowR}, ${glowG}, ${glowB})`;
+
+            ctx.save();
+            ctx.globalAlpha = 0.35 + (pulse * 0.25); // 0.35 to 0.6
+            ctx.fillStyle = glowColor;
+            ctx.shadowBlur = 15 + (pulse * 20); // 15 to 35
+            ctx.shadowColor = glowColor;
+
+            for (let i = 0; i < this.body.length; i++) {
+                const segment = this.body[i];
+                let cx = segment.x * GRID_SIZE + GRID_SIZE / 2;
+                let cy = segment.y * GRID_SIZE + GRID_SIZE / 2;
+                const sz = GRID_SIZE * 0.85;
+
+                // Apply same shake to ice overlay
+                if (isFrozen) {
+                    cx += shakeX;
+                    cy += shakeY;
+                }
+
+                // Draw ice square overlay with rounded corners
+                ctx.beginPath();
+                const iceRadius = 4;
+                ctx.roundRect(cx - sz / 2, cy - sz / 2, sz, sz, iceRadius);
+                ctx.fill();
+
+                // Draw ❄️ snowflake on head with matching glow
+                if (i === 0) {
+                    ctx.globalAlpha = 0.8 + (pulse * 0.2); // 0.8 to 1.0
+                    ctx.font = `${Math.floor(GRID_SIZE * 1.2)}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('❄️', cx, cy);
+                    ctx.globalAlpha = 0.35 + (pulse * 0.25);
+                }
+            }
+            ctx.restore();
         }
     }
 }
@@ -5604,6 +5739,24 @@ class PowerUpItem {
                 ctx.lineTo(px + center + Math.cos(angle) * r, py + center + Math.sin(angle) * r);
                 ctx.stroke();
             }
+        } else if (this.type === POWERUP_TYPES.BAND_AID) {
+            // BAND-AID: 🩹 emoji with red cross glow
+            ctx.shadowColor = '#ff0040';
+            ctx.shadowBlur = 30 * pulse;
+            ctx.font = `bold ${GRID_SIZE * 1.3}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('🩹', px + center, py + center + 2);
+        } else if (this.type === POWERUP_TYPES.FROZEN) {
+            // FROZEN: 🧊 ice cube with cyan glow (smaller icon)
+            ctx.shadowColor = '#00d4ff';
+            ctx.shadowBlur = 20 * pulse;
+            ctx.font = `bold ${GRID_SIZE * 0.9}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('🧊', px + center, py + center + 2);
         }
 
         ctx.shadowBlur = 0;
@@ -5915,11 +6068,18 @@ class Particle {
     draw(ctx) {
         ctx.globalAlpha = this.life;
         ctx.fillStyle = this.color;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = this.isPixel ? 0 : 10;
         ctx.shadowColor = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
+        if (this.isPixel) {
+            // Draw as small square pixels (no glow, sharp edges)
+            const half = this.size / 2;
+            ctx.fillRect(this.x - half, this.y - half, this.size, this.size);
+        } else {
+            // Normal circular particles
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
     }
@@ -7076,6 +7236,24 @@ function createExplosion(x, y, color, count = 10) {
     }
 }
 
+// Pixel burst explosion for power-up collection — small square pixels flying outward
+function createPixelExplosion(x, y, color, count = 12) {
+    const pixelColors = [color, '#ffffff', color]; // Mix of theme color and white sparkles
+    for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + (Math.random() * 0.5);
+        const speed = 2 + Math.random() * 4;
+        const pixelColor = pixelColors[Math.floor(Math.random() * pixelColors.length)];
+        const p = new Particle(x, y, pixelColor);
+        // Override for pixel style
+        p.vx = Math.cos(angle) * speed;
+        p.vy = Math.sin(angle) * speed;
+        p.decay = 0.04 + Math.random() * 0.03; // Faster decay
+        p.size = 2 + Math.random() * 3; // Small squares
+        p.isPixel = true; // Flag for square drawing
+        particles.push(p);
+    }
+}
+
 // POWER-UP MANAGEMENT FUNCTIONS
 function spawnPowerUp() {
     const now = Date.now();
@@ -7108,12 +7286,14 @@ function spawnPowerUp() {
 
     const pos = findValidPowerUpPosition();
     if (pos) {
-        // Randomly choose power-up type (include SLOW_DOWN)
+        // Randomly choose power-up type (include BAND_AID and FROZEN)
         const rand = Math.random();
         let type;
-        if (rand < 0.33) type = POWERUP_TYPES.GHOST;
-        else if (rand < 0.66) type = POWERUP_TYPES.MAGNET;
-        else type = POWERUP_TYPES.SLOW_DOWN;
+        if (rand < 0.20) type = POWERUP_TYPES.GHOST;
+        else if (rand < 0.40) type = POWERUP_TYPES.MAGNET;
+        else if (rand < 0.60) type = POWERUP_TYPES.SLOW_DOWN;
+        else if (rand < 0.80) type = POWERUP_TYPES.BAND_AID;
+        else type = POWERUP_TYPES.FROZEN;
         powerUpItems.push(new PowerUpItem(pos.x, pos.y, type));
         lastPowerUpSpawn = now;
         console.log(`Power-up spawned: ${type} at (${pos.x}, ${pos.y})`);
@@ -7161,6 +7341,26 @@ function collectPowerUp() {
 
         const type = p.type;
 
+        // Handle BAND_AID instantly (no duration)
+        if (type === POWERUP_TYPES.BAND_AID) {
+            createPixelExplosion(p.x, p.y, '#ff0040', 12); // Red pixel burst
+            collectBandAid();
+            powerUpItems.splice(i, 1);
+            break;
+        }
+
+        // Handle FROZEN curse instantly (no duration in activePowerUps, applies directly to snake)
+        if (type === POWERUP_TYPES.FROZEN) {
+            createPixelExplosion(p.x, p.y, '#00d4ff', 12); // Cyan pixel burst
+            player.frozenUntil = Date.now() + FROZEN_DURATION_MS;
+            soundSystem.playPowerUpCollect();
+            showFloatingText(player.body[0].x, player.body[0].y, 'FROZEN!', '#00d4ff', 0.025);
+            triggerScreenFlash('#00d4ff', 0.3);
+            powerUpItems.splice(i, 1);
+            console.log('Player frozen for 6 seconds');
+            break;
+        }
+
         // Different durations for different power-ups
         let duration = POWERUP_DURATION_MS; // default 8 seconds
         if (type === POWERUP_TYPES.POWERPILL) duration = POWERPILL_DURATION_MS;
@@ -7169,6 +7369,14 @@ function collectPowerUp() {
 
         // Add to active power-ups
         activePowerUps.push({ type, endTime });
+
+        // Pixel explosion burst at power-up location (theme color)
+        let burstColor = '#ffffff';
+        if (type === POWERUP_TYPES.GHOST) burstColor = '#9d00ff';
+        else if (type === POWERUP_TYPES.MAGNET) burstColor = '#00d4ff';
+        else if (type === POWERUP_TYPES.POWERPILL) burstColor = '#0088ff';
+        else if (type === POWERUP_TYPES.SLOW_DOWN) burstColor = '#9d00ff';
+        createPixelExplosion(p.x, p.y, burstColor, 12);
 
         // Play sound
         soundSystem.playPowerUpCollect();
@@ -7214,6 +7422,62 @@ function collectPowerUp() {
         powerUpItems.splice(i, 1);
         break; // Only collect one power-up per frame
     }
+}
+
+function collectEnemyPowerUps() {
+    // Enemies can collect power-ups (only FROZEN has effect on them)
+    if (powerUpItems.length === 0) return;
+
+    for (let i = powerUpItems.length - 1; i >= 0; i--) {
+        const p = powerUpItems[i];
+        for (const enemy of enemies) {
+            if (!enemy.alive || enemy.isInSpawnProtection() || enemy.isFrozen()) continue;
+            if (p.checkCollision(enemy)) {
+                const type = p.type;
+
+                // Enemies ignore most power-ups, but FROZEN affects them
+                if (type === POWERUP_TYPES.FROZEN) {
+                    createPixelExplosion(p.x, p.y, '#00d4ff', 12); // Cyan pixel burst
+                    enemy.frozenUntil = Date.now() + FROZEN_DURATION_MS;
+                    showFloatingText(enemy.body[0].x, enemy.body[0].y, 'FROZEN!', '#00d4ff', 0.025);
+                    powerUpItems.splice(i, 1);
+                    console.log(`Enemy ${enemy.name} frozen for 6 seconds`);
+                    break; // Only one enemy per power-up
+                }
+                // Enemies ignore other power-ups (they don't benefit from them)
+            }
+        }
+    }
+}
+
+function collectBandAid() {
+    // Play sound
+    soundSystem.playPowerUpCollect();
+
+    const wasFullHealth = playerLives >= MAX_LIVES;
+
+    if (playerLives < BAND_AID_MAX_LIVES) {
+        playerLives++;
+        updateLivesDisplay();
+    }
+
+    if (wasFullHealth) {
+        // Flash snake brighter/darker for a few seconds
+        bandAidFlashEndTime = Date.now() + 3000; // 3 seconds
+        showFloatingText(player.body[0].x, player.body[0].y, 'EXTRA LIFE!!', '#ff0040', 0.02);
+        // Trigger screen flash
+        triggerScreenFlash('green', 0.3);
+    } else {
+        showFloatingText(player.body[0].x, player.body[0].y, 'LIFE RESTORED!!', '#ff0040', 0.02);
+        triggerScreenFlash('green', 0.3);
+    }
+
+    // Track achievement stats
+    achievementProgress.stats.lifetimePowerUps++;
+    saveAchievementProgress();
+    checkAchievement('powerups_50_lifetime');
+
+    console.log(`Band-Aid collected! Lives: ${playerLives}/${BAND_AID_MAX_LIVES}`);
 }
 
 function updatePowerUps() {
@@ -9157,17 +9421,22 @@ function resetGame() {
     // Reset enemy speed multiplier
     enemySpeedMultiplier = 1.0;
 
-    // Reset death counts and spawn protection for all enemies
+    // Reset death counts, spawn protection, and frozen state for all enemies
     for (const enemy of enemies) {
         enemy.deathCount = 0;
         enemy.deathTime = null;
         enemy.spawnTime = null;
+        enemy.frozenUntil = 0;
     }
+
+    // Reset player frozen state
+    if (player) player.frozenUntil = 0;
 
     // Initialize respawn timer
     lastRespawnWaveTime = Date.now();
 
     updateScore();
+    updateLivesDisplay();
 }
 
 function updateScore() {
@@ -9200,11 +9469,12 @@ function addHighScore(name, scoreValue) {
 }
 
 function updateLivesDisplay() {
-    // Update GUI to show current lives
+    // Update GUI to show current lives (up to BAND_AID_MAX_LIVES = 4)
     const livesContainer = document.getElementById('livesContainer');
     if (livesContainer) {
         let heartsHTML = '';
-        for (let i = 0; i < MAX_LIVES; i++) {
+        const maxDisplayLives = Math.max(MAX_LIVES, playerLives);
+        for (let i = 0; i < maxDisplayLives; i++) {
             heartsHTML += i < playerLives ?
                 '<span class="life-heart active">♥</span>' :
                 '<span class="life-heart lost">♡</span>';
@@ -9810,6 +10080,9 @@ function update(deltaTime) {
     // Check for power-up collection (AFTER player moves)
     collectPowerUp();
 
+    // Check enemy power-up collection (enemies can pick up curses like FROZEN)
+    collectEnemyPowerUps();
+
     // Check gravity well collisions (Level 8+ hazard) - AFTER player moves
     checkGravityWellCollisions();
 
@@ -10107,6 +10380,48 @@ function draw() {
         } else {
             player.draw(ctx);
         }
+    }
+
+    // Draw magnet power-up effect (circular lines flashing around player head)
+    if (player.alive && hasPowerUp(POWERUP_TYPES.MAGNET)) {
+        const head = player.body[0];
+        const mx = head.x * GRID_SIZE + GRID_SIZE / 2;
+        const my = head.y * GRID_SIZE + GRID_SIZE / 2;
+        const now = Date.now();
+
+        ctx.save();
+        // Rotating circular magnetic field lines
+        const rotation = now / 300; // Slow rotation
+        const numRings = 3;
+        for (let r = 0; r < numRings; r++) {
+            const baseRadius = GRID_SIZE * (1.2 + r * 0.5);
+            const ringPulse = Math.sin(now / 150 + r * 1.5) * 0.5 + 0.5;
+            ctx.strokeStyle = `rgba(0, 212, 255, ${0.3 + ringPulse * 0.5})`;
+            ctx.lineWidth = 2 + ringPulse * 2;
+            ctx.shadowBlur = 10 + ringPulse * 15;
+            ctx.shadowColor = '#00d4ff';
+
+            ctx.beginPath();
+            // Draw arc segments that rotate
+            const segments = 4;
+            for (let s = 0; s < segments; s++) {
+                const startAngle = rotation + (s / segments) * Math.PI * 2;
+                const endAngle = startAngle + (Math.PI * 2 / segments) * 0.6;
+                ctx.arc(mx, my, baseRadius, startAngle, endAngle);
+            }
+            ctx.stroke();
+        }
+
+        // Inner glow pulse
+        const innerPulse = Math.sin(now / 100) * 0.5 + 0.5;
+        ctx.fillStyle = `rgba(0, 212, 255, ${0.05 + innerPulse * 0.1})`;
+        ctx.shadowBlur = 20 + innerPulse * 20;
+        ctx.shadowColor = '#00d4ff';
+        ctx.beginPath();
+        ctx.arc(mx, my, GRID_SIZE * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
     }
 
     // Draw combo tracker
