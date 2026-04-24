@@ -10050,16 +10050,6 @@ function draw() {
         particle.draw(ctx);
     }
 
-    // Update and draw floating texts (run every frame for smooth fade regardless of game state)
-    for (let i = floatingTexts.length - 1; i >= 0; i--) {
-        floatingTexts[i].update();
-        if (floatingTexts[i].life <= 0) {
-            floatingTexts.splice(i, 1);
-        } else {
-            floatingTexts[i].draw(ctx);
-        }
-    }
-
     // Draw READY screen
     if (gameState === GAME_STATE.READY) {
         drawReadyScreen();
@@ -10093,6 +10083,17 @@ function draw() {
 
     // Apply screen flash overlay (must be last)
     applyScreenFlash();
+
+    // Update and draw floating texts (run every frame for smooth fade regardless of game state)
+    // Drawn on top of everything so grid size change feedback is always visible
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        floatingTexts[i].update();
+        if (floatingTexts[i].life <= 0) {
+            floatingTexts.splice(i, 1);
+        } else {
+            floatingTexts[i].draw(ctx);
+        }
+    }
 }
 
 function drawReadyScreen() {
