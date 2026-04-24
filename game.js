@@ -97,6 +97,23 @@ function hexToRgba(hex, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function showBossBattleFloatingText() {
+    const bossBtn = document.getElementById('mobileBoss');
+    let textX = Math.floor(COLS / 2);
+    let textY = Math.floor(ROWS * 0.45);
+    if (bossBtn && canvas) {
+        const btnRect = bossBtn.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        const btnCenterX = btnRect.left + btnRect.width / 2 - canvasRect.left;
+        const btnTopY = btnRect.top - canvasRect.top - 8;
+        textX = btnCenterX / GRID_SIZE;
+        textY = btnTopY / GRID_SIZE;
+    }
+    const text = bossBattleMode ? 'BOSS: ON' : 'BOSS: OFF';
+    const color = bossBattleMode ? '#ff0040' : '#00c8ff';
+    showFloatingText(textX, textY, text, color, 0.02, 1.2);
+}
+
 function showAnnouncerFloatingText() {
     const announcerBtn = document.getElementById('mobileAnnouncer');
     let textX = Math.floor(COLS / 2);
@@ -7644,6 +7661,7 @@ function handleInput(e) {
             showAnnouncerFloatingText();
         } else if (e.key === '2') {
             bossBattleMode = !bossBattleMode;
+            showBossBattleFloatingText();
         } else if (e.key === 'g' || e.key === 'G') {
             cycleGridSize();
         } else if (e.key === 't' || e.key === 'T') {
@@ -8898,6 +8916,7 @@ function initMobileButtons() {
             } else {
                 bossBtn.classList.remove('active');
             }
+            showBossBattleFloatingText();
         });
         bossBtn.addEventListener('click', () => {
             bossBattleMode = !bossBattleMode;
@@ -8906,6 +8925,7 @@ function initMobileButtons() {
             } else {
                 bossBtn.classList.remove('active');
             }
+            showBossBattleFloatingText();
         });
     }
 
