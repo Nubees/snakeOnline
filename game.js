@@ -551,7 +551,8 @@ const POWERUP_TYPES = {
     POWERPILL: 'powerpill',
     SLOW_DOWN: 'slowdown',
     BAND_AID: 'bandaid',
-    FROZEN: 'frozen'
+    FROZEN: 'frozen',
+    COFFEE_BEAN: 'coffeebean'
 };
 
 let activePowerUps = []; // Array of { type, endTime }
@@ -577,6 +578,10 @@ let bandAidFlashEndTime = 0; // Timestamp when flash effect ends
 
 // FROZEN CURSE SYSTEM
 const FROZEN_DURATION_MS = 6000; // 6 seconds frozen
+
+// COFFEE BEAN SYSTEM
+const COFFEE_BEAN_DURATION_MS = 4000; // 4 seconds speed boost
+const COFFEE_BEAN_SPEED_FACTOR = 0.2; // 5x faster (20% of normal delay)
 
 // ANNOUNCER SYSTEM (Mortal Kombat Style)
 const ANNOUNCER_TIERS = [
@@ -4744,10 +4749,17 @@ class Snake {
 
         // Frozen curse state
         this.frozenUntil = 0; // Timestamp when frozen effect ends
+
+        // Coffee Bean speed boost state
+        this.coffeeBoostUntil = 0; // Timestamp when coffee boost ends
     }
 
     isFrozen() {
         return Date.now() < this.frozenUntil;
+    }
+
+    isCoffeeBoosted() {
+        return Date.now() < this.coffeeBoostUntil;
     }
 
     isInSpawnProtection() {
@@ -4866,6 +4878,10 @@ class Snake {
         // Check if frozen
         const isFrozen = this.isFrozen();
 
+        // Check if coffee boosted
+        const isCoffeeBoosted = this.isCoffeeBoosted();
+        const coffeePulse = isCoffeeBoosted ? (Math.sin(Date.now() / 60) * 0.5 + 0.5) : 0;
+
         if (inSpawnProtection) {
             // Apply flashing spawn protection visuals
             ctx.save();
@@ -4884,6 +4900,16 @@ class Snake {
             ctx.shadowColor = baseGlow;
             ctx.fillStyle = baseColor;
             ctx.globalAlpha = 0.7 + (bandAidPulse * 0.3);
+        } else if (isCoffeeBoosted) {
+            // Coffee boost: flashing white and gold
+            const flashOn = coffeePulse > 0.5;
+            const coffeeColor = flashOn ? '#ffffff' : '#ffcc00'; // White ↔ Gold
+            const coffeeGlow = flashOn ? '#ffffff' : '#ffaa00';
+            ctx.save();
+            ctx.shadowBlur = 20 + (coffeePulse * 15);
+            ctx.shadowColor = coffeeGlow;
+            ctx.fillStyle = coffeeColor;
+            ctx.globalAlpha = 0.85 + (coffeePulse * 0.15);
         } else {
             // Normal appearance
             const displayColor = this.getDisplayColor();
@@ -4894,16 +4920,16 @@ class Snake {
         }
 
         // ALL snakes are drawn with cartoon style (like the reference image)
-        this.drawCartoonStyle(ctx, inSpawnProtection, visuals, isFrozen);
+        this.drawCartoonStyle(ctx, inSpawnProtection, visuals, isFrozen, isCoffeeBoosted);
 
-        if (inSpawnProtection || inBandAidFlash) {
+        if (inSpawnProtection || inBandAidFlash || isCoffeeBoosted) {
             ctx.restore();
         }
         ctx.shadowBlur = 0;
     }
 
     // Draw snake in cartoon style (rounded pill with eyes) - used for ALL snakes
-    drawCartoonStyle(ctx, inSpawnProtection, visuals, isFrozen) {
+    drawCartoonStyle(ctx, inSpawnProtection, visuals, isFrozen, isCoffeeBoosted) {
         // Use the snake's own color (or spawn protection color)
         const snakeColor = inSpawnProtection ? visuals.color : this.getDisplayColor();
 
@@ -5168,6 +5194,48 @@ class Snake {
                     ctx.globalAlpha = 0.35 + (pulse * 0.25);
                 }
             }
+            ctx.restore();
+        }
+
+        // COFFEE BOOST EFFECT: Draw speed lines and sparkles behind coffee-boosted snakes
+        if (isCoffeeBoosted) {
+            const coffeePulse = Math.sin(Date.now() / 60) * 0.5 + 0.5;
+            ctx.save();
+
+            // Draw speed lines behind the snake (opposite to movement direction)
+            const head = this.body[0];
+            const tailEnd = this.body[this.body.length - 1];
+            const hx = head.x * GRID_SIZE + GRID_SIZE / 2;
+            const hy = head.y * GRID_SIZE + GRID_SIZE / 2;
+
+            // Speed lines radiating from head
+            ctx.strokeStyle = `rgba(255, 200, 50, ${0.3 + coffeePulse * 0.3})`;
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffcc00';
+            const numLines = 6;
+            for (let l = 0; l < numLines; l++) {
+                const angle = (l / numLines) * Math.PI * 2 + (Date.now() / 200);
+                const len = GRID_SIZE * (1.5 + coffeePulse * 1.5);
+                ctx.beginPath();
+                ctx.moveTo(hx, hy);
+                ctx.lineTo(hx + Math.cos(angle) * len, hy + Math.sin(angle) * len);
+                ctx.stroke();
+            }
+
+            // Gold sparkles on body segments
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#ffcc00';
+            for (let i = 0; i < this.body.length; i += 2) { // Every other segment
+                const seg = this.body[i];
+                const sx = seg.x * GRID_SIZE + GRID_SIZE / 2;
+                const sy = seg.y * GRID_SIZE + GRID_SIZE / 2;
+                const sparkleSize = 2 + coffeePulse * 3;
+                ctx.globalAlpha = 0.5 + coffeePulse * 0.5;
+                ctx.fillRect(sx - sparkleSize / 2, sy - sparkleSize / 2, sparkleSize, sparkleSize);
+            }
+
             ctx.restore();
         }
     }
@@ -5757,6 +5825,15 @@ class PowerUpItem {
             ctx.textBaseline = 'middle';
             ctx.fillStyle = '#ffffff';
             ctx.fillText('🧊', px + center, py + center + 2);
+        } else if (this.type === POWERUP_TYPES.COFFEE_BEAN) {
+            // COFFEE BEAN: ☕ coffee cup with brown/amber glow
+            ctx.shadowColor = '#ffaa00';
+            ctx.shadowBlur = 25 * pulse;
+            ctx.font = `bold ${GRID_SIZE * 1.2}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('☕', px + center, py + center + 2);
         }
 
         ctx.shadowBlur = 0;
@@ -7286,14 +7363,15 @@ function spawnPowerUp() {
 
     const pos = findValidPowerUpPosition();
     if (pos) {
-        // Randomly choose power-up type (include BAND_AID and FROZEN)
+        // Randomly choose power-up type (6 types, ~16.67% each)
         const rand = Math.random();
         let type;
-        if (rand < 0.20) type = POWERUP_TYPES.GHOST;
-        else if (rand < 0.40) type = POWERUP_TYPES.MAGNET;
-        else if (rand < 0.60) type = POWERUP_TYPES.SLOW_DOWN;
-        else if (rand < 0.80) type = POWERUP_TYPES.BAND_AID;
-        else type = POWERUP_TYPES.FROZEN;
+        if (rand < 0.1667) type = POWERUP_TYPES.GHOST;
+        else if (rand < 0.3334) type = POWERUP_TYPES.MAGNET;
+        else if (rand < 0.5001) type = POWERUP_TYPES.SLOW_DOWN;
+        else if (rand < 0.6668) type = POWERUP_TYPES.BAND_AID;
+        else if (rand < 0.8335) type = POWERUP_TYPES.FROZEN;
+        else type = POWERUP_TYPES.COFFEE_BEAN;
         powerUpItems.push(new PowerUpItem(pos.x, pos.y, type));
         lastPowerUpSpawn = now;
         console.log(`Power-up spawned: ${type} at (${pos.x}, ${pos.y})`);
@@ -7365,7 +7443,13 @@ function collectPowerUp() {
         let duration = POWERUP_DURATION_MS; // default 8 seconds
         if (type === POWERUP_TYPES.POWERPILL) duration = POWERPILL_DURATION_MS;
         else if (type === POWERUP_TYPES.SLOW_DOWN) duration = SLOW_DOWN_DURATION_MS;
+        else if (type === POWERUP_TYPES.COFFEE_BEAN) duration = COFFEE_BEAN_DURATION_MS;
         const endTime = Date.now() + duration;
+
+        // Coffee Bean: also set player's per-snake boost timestamp for visual effects
+        if (type === POWERUP_TYPES.COFFEE_BEAN) {
+            player.coffeeBoostUntil = endTime;
+        }
 
         // Add to active power-ups
         activePowerUps.push({ type, endTime });
@@ -7376,6 +7460,7 @@ function collectPowerUp() {
         else if (type === POWERUP_TYPES.MAGNET) burstColor = '#00d4ff';
         else if (type === POWERUP_TYPES.POWERPILL) burstColor = '#0088ff';
         else if (type === POWERUP_TYPES.SLOW_DOWN) burstColor = '#9d00ff';
+        else if (type === POWERUP_TYPES.COFFEE_BEAN) burstColor = '#ffaa00';
         createPixelExplosion(p.x, p.y, burstColor, 12);
 
         // Play sound
@@ -7391,6 +7476,10 @@ function collectPowerUp() {
             triggerScreenFlash('blue', 0.5);
         }
         if (type === POWERUP_TYPES.SLOW_DOWN) soundSystem.playSlowDown();
+        if (type === POWERUP_TYPES.COFFEE_BEAN) {
+            soundSystem.playPowerUpCollect();
+            triggerScreenFlash('#ffaa00', 0.3); // Amber flash for coffee boost
+        }
 
         // Show floating text
         let text, color;
@@ -7406,6 +7495,9 @@ function collectPowerUp() {
         } else if (type === POWERUP_TYPES.SLOW_DOWN) {
             text = 'SLOW MOTION!';
             color = '#9d00ff';
+        } else if (type === POWERUP_TYPES.COFFEE_BEAN) {
+            text = 'SPEED BOOST!!';
+            color = '#ffaa00';
         }
         showFloatingText(player.body[0].x, player.body[0].y, text, color, 0.02);
 
@@ -7435,13 +7527,22 @@ function collectEnemyPowerUps() {
             if (p.checkCollision(enemy)) {
                 const type = p.type;
 
-                // Enemies ignore most power-ups, but FROZEN affects them
+                // Enemies ignore most power-ups, but FROZEN and COFFEE_BEAN affect them
                 if (type === POWERUP_TYPES.FROZEN) {
                     createPixelExplosion(p.x, p.y, '#00d4ff', 12); // Cyan pixel burst
                     enemy.frozenUntil = Date.now() + FROZEN_DURATION_MS;
                     showFloatingText(enemy.body[0].x, enemy.body[0].y, 'FROZEN!', '#00d4ff', 0.025);
                     powerUpItems.splice(i, 1);
                     console.log(`Enemy ${enemy.name} frozen for 6 seconds`);
+                    break; // Only one enemy per power-up
+                }
+
+                if (type === POWERUP_TYPES.COFFEE_BEAN) {
+                    createPixelExplosion(p.x, p.y, '#ffaa00', 12); // Amber pixel burst
+                    enemy.coffeeBoostUntil = Date.now() + COFFEE_BEAN_DURATION_MS;
+                    showFloatingText(enemy.body[0].x, enemy.body[0].y, 'SPEED BOOST!!', '#ffaa00', 0.025);
+                    powerUpItems.splice(i, 1);
+                    console.log(`Enemy ${enemy.name} coffee boosted for 4 seconds`);
                     break; // Only one enemy per power-up
                 }
                 // Enemies ignore other power-ups (they don't benefit from them)
@@ -7506,6 +7607,9 @@ function updatePowerUps() {
                 text = 'SPEED RESTORED!';
                 color = '#9d00ff';
                 enemySpeedMultiplier = 1.0; // Reset enemy speed
+            } else if (expired.type === POWERUP_TYPES.COFFEE_BEAN) {
+                text = 'COFFEE WORE OFF!';
+                color = '#ffaa00';
             }
             showFloatingText(player.body[0].x, player.body[0].y, text, color, 0.02);
         }
@@ -9421,16 +9525,20 @@ function resetGame() {
     // Reset enemy speed multiplier
     enemySpeedMultiplier = 1.0;
 
-    // Reset death counts, spawn protection, and frozen state for all enemies
+    // Reset death counts, spawn protection, frozen state, and coffee boost for all enemies
     for (const enemy of enemies) {
         enemy.deathCount = 0;
         enemy.deathTime = null;
         enemy.spawnTime = null;
         enemy.frozenUntil = 0;
+        enemy.coffeeBoostUntil = 0;
     }
 
-    // Reset player frozen state
-    if (player) player.frozenUntil = 0;
+    // Reset player frozen and coffee boost state
+    if (player) {
+        player.frozenUntil = 0;
+        player.coffeeBoostUntil = 0;
+    }
 
     // Initialize respawn timer
     lastRespawnWaveTime = Date.now();
@@ -9858,8 +9966,15 @@ function update(deltaTime) {
     // Move all snakes
     player.move();
     for (const enemy of enemies) {
+        // Apply coffee bean speed boost (5x faster = 5 moves per frame)
+        if (enemy.isCoffeeBoosted()) {
+            const coffeeMoves = 5;
+            for (let m = 0; m < coffeeMoves; m++) {
+                if (enemy.alive) enemy.move();
+            }
+        }
         // Apply slow down effect - enemies move slower
-        if (enemySpeedMultiplier > 1.0) {
+        else if (enemySpeedMultiplier > 1.0) {
             // Only move every Nth frame based on slow down factor
             if (Math.random() < (1.0 / enemySpeedMultiplier)) {
                 enemy.move();
@@ -11475,7 +11590,11 @@ function gameLoop(timestamp) {
     const deltaTime = timestamp - lastTime;
 
     // Apply POWERPILL speed boost (2.5x faster = 0.4 of the delay - very fast!)
-    const currentGameSpeed = isPowerPillActive() ? gameSpeed * 0.4 : gameSpeed;
+    let speedMultiplier = 1.0;
+    if (isPowerPillActive()) speedMultiplier *= 0.4;
+    // Apply Coffee Bean speed boost (5x faster = 0.2 of the delay)
+    if (player && player.isCoffeeBoosted()) speedMultiplier *= COFFEE_BEAN_SPEED_FACTOR;
+    const currentGameSpeed = gameSpeed * speedMultiplier;
 
     if (deltaTime >= currentGameSpeed) {
         update(deltaTime);
