@@ -5,7 +5,8 @@ let CANVAS_HEIGHT = 600;
 const GRID_SIZE_PRESETS = {
     large:  20,  // Maximum play area (PC default)
     medium: 30,  // 1.5x bigger entities (phone default)
-    small:  40   // 2x bigger entities (small phone)
+    small:  40,  // 2x bigger entities (small phone)
+    tiny:   50   // 2.5x bigger entities (tiny phone / max zoom)
 };
 let GRID_SIZE = GRID_SIZE_PRESETS.large;
 let currentGridSizePreset = 'large';
@@ -38,7 +39,7 @@ function saveGridSizePreference(preset) {
 }
 
 function cycleGridSize() {
-    const presets = ['large', 'medium', 'small'];
+    const presets = ['large', 'medium', 'small', 'tiny'];
     const idx = presets.indexOf(currentGridSizePreset);
     const next = presets[(idx + 1) % presets.length];
     currentGridSizePreset = next;
@@ -49,13 +50,19 @@ function cycleGridSize() {
     resetGame();
     // Update button visual
     updateGridSizeButton();
+    // Show floating text feedback at center of screen
+    // Must be AFTER resetGame() because resetGame() clears floatingTexts[]
+    const label = next.toUpperCase();
+    const centerX = Math.floor(COLS / 2);
+    const centerY = Math.floor(ROWS / 2);
+    showFloatingText(centerX, centerY, `GRID: ${label} (${GRID_SIZE}px)`, '#00c8ff', 0.012, 1.5);
 }
 
 function updateGridSizeButton() {
     const btn = document.getElementById('mobileGridSize');
     if (!btn) return;
-    const icons = { large: '⬜', medium: '◼', small: '◾' };
-    btn.textContent = icons[currentGridSizePreset] || '⬜';
+    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T' };
+    btn.textContent = labels[currentGridSizePreset] || 'L';
     btn.title = `Grid: ${currentGridSizePreset.toUpperCase()} (${GRID_SIZE}px)`;
 }
 
