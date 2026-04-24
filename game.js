@@ -97,6 +97,23 @@ function hexToRgba(hex, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function showAnnouncerFloatingText() {
+    const announcerBtn = document.getElementById('mobileAnnouncer');
+    let textX = Math.floor(COLS / 2);
+    let textY = Math.floor(ROWS * 0.45);
+    if (announcerBtn && canvas) {
+        const btnRect = announcerBtn.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        const btnCenterX = btnRect.left + btnRect.width / 2 - canvasRect.left;
+        const btnTopY = btnRect.top - canvasRect.top - 8;
+        textX = btnCenterX / GRID_SIZE;
+        textY = btnTopY / GRID_SIZE;
+    }
+    const setNum = currentAnnouncerMode === 'set1' ? '1' : '2';
+    const color = currentAnnouncerMode === 'set1' ? '#ffd700' : '#00c8ff';
+    showFloatingText(textX, textY, `ANNOUNCER: ${setNum}`, color, 0.02, 1.2);
+}
+
 // Staggered enemy spawn system
 const STAGGERED_SPAWN_INTERVAL_MS = 5000; // 5 seconds between batches
 let staggeredSpawnTarget = 0;
@@ -7624,6 +7641,7 @@ function handleInput(e) {
             startCountdown();
         } else if (e.key === '1') {
             toggleAnnouncerMode();
+            showAnnouncerFloatingText();
         } else if (e.key === '2') {
             bossBattleMode = !bossBattleMode;
         } else if (e.key === 'g' || e.key === 'G') {
@@ -8839,12 +8857,14 @@ function initMobileButtons() {
                 initAudioOnFirstInteraction();
             }
             toggleAnnouncerMode();
+            showAnnouncerFloatingText();
         });
         announcerBtn.addEventListener('click', () => {
             if (typeof initAudioOnFirstInteraction === 'function') {
                 initAudioOnFirstInteraction();
             }
             toggleAnnouncerMode();
+            showAnnouncerFloatingText();
         });
     }
 
