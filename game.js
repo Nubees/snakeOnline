@@ -5826,14 +5826,14 @@ class PowerUpItem {
                 ctx.stroke();
             }
         } else if (this.type === POWERUP_TYPES.BAND_AID) {
-            // BAND-AID: 🩹 emoji with red cross glow
+            // BAND-AID: ✚ medical cross with red glow
             ctx.shadowColor = '#ff0040';
             ctx.shadowBlur = 30 * pulse;
-            ctx.font = `bold ${GRID_SIZE * 1.3}px Arial`;
+            ctx.font = `bold ${GRID_SIZE * 1.5}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText('🩹', px + center, py + center + 2);
+            ctx.fillStyle = '#ff0040';
+            ctx.fillText('✚', px + center, py + center + 2);
         } else if (this.type === POWERUP_TYPES.FROZEN) {
             // FROZEN: 🧊 ice cube with cyan glow (smaller icon)
             ctx.shadowColor = '#00d4ff';
