@@ -9,7 +9,7 @@ const GRID_SIZE_PRESETS = {
     tiny:   50,  // 2.5x bigger entities
     cell0:   0, // Dynamic: fits exactly 16x16 grid to screen
     cell2:   0, // Dynamic: fits exactly 30x30 grid to screen
-    cell:    0   // Dynamic: fits exactly 20x20 grid to screen (portrait phones)
+    cell1:    0   // Dynamic: fits exactly 20x20 grid to screen (portrait phones)
 };
 let GRID_SIZE = GRID_SIZE_PRESETS.tiny;
 let currentGridSizePreset = 'tiny';
@@ -64,7 +64,7 @@ function cycleGridSize() {
     if (now - lastGridCycleTime < 300) return;
     lastGridCycleTime = now;
 
-    const presets = ['large', 'medium', 'small', 'tiny', 'cell0', 'cell2', 'cell'];
+    const presets = ['large', 'medium', 'small', 'tiny', 'cell0', 'cell2', 'cell1'];
     const idx = presets.indexOf(currentGridSizePreset);
     const next = presets[(idx + 1) % presets.length];
     currentGridSizePreset = next;
@@ -83,7 +83,7 @@ function cycleGridSize() {
         label = 'CELL0 - 16x16';
     } else if (next === 'cell2') {
         label = 'CELL2 - 30x30';
-    } else if (next === 'cell') {
+    } else if (next === 'cell1') {
         label = 'CELL1 - 20x20';
     } else {
         label = next.toUpperCase();
@@ -100,7 +100,7 @@ function cycleGridSize() {
         textX = btnCenterX / GRID_SIZE;
         textY = btnTopY / GRID_SIZE;
     }
-    const sizeLabel = next === 'cell0' ? '16x16' : next === 'cell' ? '20x20' : next === 'cell2' ? '30x30' : `${GRID_SIZE}px`;
+    const sizeLabel = next === 'cell0' ? '16x16' : next === 'cell1' ? '20x20' : next === 'cell2' ? '30x30' : `${GRID_SIZE}px`;
     showFloatingText(textX, textY, `GRID-Size: ${label} (${sizeLabel})`, color, 0.005, 1.2);
 }
 
@@ -111,20 +111,20 @@ const GRID_SIZE_COLORS = {
     tiny:   '#ff44aa', // Pink - extreme zoom
     cell0:  '#aa00ff', // Purple - cell0 dynamic 16x16
     cell2:    '#ff0000', // Red - cell2 dynamic
-    cell:   '#ff6600'  // Deep orange - cell phone portrait mode
+    cell1:   '#ff6600'  // Deep orange - cell phone portrait mode
 };
 
 function updateGridSizeButton() {
     const btn = document.getElementById('mobileGridSize');
     if (!btn) return;
-    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T', cell0: 'B', cell2: 'D', cell: 'C' };
+    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T', cell0: 'B', cell2: 'D', cell1: 'C' };
     const color = GRID_SIZE_COLORS[currentGridSizePreset] || '#00ffff';
     btn.textContent = labels[currentGridSizePreset] || 'L';
     const titleLabel = currentGridSizePreset === 'cell0' ? 'CELL0' :
                        currentGridSizePreset === 'cell2' ? 'CELL2' :
-                       currentGridSizePreset === 'cell' ? 'CELL1' :
+                       currentGridSizePreset === 'cell1' ? 'CELL1' :
                        currentGridSizePreset.toUpperCase();
-    const sizeText = currentGridSizePreset === 'cell0' ? '16x16' : currentGridSizePreset === 'cell' ? '20x20' : currentGridSizePreset === 'cell2' ? '30x30' : `${GRID_SIZE}px`;
+    const sizeText = currentGridSizePreset === 'cell0' ? '16x16' : currentGridSizePreset === 'cell1' ? '20x20' : currentGridSizePreset === 'cell2' ? '30x30' : `${GRID_SIZE}px`;
     btn.title = `Grid: ${titleLabel} (${sizeText})`;
     // Dynamic button color to match preset
     btn.style.background = hexToRgba(color, 0.2);
@@ -8670,7 +8670,7 @@ function startCountdown() {
     const centerY = Math.floor(ROWS / 2);
     for (const line of introLines) {
         let introScale = Math.min(GRID_SIZE / 14, 1.5);
-        if (currentGridSizePreset === 'cell0' || currentGridSizePreset === 'cell' || currentGridSizePreset === 'cell2') {
+        if (currentGridSizePreset === 'cell0' || currentGridSizePreset === 'cell1' || currentGridSizePreset === 'cell2') {
             introScale *= 2;
         }
         showFloatingText(centerX, centerY + line.yOff, line.text, '#9d00ff', 0.0011, introScale, true, true);
@@ -9922,7 +9922,7 @@ function calculateGridDimensions() {
     const availableHeight = window.innerHeight - hudHeight - controlsHeight;
 
     // CELL preset: dynamic 20x20 grid sized to fit portrait phone screen
-    if (currentGridSizePreset === 'cell') {
+    if (currentGridSizePreset === 'cell1') {
         const margin = 3; // visible border on each side
         const cellW = Math.floor((availableWidth - margin * 2) / 20);
         const cellH = Math.floor((availableHeight - margin * 2) / 20);
