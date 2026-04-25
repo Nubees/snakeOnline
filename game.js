@@ -5625,7 +5625,7 @@ class Food {
         const x = this.position.x * GRID_SIZE;
         const y = this.position.y * GRID_SIZE;
         const center = GRID_SIZE / 2;
-        const size = (GRID_SIZE + 6) * pulse * 1.1;
+        const size = (GRID_SIZE + 6) * pulse * 1.5;
         const offset = (GRID_SIZE - size) / 2;
         const cx = x + center;
         const cy = y + center;
@@ -5891,27 +5891,69 @@ class Food {
     drawBanana(ctx, cx, cy, size) {
         const scale = size / 16;
 
-        // Banana body (curved crescent)
-        ctx.fillStyle = '#ffeb3b';
+        // Rotate the banana so it curves nicely
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(-Math.PI / 6);
+        ctx.translate(-cx, -cy);
+
+        // Banana body (smooth crescent shape)
+        ctx.fillStyle = '#ffe135';
         ctx.beginPath();
-        ctx.moveTo(cx - size * 0.35, cy - size * 0.2);
-        ctx.quadraticCurveTo(cx, cy - size * 0.6, cx + size * 0.35, cy - size * 0.1);
-        ctx.quadraticCurveTo(cx + size * 0.45, cy + size * 0.2, cx + size * 0.3, cy + size * 0.25);
-        ctx.quadraticCurveTo(cx, cy + size * 0.1, cx - size * 0.3, cy + size * 0.15);
-        ctx.quadraticCurveTo(cx - size * 0.4, cy, cx - size * 0.35, cy - size * 0.2);
+        ctx.moveTo(cx - size * 0.45, cy + size * 0.15);
+        ctx.quadraticCurveTo(cx - size * 0.55, cy - size * 0.35, cx - size * 0.2, cy - size * 0.42);
+        ctx.quadraticCurveTo(cx + size * 0.15, cy - size * 0.42, cx + size * 0.38, cy - size * 0.15);
+        ctx.quadraticCurveTo(cx + size * 0.48, cy + size * 0.05, cx + size * 0.42, cy + size * 0.15);
+        ctx.quadraticCurveTo(cx + size * 0.35, cy + size * 0.28, cx + size * 0.1, cy + size * 0.22);
+        ctx.quadraticCurveTo(cx - size * 0.2, cy + size * 0.18, cx - size * 0.45, cy + size * 0.15);
         ctx.fill();
 
-        // Banana tip
-        ctx.fillStyle = '#3e2723';
+        // Inner shadow (bottom edge for depth)
+        ctx.fillStyle = 'rgba(200, 160, 0, 0.35)';
         ctx.beginPath();
-        ctx.arc(cx + size * 0.33, cy - size * 0.08, size * 0.04, 0, Math.PI * 2);
+        ctx.moveTo(cx - size * 0.45, cy + size * 0.15);
+        ctx.quadraticCurveTo(cx - size * 0.2, cy + size * 0.18, cx + size * 0.1, cy + size * 0.22);
+        ctx.quadraticCurveTo(cx + size * 0.35, cy + size * 0.28, cx + size * 0.42, cy + size * 0.15);
+        ctx.quadraticCurveTo(cx + size * 0.35, cy + size * 0.22, cx + size * 0.1, cy + size * 0.18);
+        ctx.quadraticCurveTo(cx - size * 0.2, cy + size * 0.14, cx - size * 0.45, cy + size * 0.15);
         ctx.fill();
 
-        // Highlight
-        ctx.fillStyle = 'rgba(255, 255, 200, 0.4)';
+        // Ridge lines (segment edges)
+        ctx.strokeStyle = 'rgba(180, 140, 0, 0.3)';
+        ctx.lineWidth = 1;
+        for (let i = -2; i <= 2; i++) {
+            const rx = cx + i * size * 0.12;
+            ctx.beginPath();
+            ctx.moveTo(rx, cy - size * 0.35);
+            ctx.quadraticCurveTo(rx + size * 0.03, cy, rx, cy + size * 0.18);
+            ctx.stroke();
+        }
+
+        // Stem (top left)
+        ctx.fillStyle = '#6d4c41';
         ctx.beginPath();
-        ctx.ellipse(cx - size * 0.05, cy - size * 0.15, size * 0.08, size * 0.2, -Math.PI / 6, 0, Math.PI * 2);
+        ctx.ellipse(cx - size * 0.48, cy - size * 0.1, size * 0.06, size * 0.12, -Math.PI / 4, 0, Math.PI * 2);
         ctx.fill();
+
+        // Stem highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.beginPath();
+        ctx.ellipse(cx - size * 0.48, cy - size * 0.12, size * 0.03, size * 0.06, -Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Tip (bottom right, small dark spot)
+        ctx.fillStyle = '#4a3728';
+        ctx.beginPath();
+        ctx.ellipse(cx + size * 0.43, cy + size * 0.12, size * 0.03, size * 0.05, Math.PI / 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Shiny highlight (top curve)
+        ctx.fillStyle = 'rgba(255, 255, 220, 0.5)';
+        ctx.beginPath();
+        ctx.ellipse(cx - size * 0.05, cy - size * 0.28, size * 0.06, size * 0.22, -Math.PI / 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
     }
 
     drawOrange(ctx, cx, cy, size) {
