@@ -9000,6 +9000,7 @@ function updateAttractMode() {
 
 async function startGame() {
     gameState = GAME_STATE.PLAYING;
+    updateMobileStartButton();
     soundSystem.playStart();
     initLevelTimer();
 
@@ -10027,11 +10028,18 @@ function resizeCanvas() {
 
 function updateMobileStartButton() {
     const readyControls = document.getElementById('mobile-ready-controls');
+    const gameControls = document.getElementById('mobile-controls');
 
     if (gameState === GAME_STATE.READY) {
         if (readyControls) readyControls.classList.remove('hidden');
-    } else {
+        if (gameControls) gameControls.classList.add('hidden');
+    } else if (gameState === GAME_STATE.PLAYING) {
         if (readyControls) readyControls.classList.add('hidden');
+        if (gameControls) gameControls.classList.remove('hidden');
+    } else {
+        // ATTRACT, PAUSED, GAME_OVER, etc. — hide both
+        if (readyControls) readyControls.classList.add('hidden');
+        if (gameControls) gameControls.classList.add('hidden');
     }
 }
 

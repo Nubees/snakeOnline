@@ -737,7 +737,7 @@ canvas, #gameCanvas {
 }
 
 .mobile-controls.hidden {
-    display: none;
+    display: none !important;
 }
 
 /* Mobile action buttons */
@@ -839,10 +839,6 @@ canvas, #gameCanvas {
     align-items: center;
     gap: 30px;
     pointer-events: auto;
-}
-
-.mobile-ready-controls.hidden {
-    display: none;
 }
 
 .mobile-option-btn {
