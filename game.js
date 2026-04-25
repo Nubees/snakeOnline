@@ -8,7 +8,8 @@ const GRID_SIZE_PRESETS = {
     small:  40,  // 2x bigger entities
     tiny:   50,  // 2.5x bigger entities
     xt:     75,  // 3.75x bigger entities
-    xxt:    100  // 5x bigger entities (extra-extra small grid, largest cells)
+    xxt:    100, // 5x bigger entities
+    xxx:      0  // 20x20 fixed grid — size computed dynamically
 };
 let GRID_SIZE = GRID_SIZE_PRESETS.xt;
 let currentGridSizePreset = 'xt';
@@ -51,7 +52,7 @@ function saveGridSizePreference(preset) {
 }
 
 function cycleGridSize() {
-    const presets = ['large', 'medium', 'small', 'tiny', 'xt', 'xxt'];
+    const presets = ['large', 'medium', 'small', 'tiny', 'xt', 'xxt', 'xxx'];
     const idx = presets.indexOf(currentGridSizePreset);
     const next = presets[(idx + 1) % presets.length];
     currentGridSizePreset = next;
@@ -70,6 +71,8 @@ function cycleGridSize() {
         label = 'EXTRA SMALL';
     } else if (next === 'xxt') {
         label = 'EXTRA-EXTRA SMALL';
+    } else if (next === 'xxx') {
+        label = '20x20 FIXED GRID';
     } else {
         label = next.toUpperCase();
     }
@@ -94,13 +97,14 @@ const GRID_SIZE_COLORS = {
     small:  '#ffaa00', // Orange - caution, getting tight
     tiny:   '#ff44aa', // Pink - extreme zoom
     xt:     '#ff0080', // Magenta - extra tiny
-    xxt:    '#ff0000'  // Red - extra-extra tiny / max zoom
+    xxt:    '#ff0000', // Red - extra-extra tiny / max zoom
+    xxx:    '#ffffff'  // White - 20x20 fixed grid
 };
 
 function updateGridSizeButton() {
     const btn = document.getElementById('mobileGridSize');
     if (!btn) return;
-    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T', xt: 'X', xxt: 'XX' };
+    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T', xt: 'X', xxt: 'XX', xxx: 'XXX' };
     const color = GRID_SIZE_COLORS[currentGridSizePreset] || '#00ffff';
     btn.textContent = labels[currentGridSizePreset] || 'L';
     btn.title = `Grid: ${currentGridSizePreset.toUpperCase()} (${GRID_SIZE}px)`;
@@ -9850,6 +9854,24 @@ function calculateGridDimensions() {
 
     const availableWidth = window.innerWidth;
     const availableHeight = window.innerHeight - hudHeight - controlsHeight;
+
+    // XXX preset: fixed 20x20 grid, cell size computed from smaller screen dimension
+    if (currentGridSizePreset === 'xxx') {
+        GRID_SIZE = Math.max(5, Math.floor(Math.min(availableWidth, availableHeight) / 20));
+        COLS = 20;
+        ROWS = 20;
+        CANVAS_WIDTH = COLS * GRID_SIZE;
+        CANVAS_HEIGHT = ROWS * GRID_SIZE;
+
+        const canvasEl = document.getElementById('gameCanvas');
+        if (canvasEl) {
+            canvasEl.width = CANVAS_WIDTH;
+            canvasEl.height = CANVAS_HEIGHT;
+            canvasEl.style.width = CANVAS_WIDTH + 'px';
+            canvasEl.style.height = CANVAS_HEIGHT + 'px';
+        }
+        return;
+    }
 
     // Minimum playable grid size
     const MIN_COLS = 20;
