@@ -27,9 +27,14 @@ function getMaxEnemyCount() {
 // Grid size preference load/save
 function loadGridSizePreference() {
     const saved = localStorage.getItem('snakeGridSize');
-    if (saved && GRID_SIZE_PRESETS[saved]) {
+    if (saved && GRID_SIZE_PRESETS.hasOwnProperty(saved)) {
         currentGridSizePreset = saved;
-        GRID_SIZE = GRID_SIZE_PRESETS[saved];
+        const presetValue = GRID_SIZE_PRESETS[saved];
+        if (presetValue > 0) {
+            GRID_SIZE = presetValue;
+        }
+        // For dynamic presets (value === 0), GRID_SIZE is left as-is
+        // so calculateGridDimensions() can set it dynamically.
     } else {
         // Default to tiny for all new games
         currentGridSizePreset = 'tiny';
@@ -51,7 +56,14 @@ function saveGridSizePreference(preset) {
     localStorage.setItem('snakeGridSize', preset);
 }
 
+let lastGridCycleTime = 0;
+
 function cycleGridSize() {
+    // Debounce: prevent double-fire from touchstart + click on touch devices
+    const now = Date.now();
+    if (now - lastGridCycleTime < 300) return;
+    lastGridCycleTime = now;
+
     const presets = ['large', 'medium', 'small', 'tiny', 'xt', 'xxt', 'cell'];
     const idx = presets.indexOf(currentGridSizePreset);
     const next = presets[(idx + 1) % presets.length];
