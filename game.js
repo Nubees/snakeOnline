@@ -8669,7 +8669,10 @@ function startCountdown() {
     const centerX = Math.floor(COLS / 2);
     const centerY = Math.floor(ROWS / 2);
     for (const line of introLines) {
-        const introScale = Math.min(GRID_SIZE / 14, 1.5);
+        let introScale = Math.min(GRID_SIZE / 14, 1.5);
+        if (currentGridSizePreset === 'cell' || currentGridSizePreset === 'cell2') {
+            introScale *= 2;
+        }
         showFloatingText(centerX, centerY + line.yOff, line.text, '#9d00ff', 0.0011, introScale, true, true);
     }
 
