@@ -8795,6 +8795,9 @@ function startAttractMode() {
     gameState = GAME_STATE.ATTRACT;
     attractModeStartTime = Date.now();
 
+    // Hide mobile ready-screen buttons during demo
+    updateMobileStartButton();
+
     // Reset game for demo
     resetGameForAttract();
 
