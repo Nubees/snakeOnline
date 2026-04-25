@@ -6,13 +6,10 @@ const GRID_SIZE_PRESETS = {
     large:  20,  // Maximum play area (PC default)
     medium: 30,  // 1.5x bigger entities
     small:  40,  // 2x bigger entities
-    tiny:   50,  // 2.5x bigger entities
-    xt:     75,  // 3.75x bigger entities
-    xxt:    100, // 5x bigger entities
-    xxx:      0  // 20x20 fixed grid — size computed dynamically
+    tiny:   50   // 2.5x bigger entities (default for all devices)
 };
-let GRID_SIZE = GRID_SIZE_PRESETS.xt;
-let currentGridSizePreset = 'xt';
+let GRID_SIZE = GRID_SIZE_PRESETS.tiny;
+let currentGridSizePreset = 'tiny';
 let COLS = CANVAS_WIDTH / GRID_SIZE;
 let ROWS = CANVAS_HEIGHT / GRID_SIZE;
 
@@ -31,9 +28,9 @@ function loadGridSizePreference() {
         currentGridSizePreset = saved;
         GRID_SIZE = GRID_SIZE_PRESETS[saved];
     } else {
-        // Default to xt for all new games
-        currentGridSizePreset = 'xt';
-        GRID_SIZE = GRID_SIZE_PRESETS.xt;
+        // Default to tiny for all new games
+        currentGridSizePreset = 'tiny';
+        GRID_SIZE = GRID_SIZE_PRESETS.tiny;
     }
 }
 
@@ -52,7 +49,7 @@ function saveGridSizePreference(preset) {
 }
 
 function cycleGridSize() {
-    const presets = ['large', 'medium', 'small', 'tiny', 'xt', 'xxt', 'xxx'];
+    const presets = ['large', 'medium', 'small', 'tiny'];
     const idx = presets.indexOf(currentGridSizePreset);
     const next = presets[(idx + 1) % presets.length];
     currentGridSizePreset = next;
@@ -66,16 +63,7 @@ function cycleGridSize() {
     // Show floating text feedback just above the grid size button
     // Must be AFTER resetGame() because resetGame() clears floatingTexts[]
     // Decay 0.02 = ~3 second lifetime (accounts for frame throttling)
-    let label;
-    if (next === 'xt') {
-        label = 'EXTRA SMALL';
-    } else if (next === 'xxt') {
-        label = 'EXTRA-EXTRA SMALL';
-    } else if (next === 'xxx') {
-        label = '20x20 FIXED GRID';
-    } else {
-        label = next.toUpperCase();
-    }
+    const label = next.toUpperCase();
     const color = GRID_SIZE_COLORS[next] || '#00ffff';
     const gridSizeBtn = document.getElementById('mobileGridSize');
     let textX = Math.floor(COLS / 2);
@@ -95,16 +83,13 @@ const GRID_SIZE_COLORS = {
     large:  '#00ffff', // Cyan - default, bright
     medium: '#00ff88', // Green - balanced
     small:  '#ffaa00', // Orange - caution, getting tight
-    tiny:   '#ff44aa', // Pink - extreme zoom
-    xt:     '#ff0080', // Magenta - extra tiny
-    xxt:    '#ff0000', // Red - extra-extra tiny / max zoom
-    xxx:    '#ffffff'  // White - 20x20 fixed grid
+    tiny:   '#ff44aa'  // Pink - extreme zoom
 };
 
 function updateGridSizeButton() {
     const btn = document.getElementById('mobileGridSize');
     if (!btn) return;
-    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T', xt: 'X', xxt: 'XX', xxx: 'XXX' };
+    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T' };
     const color = GRID_SIZE_COLORS[currentGridSizePreset] || '#00ffff';
     btn.textContent = labels[currentGridSizePreset] || 'L';
     btn.title = `Grid: ${currentGridSizePreset.toUpperCase()} (${GRID_SIZE}px)`;
@@ -9854,24 +9839,6 @@ function calculateGridDimensions() {
 
     const availableWidth = window.innerWidth;
     const availableHeight = window.innerHeight - hudHeight - controlsHeight;
-
-    // XXX preset: fixed 20x20 grid, cell size computed from smaller screen dimension
-    if (currentGridSizePreset === 'xxx') {
-        GRID_SIZE = Math.max(5, Math.floor(Math.min(availableWidth, availableHeight) / 20));
-        COLS = 20;
-        ROWS = 20;
-        CANVAS_WIDTH = COLS * GRID_SIZE;
-        CANVAS_HEIGHT = ROWS * GRID_SIZE;
-
-        const canvasEl = document.getElementById('gameCanvas');
-        if (canvasEl) {
-            canvasEl.width = CANVAS_WIDTH;
-            canvasEl.height = CANVAS_HEIGHT;
-            canvasEl.style.width = CANVAS_WIDTH + 'px';
-            canvasEl.style.height = CANVAS_HEIGHT + 'px';
-        }
-        return;
-    }
 
     // Minimum playable grid size
     const MIN_COLS = 20;
