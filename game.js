@@ -2121,7 +2121,7 @@ const HAZARD_SETTINGS = [
 
 class MusicSystem {
     constructor() {
-        this.currentTrack = 0; // 0-5 = procedural music flavors, 6 = Silent
+        this.currentTrack = 11; // Default to Silent Mode; 0-5 = procedural, 11-12 = Silent
         this.audioElements = [];
         this.trackNames = [
             '1: Cozy Valley',        // Track 0
@@ -8950,8 +8950,8 @@ async function startGame() {
     runStats.levelStartTime = Date.now();
     runStats.bossStartTime = (currentLevel === 6) ? Date.now() : 0;
 
-    // Start music based on selected track
-    if (musicSystem.currentTrack !== 6 && !musicSystem.usingMP3) {
+    // Start music based on selected track (skip if Silent Mode: tracks 11-12)
+    if (musicSystem.currentTrack < 11 && !musicSystem.usingMP3) {
         proceduralMusic.setLevel(currentLevel);
         await musicSystem.startProceduralForTrack(musicSystem.currentTrack);
     }
