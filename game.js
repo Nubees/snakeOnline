@@ -6,7 +6,8 @@ const GRID_SIZE_PRESETS = {
     large:  20,  // Maximum play area (PC default)
     medium: 30,  // 1.5x bigger entities
     small:  40,  // 2x bigger entities
-    tiny:   50   // 2.5x bigger entities (default for all devices)
+    tiny:   50,  // 2.5x bigger entities (default for all devices)
+    cell:    0   // Dynamic: fits exactly 20x20 grid to screen (portrait phones)
 };
 let GRID_SIZE = GRID_SIZE_PRESETS.tiny;
 let currentGridSizePreset = 'tiny';
@@ -49,7 +50,7 @@ function saveGridSizePreference(preset) {
 }
 
 function cycleGridSize() {
-    const presets = ['large', 'medium', 'small', 'tiny'];
+    const presets = ['large', 'medium', 'small', 'tiny', 'cell'];
     const idx = presets.indexOf(currentGridSizePreset);
     const next = presets[(idx + 1) % presets.length];
     currentGridSizePreset = next;
@@ -63,7 +64,7 @@ function cycleGridSize() {
     // Show floating text feedback just above the grid size button
     // Must be AFTER resetGame() because resetGame() clears floatingTexts[]
     // Decay 0.02 = ~3 second lifetime (accounts for frame throttling)
-    const label = next.toUpperCase();
+    const label = next === 'cell' ? 'CELL PHONE' : next.toUpperCase();
     const color = GRID_SIZE_COLORS[next] || '#00ffff';
     const gridSizeBtn = document.getElementById('mobileGridSize');
     let textX = Math.floor(COLS / 2);
@@ -83,13 +84,14 @@ const GRID_SIZE_COLORS = {
     large:  '#00ffff', // Cyan - default, bright
     medium: '#00ff88', // Green - balanced
     small:  '#ffaa00', // Orange - caution, getting tight
-    tiny:   '#ff44aa'  // Pink - extreme zoom
+    tiny:   '#ff44aa', // Pink - extreme zoom
+    cell:   '#ff6600'  // Deep orange - cell phone portrait mode
 };
 
 function updateGridSizeButton() {
     const btn = document.getElementById('mobileGridSize');
     if (!btn) return;
-    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T' };
+    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T', cell: 'C' };
     const color = GRID_SIZE_COLORS[currentGridSizePreset] || '#00ffff';
     btn.textContent = labels[currentGridSizePreset] || 'L';
     btn.title = `Grid: ${currentGridSizePreset.toUpperCase()} (${GRID_SIZE}px)`;
@@ -9839,6 +9841,26 @@ function calculateGridDimensions() {
 
     const availableWidth = window.innerWidth;
     const availableHeight = window.innerHeight - hudHeight - controlsHeight;
+
+    // CELL preset: dynamic 20x20 grid sized to fit portrait phone screen
+    if (currentGridSizePreset === 'cell') {
+        const cellW = Math.floor(availableWidth / 20);
+        const cellH = Math.floor(availableHeight / 20);
+        GRID_SIZE = Math.max(5, Math.min(cellW, cellH));
+        COLS = 20;
+        ROWS = 20;
+        CANVAS_WIDTH = COLS * GRID_SIZE;
+        CANVAS_HEIGHT = ROWS * GRID_SIZE;
+
+        const canvasEl = document.getElementById('gameCanvas');
+        if (canvasEl) {
+            canvasEl.width = CANVAS_WIDTH;
+            canvasEl.height = CANVAS_HEIGHT;
+            canvasEl.style.width = CANVAS_WIDTH + 'px';
+            canvasEl.style.height = CANVAS_HEIGHT + 'px';
+        }
+        return;
+    }
 
     // Minimum playable grid size
     const MIN_COLS = 20;
