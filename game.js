@@ -6,7 +6,9 @@ const GRID_SIZE_PRESETS = {
     large:  20,  // Maximum play area (PC default)
     medium: 30,  // 1.5x bigger entities
     small:  40,  // 2x bigger entities
-    tiny:   50,  // 2.5x bigger entities (default for all devices)
+    tiny:   50,  // 2.5x bigger entities
+    xt:     75,  // 3.75x bigger entities
+    xxt:    100, // 5x bigger entities
     cell:    0   // Dynamic: fits exactly 20x20 grid to screen (portrait phones)
 };
 let GRID_SIZE = GRID_SIZE_PRESETS.tiny;
@@ -50,7 +52,7 @@ function saveGridSizePreference(preset) {
 }
 
 function cycleGridSize() {
-    const presets = ['large', 'medium', 'small', 'tiny', 'cell'];
+    const presets = ['large', 'medium', 'small', 'tiny', 'xt', 'xxt', 'cell'];
     const idx = presets.indexOf(currentGridSizePreset);
     const next = presets[(idx + 1) % presets.length];
     currentGridSizePreset = next;
@@ -64,7 +66,16 @@ function cycleGridSize() {
     // Show floating text feedback just above the grid size button
     // Must be AFTER resetGame() because resetGame() clears floatingTexts[]
     // Decay 0.02 = ~3 second lifetime (accounts for frame throttling)
-    const label = next === 'cell' ? 'CELL PHONE' : next.toUpperCase();
+    let label;
+    if (next === 'xt') {
+        label = 'EXTRA SMALL';
+    } else if (next === 'xxt') {
+        label = 'EXTRA-EXTRA SMALL';
+    } else if (next === 'cell') {
+        label = 'CELL PHONE';
+    } else {
+        label = next.toUpperCase();
+    }
     const color = GRID_SIZE_COLORS[next] || '#00ffff';
     const gridSizeBtn = document.getElementById('mobileGridSize');
     let textX = Math.floor(COLS / 2);
@@ -77,7 +88,8 @@ function cycleGridSize() {
         textX = btnCenterX / GRID_SIZE;
         textY = btnTopY / GRID_SIZE;
     }
-    showFloatingText(textX, textY, `GRID-Size: ${label} (${GRID_SIZE}px)`, color, 0.005, 1.2);
+    const sizeLabel = next === 'cell' ? '20x20' : `${GRID_SIZE}px`;
+    showFloatingText(textX, textY, `GRID-Size: ${label} (${sizeLabel})`, color, 0.005, 1.2);
 }
 
 const GRID_SIZE_COLORS = {
@@ -85,16 +97,23 @@ const GRID_SIZE_COLORS = {
     medium: '#00ff88', // Green - balanced
     small:  '#ffaa00', // Orange - caution, getting tight
     tiny:   '#ff44aa', // Pink - extreme zoom
+    xt:     '#ff0080', // Magenta - extra tiny
+    xxt:    '#ff0000', // Red - extra-extra tiny
     cell:   '#ff6600'  // Deep orange - cell phone portrait mode
 };
 
 function updateGridSizeButton() {
     const btn = document.getElementById('mobileGridSize');
     if (!btn) return;
-    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T', cell: 'C' };
+    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T', xt: 'X', xxt: 'XX', cell: 'C' };
     const color = GRID_SIZE_COLORS[currentGridSizePreset] || '#00ffff';
     btn.textContent = labels[currentGridSizePreset] || 'L';
-    btn.title = `Grid: ${currentGridSizePreset.toUpperCase()} (${GRID_SIZE}px)`;
+    const titleLabel = currentGridSizePreset === 'cell' ? 'CELL PHONE' :
+                       currentGridSizePreset === 'xt' ? 'EXTRA SMALL' :
+                       currentGridSizePreset === 'xxt' ? 'EXTRA-EXTRA SMALL' :
+                       currentGridSizePreset.toUpperCase();
+    const sizeText = currentGridSizePreset === 'cell' ? '20x20' : `${GRID_SIZE}px`;
+    btn.title = `Grid: ${titleLabel} (${sizeText})`;
     // Dynamic button color to match preset
     btn.style.background = hexToRgba(color, 0.2);
     btn.style.borderColor = color;
