@@ -9863,8 +9863,9 @@ function calculateGridDimensions() {
 
     // CELL preset: dynamic 20x20 grid sized to fit portrait phone screen
     if (currentGridSizePreset === 'cell') {
-        const cellW = Math.floor(availableWidth / 20);
-        const cellH = Math.floor(availableHeight / 20);
+        const margin = 3; // visible border on each side
+        const cellW = Math.floor((availableWidth - margin * 2) / 20);
+        const cellH = Math.floor((availableHeight - margin * 2) / 20);
         GRID_SIZE = Math.max(5, Math.min(cellW, cellH));
         COLS = 20;
         ROWS = 20;
