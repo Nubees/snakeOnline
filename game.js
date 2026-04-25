@@ -9614,14 +9614,19 @@ function initTouchControls() {
 
     touchEnabled = true;
 
-    // Show mobile controls
-    const mobileControls = document.getElementById('mobile-controls');
-    if (mobileControls) mobileControls.classList.remove('hidden');
+    // Do NOT show mobile-controls here — updateMobileStartButton() manages visibility
 
     // Add touch listeners to canvas
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    // Also listen on document for attract-mode exit (catches touches outside canvas)
+    document.addEventListener('touchend', (e) => {
+        if (gameState === GAME_STATE.ATTRACT) {
+            stopAttractMode();
+        }
+    }, { passive: false });
 
     // Click/tap on canvas to exit attract mode or level transition
     canvas.addEventListener('click', (e) => {
@@ -9660,6 +9665,9 @@ function handleTouchStart(e) {
     if (!touchEnabled) return;
     e.preventDefault();
 
+    // Track input time for attract mode
+    lastInputTime = Date.now();
+
     // Tap anywhere in attract mode to exit demo immediately
     if (gameState === GAME_STATE.ATTRACT) {
         stopAttractMode();
@@ -9674,6 +9682,9 @@ function handleTouchStart(e) {
 function handleTouchEnd(e) {
     if (!touchEnabled) return;
     e.preventDefault();
+
+    // Track input time for attract mode
+    lastInputTime = Date.now();
 
     const touch = e.changedTouches[0];
     const deltaX = touch.clientX - touchStartX;
@@ -10031,15 +10042,33 @@ function updateMobileStartButton() {
     const gameControls = document.getElementById('mobile-controls');
 
     if (gameState === GAME_STATE.READY) {
-        if (readyControls) readyControls.classList.remove('hidden');
-        if (gameControls) gameControls.classList.add('hidden');
+        if (readyControls) {
+            readyControls.classList.remove('hidden');
+            readyControls.style.display = '';
+        }
+        if (gameControls) {
+            gameControls.classList.add('hidden');
+            gameControls.style.display = 'none';
+        }
     } else if (gameState === GAME_STATE.PLAYING) {
-        if (readyControls) readyControls.classList.add('hidden');
-        if (gameControls) gameControls.classList.remove('hidden');
+        if (readyControls) {
+            readyControls.classList.add('hidden');
+            readyControls.style.display = 'none';
+        }
+        if (gameControls) {
+            gameControls.classList.remove('hidden');
+            gameControls.style.display = '';
+        }
     } else {
         // ATTRACT, PAUSED, GAME_OVER, etc. — hide both
-        if (readyControls) readyControls.classList.add('hidden');
-        if (gameControls) gameControls.classList.add('hidden');
+        if (readyControls) {
+            readyControls.classList.add('hidden');
+            readyControls.style.display = 'none';
+        }
+        if (gameControls) {
+            gameControls.classList.add('hidden');
+            gameControls.style.display = 'none';
+        }
     }
 }
 
