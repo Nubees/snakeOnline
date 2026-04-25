@@ -4,12 +4,14 @@ let CANVAS_HEIGHT = 600;
 // Grid Size Presets - dynamic cell size for better mobile visibility
 const GRID_SIZE_PRESETS = {
     large:  20,  // Maximum play area (PC default)
-    medium: 30,  // 1.5x bigger entities (phone default)
-    small:  40,  // 2x bigger entities (small phone)
-    tiny:   50   // 2.5x bigger entities (tiny phone / max zoom)
+    medium: 30,  // 1.5x bigger entities
+    small:  40,  // 2x bigger entities
+    tiny:   50,  // 2.5x bigger entities
+    xt:     75,  // 3.75x bigger entities
+    xxt:    100  // 5x bigger entities (extra-extra small grid, largest cells)
 };
-let GRID_SIZE = GRID_SIZE_PRESETS.tiny;
-let currentGridSizePreset = 'tiny';
+let GRID_SIZE = GRID_SIZE_PRESETS.xt;
+let currentGridSizePreset = 'xt';
 let COLS = CANVAS_WIDTH / GRID_SIZE;
 let ROWS = CANVAS_HEIGHT / GRID_SIZE;
 
@@ -28,9 +30,9 @@ function loadGridSizePreference() {
         currentGridSizePreset = saved;
         GRID_SIZE = GRID_SIZE_PRESETS[saved];
     } else {
-        // Default to tiny for all new games
-        currentGridSizePreset = 'tiny';
-        GRID_SIZE = GRID_SIZE_PRESETS.tiny;
+        // Default to xt for all new games
+        currentGridSizePreset = 'xt';
+        GRID_SIZE = GRID_SIZE_PRESETS.xt;
     }
 }
 
@@ -49,7 +51,7 @@ function saveGridSizePreference(preset) {
 }
 
 function cycleGridSize() {
-    const presets = ['large', 'medium', 'small', 'tiny'];
+    const presets = ['large', 'medium', 'small', 'tiny', 'xt', 'xxt'];
     const idx = presets.indexOf(currentGridSizePreset);
     const next = presets[(idx + 1) % presets.length];
     currentGridSizePreset = next;
@@ -63,7 +65,14 @@ function cycleGridSize() {
     // Show floating text feedback just above the grid size button
     // Must be AFTER resetGame() because resetGame() clears floatingTexts[]
     // Decay 0.02 = ~3 second lifetime (accounts for frame throttling)
-    const label = next.toUpperCase();
+    let label;
+    if (next === 'xt') {
+        label = 'EXTRA SMALL';
+    } else if (next === 'xxt') {
+        label = 'EXTRA-EXTRA SMALL';
+    } else {
+        label = next.toUpperCase();
+    }
     const color = GRID_SIZE_COLORS[next] || '#00ffff';
     const gridSizeBtn = document.getElementById('mobileGridSize');
     let textX = Math.floor(COLS / 2);
@@ -76,20 +85,22 @@ function cycleGridSize() {
         textX = btnCenterX / GRID_SIZE;
         textY = btnTopY / GRID_SIZE;
     }
-    showFloatingText(textX, textY, `GRID-Size: ${label} (${GRID_SIZE}px)`, color, 0.02, 1.2);
+    showFloatingText(textX, textY, `GRID-Size: ${label} (${GRID_SIZE}px)`, color, 0.005, 1.2);
 }
 
 const GRID_SIZE_COLORS = {
     large:  '#00ffff', // Cyan - default, bright
     medium: '#00ff88', // Green - balanced
     small:  '#ffaa00', // Orange - caution, getting tight
-    tiny:   '#ff44aa'  // Pink - extreme zoom
+    tiny:   '#ff44aa', // Pink - extreme zoom
+    xt:     '#ff0080', // Magenta - extra tiny
+    xxt:    '#ff0000'  // Red - extra-extra tiny / max zoom
 };
 
 function updateGridSizeButton() {
     const btn = document.getElementById('mobileGridSize');
     if (!btn) return;
-    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T' };
+    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T', xt: 'X', xxt: 'XX' };
     const color = GRID_SIZE_COLORS[currentGridSizePreset] || '#00ffff';
     btn.textContent = labels[currentGridSizePreset] || 'L';
     btn.title = `Grid: ${currentGridSizePreset.toUpperCase()} (${GRID_SIZE}px)`;
@@ -121,7 +132,7 @@ function showBossBattleFloatingText() {
     }
     const text = bossBattleMode ? 'BOSS: ON' : 'BOSS: OFF';
     const color = bossBattleMode ? '#ff0040' : '#00c8ff';
-    showFloatingText(textX, textY, text, color, 0.02, 1.2);
+    showFloatingText(textX, textY, text, color, 0.005, 1.2);
 }
 
 function showAnnouncerFloatingText() {
@@ -138,7 +149,7 @@ function showAnnouncerFloatingText() {
     }
     const setNum = currentAnnouncerMode === 'set1' ? '1' : '2';
     const color = currentAnnouncerMode === 'set1' ? '#ffd700' : '#00c8ff';
-    showFloatingText(textX, textY, `ANNOUNCER: ${setNum}`, color, 0.02, 1.2);
+    showFloatingText(textX, textY, `ANNOUNCER: ${setNum}`, color, 0.005, 1.2);
 }
 
 // Staggered enemy spawn system
@@ -8576,28 +8587,49 @@ function startCountdown() {
     playerName = '';
 
     gameState = GAME_STATE.COUNTDOWN;
-    countdownValue = 3;
+    countdownValue = -1; // Sentinel: don't draw countdown yet
 
     // Hide mobile start button
     updateMobileStartButton();
 
-    // Play first beep
-    soundSystem.playCountdown();
+    // Show introductory spooky message before countdown
+    const introLines = [
+        { text: "Welcome to Neon Snake.", yOff: -3 },
+        { text: "Eat the fruits before them.", yOff: -2 },
+        { text: "Each Level brings a new", yOff: -1 },
+        { text: "Power-up. Your first awaits!", yOff: 0 },
+        { text: "The Ghost! Phase through", yOff: 1 },
+        { text: "walls and enemies alike.", yOff: 2 },
+        { text: "Catch it for bonus score!", yOff: 3 }
+    ];
+    const centerX = Math.floor(COLS / 2);
+    const centerY = Math.floor(ROWS / 2);
+    for (const line of introLines) {
+        const introScale = Math.min(GRID_SIZE / 14, 1.5);
+        showFloatingText(centerX, centerY + line.yOff, line.text, '#9d00ff', 0.0011, introScale, true, true);
+    }
 
-    countdownInterval = setInterval(() => {
-        countdownValue--;
+    // Wait 15 seconds for intro text, then start 3-second countdown
+    setTimeout(() => {
+        if (gameState !== GAME_STATE.COUNTDOWN) return; // Aborted
+        countdownValue = 3;
+        soundSystem.playCountdown();
 
-        if (countdownValue > 0) {
-            soundSystem.playCountdown();
-        } else if (countdownValue === 0) {
-            soundSystem.playCountdownFinal();
-        } else {
-            // Countdown finished, start game
-            clearInterval(countdownInterval);
-            countdownInterval = null;
-            startGame();
-        }
-    }, 1000);
+        countdownInterval = setInterval(() => {
+            countdownValue--;
+
+            if (countdownValue > 0) {
+                soundSystem.playCountdown();
+            } else if (countdownValue === 0) {
+                soundSystem.playCountdownFinal();
+            } else {
+                // Countdown finished, start game
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+                startGame();
+            }
+        }, 1000);
+    }, 15000);
 }
 
 // Initialize Level 6 Boss Battle mode (skips normal progression)
@@ -8900,22 +8932,6 @@ async function startGame() {
     gameState = GAME_STATE.PLAYING;
     soundSystem.playStart();
     initLevelTimer();
-
-    // Introductory spooky message for first-time players (stacked lines)
-    const introLines = [
-        { text: "Your first power awaits...", yOff: -2 },
-        { text: "The Ghost!", yOff: -0.8 },
-        { text: "Phase through walls", yOff: 0.4 },
-        { text: "and enemies alike.", yOff: 1.6 },
-        { text: "Catch it for bonus score!", yOff: 2.8 }
-    ];
-    const centerX = Math.floor(COLS / 2);
-    const centerY = Math.floor(ROWS / 2);
-    window._introTextEndTime = Date.now() + 10000; // 10 seconds
-    for (const line of introLines) {
-        const introScale = Math.min(GRID_SIZE / 14, 1.5); // Smaller, capped scale for all screens
-        showFloatingText(centerX, centerY + line.yOff, line.text, '#9d00ff', 0.0025, introScale, true, true);
-    }
 
     // Reset run-level stats
     runStats.levelStartLives = playerLives;
@@ -9456,6 +9472,7 @@ function togglePause() {
 }
 
 let achievementsOpen = false;
+let _pausedByAchievements = false;
 
 function showAchievements() {
     const screen = document.getElementById('achievementsScreen');
@@ -9464,7 +9481,20 @@ function showAchievements() {
     if (achievementsOpen) {
         screen.classList.add('hidden');
         achievementsOpen = false;
+        // Resume gameplay if we paused it
+        if (_pausedByAchievements) {
+            _pausedByAchievements = false;
+            if (gameState === GAME_STATE.PAUSED) {
+                gameState = GAME_STATE.PLAYING;
+            }
+        }
         return;
+    }
+
+    // Pause gameplay while achievements are open
+    if (gameState === GAME_STATE.PLAYING) {
+        gameState = GAME_STATE.PAUSED;
+        _pausedByAchievements = true;
     }
 
     // Build achievement list dynamically
@@ -9494,6 +9524,13 @@ function closeAchievements() {
     const screen = document.getElementById('achievementsScreen');
     if (screen) screen.classList.add('hidden');
     achievementsOpen = false;
+    // Resume gameplay if we paused it
+    if (_pausedByAchievements) {
+        _pausedByAchievements = false;
+        if (gameState === GAME_STATE.PAUSED) {
+            gameState = GAME_STATE.PLAYING;
+        }
+    }
 }
 
 // ============================================================================
@@ -10385,14 +10422,6 @@ function update(deltaTime) {
 
     if (gameState !== GAME_STATE.PLAYING && gameState !== GAME_STATE.RESPAWNING) return;
 
-    // Pause game logic during intro text display (8 seconds)
-    if (window._introTextEndTime && Date.now() < window._introTextEndTime) {
-        // Only update floating texts (drawn every frame anyway)
-        return;
-    } else {
-        window._introTextEndTime = null;
-    }
-
     // Staggered enemy spawn (adds 3 snakes every 5 seconds until max reached)
     processStaggeredSpawns();
 
@@ -11087,6 +11116,29 @@ function drawReadyScreen() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+    // Floating frame that holds title, scoreboard, and start button area
+    const frameW = CANVAS_WIDTH * 0.42; // Narrower
+    const frameH = 360; // Tall enough to fully contain start button
+    const frameX = (CANVAS_WIDTH - frameW) / 2; // Centered
+    const frameY = 25;
+    const frameR = 15; // corner radius
+
+    // Frame background
+    ctx.fillStyle = 'rgba(0, 20, 40, 0.6)';
+    ctx.beginPath();
+    ctx.roundRect(frameX, frameY, frameW, frameH, frameR);
+    ctx.fill();
+
+    // Frame border glow
+    ctx.strokeStyle = '#00ffff';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 25;
+    ctx.shadowColor = '#00ffff';
+    ctx.beginPath();
+    ctx.roundRect(frameX, frameY, frameW, frameH, frameR);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
     // Title
     ctx.fillStyle = '#00ffff';
     ctx.font = "bold 36px 'Courier New', monospace";
@@ -11128,13 +11180,35 @@ function drawReadyScreen() {
         }
     }
 
+    // Middle frame: player name, announcer, boss, start prompt
+    const midFrameY = 300 + CANVAS_HEIGHT * 0.1; // Moved down 10%
+    const midFrameH = 185;
+    const midFrameW = CANVAS_WIDTH * 0.42; // Same width as top frame
+    const midFrameX = (CANVAS_WIDTH - midFrameW) / 2;
+
+    // Middle frame background
+    ctx.fillStyle = 'rgba(0, 40, 20, 0.5)';
+    ctx.beginPath();
+    ctx.roundRect(midFrameX, midFrameY, midFrameW, midFrameH, 12);
+    ctx.fill();
+
+    // Middle frame border glow
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = '#00ff88';
+    ctx.beginPath();
+    ctx.roundRect(midFrameX, midFrameY, midFrameW, midFrameH, 12);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
     // Player Name Display
     ctx.fillStyle = '#ff00ff';
     ctx.font = "bold 20px 'Courier New', monospace";
     ctx.shadowColor = '#ff00ff';
     ctx.shadowBlur = 15;
     const displayName = (playerName || 'ANON').substring(0, MAX_PLAYER_NAME_LENGTH).toUpperCase();
-    ctx.fillText(`PLAYER: ${displayName}`, CANVAS_WIDTH / 2, 325);
+    ctx.fillText(`PLAYER: ${displayName}`, CANVAS_WIDTH / 2, midFrameY + 25);
 
     // ANNOUNCER MODE INDICATOR
     const announcerText = currentAnnouncerMode === 'set1' ? 'SET 1' : 'SET 2';
@@ -11144,12 +11218,12 @@ function drawReadyScreen() {
     ctx.font = "bold 16px 'Courier New', monospace";
     ctx.shadowColor = announcerColor;
     ctx.shadowBlur = 15;
-    ctx.fillText(`♪ ANNOUNCER: ${announcerText} ♪`, CANVAS_WIDTH / 2, 355);
+    ctx.fillText(`♪ ANNOUNCER: ${announcerText} ♪`, CANVAS_WIDTH / 2, midFrameY + 55);
 
     ctx.font = "12px 'Courier New', monospace";
     ctx.fillStyle = '#aaaaaa';
     ctx.shadowBlur = 5;
-    ctx.fillText('Press 1 to Change', CANVAS_WIDTH / 2, 372);
+    ctx.fillText('Press 1 to Change', CANVAS_WIDTH / 2, midFrameY + 72);
 
     // BOSS BATTLE MODE TOGGLE
     const bossBattleColor = bossBattleMode ? '#ff0040' : '#888888';
@@ -11159,19 +11233,19 @@ function drawReadyScreen() {
     ctx.font = "bold 16px 'Courier New', monospace";
     ctx.shadowColor = bossBattleColor;
     ctx.shadowBlur = bossBattleMode ? 15 : 0;
-    ctx.fillText(`⚔️ ${bossBattleText} ⚔️`, CANVAS_WIDTH / 2, 400);
+    ctx.fillText(`⚔️ ${bossBattleText} ⚔️`, CANVAS_WIDTH / 2, midFrameY + 100);
 
     ctx.font = "12px 'Courier New', monospace";
     ctx.fillStyle = '#aaaaaa';
     ctx.shadowBlur = 5;
-    ctx.fillText('Press 2 to Toggle', CANVAS_WIDTH / 2, 417);
+    ctx.fillText('Press 2 to Toggle', CANVAS_WIDTH / 2, midFrameY + 117);
 
     // Instructions
     ctx.fillStyle = '#ffffff';
     ctx.font = "bold 16px 'Courier New', monospace";
     ctx.shadowBlur = 10;
     ctx.shadowColor = '#ffffff';
-    ctx.fillText('Press 3 to start on PC', CANVAS_WIDTH / 2, 450);
+    ctx.fillText('Press 3 to start on PC', CANVAS_WIDTH / 2, midFrameY + 145);
 
     // Rainbow glow helper for name prompt
     const rainbowHue = (Date.now() / 80) % 360; // Faster colour cycling
@@ -11183,11 +11257,11 @@ function drawReadyScreen() {
     ctx.fillStyle = '#ffffff';
     ctx.shadowBlur = 18;
     ctx.shadowColor = rainbowColor;
-    ctx.fillText(namePromptText, CANVAS_WIDTH / 2, 465);
+    ctx.fillText(namePromptText, CANVAS_WIDTH / 2, midFrameY + 160);
 
     // Rainbow underline
     const promptWidth = ctx.measureText(namePromptText).width;
-    const underlineY = 469;
+    const underlineY = midFrameY + 164;
     const underlineGrad = ctx.createLinearGradient(
         CANVAS_WIDTH / 2 - promptWidth / 2, 0,
         CANVAS_WIDTH / 2 + promptWidth / 2, 0
@@ -11204,11 +11278,33 @@ function drawReadyScreen() {
 
     // Reset shadow for remaining text
     ctx.shadowBlur = 0;
-    ctx.fillStyle = '#aaaaaa';
-    ctx.fillText('Arrow Keys: Move  |  Z: Speed Up  |  X: Slow Down', CANVAS_WIDTH / 2, 510);
-    ctx.fillText('P: Pause  |  R: Restart  |  1: Sound Set  |  2: Boss Mode', CANVAS_WIDTH / 2, 530);
 
+    // Bottom controls frame
+    const botFrameH = 65;
+    const botFrameY = CANVAS_HEIGHT - botFrameH - 10;
+    const botFrameW = CANVAS_WIDTH * 0.42;
+    const botFrameX = (CANVAS_WIDTH - botFrameW) / 2;
+
+    // Bottom frame background
+    ctx.fillStyle = 'rgba(20, 0, 40, 0.5)';
+    ctx.beginPath();
+    ctx.roundRect(botFrameX, botFrameY, botFrameW, botFrameH, 10);
+    ctx.fill();
+
+    // Bottom frame border glow
+    ctx.strokeStyle = '#ff00ff';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = '#ff00ff';
+    ctx.beginPath();
+    ctx.roundRect(botFrameX, botFrameY, botFrameW, botFrameH, 10);
+    ctx.stroke();
     ctx.shadowBlur = 0;
+
+    // Controls text inside bottom frame
+    ctx.fillStyle = '#aaaaaa';
+    ctx.fillText('Arrow Keys: Move  |  Z: Speed Up  |  X: Slow Down', CANVAS_WIDTH / 2, botFrameY + 28);
+    ctx.fillText('P: Pause  |  R: Restart  |  1: Sound Set  |  2: Boss Mode', CANVAS_WIDTH / 2, botFrameY + 50);
 }
 
 function drawAttractOverlay() {
@@ -11259,6 +11355,9 @@ function drawAttractOverlay() {
 }
 
 function drawCountdown() {
+    // Don't draw during intro text phase (countdownValue is -1)
+    if (countdownValue < 0) return;
+
     // Semi-transparent overlay
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
