@@ -7,7 +7,6 @@ const GRID_SIZE_PRESETS = {
     medium: 30,  // 1.5x bigger entities
     small:  40,  // 2x bigger entities
     tiny:   50,  // 2.5x bigger entities
-    xt:     75,  // 3.75x bigger entities
     cell2:   0, // Dynamic: fits exactly 30x30 grid to screen
     cell:    0   // Dynamic: fits exactly 20x20 grid to screen (portrait phones)
 };
@@ -64,7 +63,7 @@ function cycleGridSize() {
     if (now - lastGridCycleTime < 300) return;
     lastGridCycleTime = now;
 
-    const presets = ['large', 'medium', 'small', 'tiny', 'xt', 'cell2', 'cell'];
+    const presets = ['large', 'medium', 'small', 'tiny', 'cell2', 'cell'];
     const idx = presets.indexOf(currentGridSizePreset);
     const next = presets[(idx + 1) % presets.length];
     currentGridSizePreset = next;
@@ -79,9 +78,7 @@ function cycleGridSize() {
     // Must be AFTER resetGame() because resetGame() clears floatingTexts[]
     // Decay 0.02 = ~3 second lifetime (accounts for frame throttling)
     let label;
-    if (next === 'xt') {
-        label = 'EXTRA SMALL';
-    } else if (next === 'cell2') {
+    if (next === 'cell2') {
         label = 'CELL2';
     } else if (next === 'cell') {
         label = 'CELL PHONE';
@@ -109,19 +106,17 @@ const GRID_SIZE_COLORS = {
     medium: '#00ff88', // Green - balanced
     small:  '#ffaa00', // Orange - caution, getting tight
     tiny:   '#ff44aa', // Pink - extreme zoom
-    xt:     '#ff0080', // Magenta - extra tiny
-    cell2:    '#ff0000', // Red - extra-extra tiny
+    cell2:    '#ff0000', // Red - cell2 dynamic
     cell:   '#ff6600'  // Deep orange - cell phone portrait mode
 };
 
 function updateGridSizeButton() {
     const btn = document.getElementById('mobileGridSize');
     if (!btn) return;
-    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T', xt: 'X', cell2: 'D', cell: 'C' };
+    const labels = { large: 'L', medium: 'M', small: 'S', tiny: 'T', cell2: 'D', cell: 'C' };
     const color = GRID_SIZE_COLORS[currentGridSizePreset] || '#00ffff';
     btn.textContent = labels[currentGridSizePreset] || 'L';
     const titleLabel = currentGridSizePreset === 'cell' ? 'CELL PHONE' :
-                       currentGridSizePreset === 'xt' ? 'EXTRA SMALL' :
                        currentGridSizePreset === 'cell2' ? 'CELL2' :
                        currentGridSizePreset.toUpperCase();
     const sizeText = currentGridSizePreset === 'cell' ? '20x20' : currentGridSizePreset === 'cell2' ? '30x30' : `${GRID_SIZE}px`;
