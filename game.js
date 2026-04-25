@@ -8,7 +8,7 @@ const GRID_SIZE_PRESETS = {
     small:  40,  // 2x bigger entities
     tiny:   50,  // 2.5x bigger entities
     xt:     75,  // 3.75x bigger entities
-    xxt:    100, // 5x bigger entities
+    xxt:     0, // Dynamic: fits exactly 30x30 grid to screen
     cell:    0   // Dynamic: fits exactly 20x20 grid to screen (portrait phones)
 };
 let GRID_SIZE = GRID_SIZE_PRESETS.tiny;
@@ -88,7 +88,7 @@ function cycleGridSize() {
         textX = btnCenterX / GRID_SIZE;
         textY = btnTopY / GRID_SIZE;
     }
-    const sizeLabel = next === 'cell' ? '20x20' : `${GRID_SIZE}px`;
+    const sizeLabel = next === 'cell' ? '20x20' : next === 'xxt' ? '30x30' : `${GRID_SIZE}px`;
     showFloatingText(textX, textY, `GRID-Size: ${label} (${sizeLabel})`, color, 0.005, 1.2);
 }
 
@@ -112,7 +112,7 @@ function updateGridSizeButton() {
                        currentGridSizePreset === 'xt' ? 'EXTRA SMALL' :
                        currentGridSizePreset === 'xxt' ? 'EXTRA-EXTRA SMALL' :
                        currentGridSizePreset.toUpperCase();
-    const sizeText = currentGridSizePreset === 'cell' ? '20x20' : `${GRID_SIZE}px`;
+    const sizeText = currentGridSizePreset === 'cell' ? '20x20' : currentGridSizePreset === 'xxt' ? '30x30' : `${GRID_SIZE}px`;
     btn.title = `Grid: ${titleLabel} (${sizeText})`;
     // Dynamic button color to match preset
     btn.style.background = hexToRgba(color, 0.2);
@@ -9869,6 +9869,27 @@ function calculateGridDimensions() {
         GRID_SIZE = Math.max(5, Math.min(cellW, cellH));
         COLS = 20;
         ROWS = 20;
+        CANVAS_WIDTH = COLS * GRID_SIZE;
+        CANVAS_HEIGHT = ROWS * GRID_SIZE;
+
+        const canvasEl = document.getElementById('gameCanvas');
+        if (canvasEl) {
+            canvasEl.width = CANVAS_WIDTH;
+            canvasEl.height = CANVAS_HEIGHT;
+            canvasEl.style.width = CANVAS_WIDTH + 'px';
+            canvasEl.style.height = CANVAS_HEIGHT + 'px';
+        }
+        return;
+    }
+
+    // XXT preset: dynamic 30x30 grid sized to fit screen
+    if (currentGridSizePreset === 'xxt') {
+        const margin = 3; // visible border on each side
+        const cellW = Math.floor((availableWidth - margin * 2) / 30);
+        const cellH = Math.floor((availableHeight - margin * 2) / 30);
+        GRID_SIZE = Math.max(5, Math.min(cellW, cellH));
+        COLS = 30;
+        ROWS = 30;
         CANVAS_WIDTH = COLS * GRID_SIZE;
         CANVAS_HEIGHT = ROWS * GRID_SIZE;
 
