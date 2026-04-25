@@ -2,10 +2,29 @@
 
 ## Game Technology Stack
 - **Rendering**: HTML5 Canvas API
-- **Language**: Vanilla JavaScript (ES6+)
-- **Audio**: Web Audio API
+- **Language**: Vanilla JavaScript (ES6+), ~10,500 lines
+- **Audio**: Web Audio API + Tone.js (procedural music)
 - **Styling**: CSS3 with CSS Variables
 - **Build**: None (pure HTML/JS/CSS)
+- **Storage**: localStorage (scores, achievements, preferences)
+
+---
+
+## Current Feature Status (April 2026)
+
+### Implemented Features
+- **8 Power-Ups** (progressively unlocked by level)
+- **8 Levels** with unique hazards (drifting debris, gravity wells)
+- **Boss Battle Mode** (Level 6)
+- **Dynamic Grid System** — 7 presets including 3 dynamic cell-phone modes
+- **20 Achievements** with localStorage persistence
+- **13-Track Music System** (11 procedural + 2 Silent Mode)
+- **Announcer System** — 2 voice sets with kill streak announcements
+- **3 Lives System** with spawn protection
+- **Attract/Demo Mode** — AI plays after 60 seconds idle
+- **Screen Effects** — Shake, flash, particles, floating text
+- **Mobile Touch Controls** — Swipe gestures + on-screen buttons
+- **Combo Multiplier** and **Kill Streaks**
 
 ---
 
@@ -44,16 +63,6 @@
 - **Features**: Lightweight, trailing effects, randomized paths
 - **Use Case**: Menu screen animated background
 
-### 4. **JParticles**
-- **Best For**: Chinese dev community, lightweight
-- **Size**: ~3.4KB gzipped
-- **Effects**: Snow falling, wave motion, line animations
-
-### 5. **particle-explosions**
-- **Best For**: Explosion effects specifically
-- **Features**: Configurable drag, easing, explosion factor
-- **Use Case**: Enemy death explosions
-
 ---
 
 ## Screen Shake / Camera Effects
@@ -86,35 +95,20 @@ function shakeCanvas(intensity = 10, duration = 500) {
 
 ## Audio Tools & Libraries
 
-### 1. **Tone.js** ⭐ RECOMMENDED
+### 1. **Tone.js** ⭐ CURRENTLY USED
 - **Website**: tonejs.github.io
-- **Best For**: Music, synthesizers, complex audio
-- **Features**:
-  - Built-in synthesizers (Synth, FMSynth, AMSynth, NoiseSynth)
-  - Effects: reverb, delay, distortion, filters
-  - Sequencing and transport for timing
-  - Sample playback
+- **Status**: ✅ IMPLEMENTED — Background music generation
+- **Features Used**:
+  - Built-in synthesizers for procedural music
+  - Volume control slider
+  - 11 unique procedural tracks
+  - 2 Silent Mode options
 - **Use Cases**:
   - Background music generation
   - Dynamic sound effects
   - Procedural audio
-- **Installation**: `npm install tone`
 
-### 2. **Cacophony**
-- **Website**: cacophony.js.org
-- **Best For**: Game audio with 3D spatial positioning
-- **Features**:
-  - 3D spatial audio (HRTF and stereo panning)
-  - 4 waveform synthesizers
-  - Advanced filtering
-  - Group management
-  - 3-layer caching
-- **Use Cases**:
-  - Positional enemy sounds
-  - Dynamic mixing
-- **Installation**: `npm install cacophony`
-
-### 3. **jsfxr** ⭐ PERFECT FOR ARCADE GAMES
+### 2. **jsfxr** ⭐ PERFECT FOR ARCADE GAMES
 - **NPM**: jsfxr
 - **Best For**: Retro/8-bit arcade sound effects
 - **Features**:
@@ -128,14 +122,43 @@ function shakeCanvas(intensity = 10, duration = 500) {
 - **Size**: Tiny (~50KB)
 - **Installation**: `npm i jsfxr`
 
-### 4. **Syngen**
-- **GitHub**: nicross/syngen
-- **Best For**: 3D spatial audio games
-- **Features**:
-  - Binaural audio positioning
-  - Frame-by-frame updates
-  - Simple synth creation
-- **Installation**: `npm install syngen`
+### 3. **Web Audio API** ⭐ CURRENTLY USED
+- **Status**: ✅ IMPLEMENTED — All sound effects
+- **Features Used**:
+  - Oscillator-based sound generation
+  - Gain nodes for volume control
+  - Procedural countdown beeps
+  - Chomping sounds (sawtooth + square wave alternation)
+  - POWERPILL ambient siren effect
+
+---
+
+## Grid Size Presets Reference
+
+| Preset | Button | Type | Value | Description |
+|--------|--------|------|-------|-------------|
+| Large | L | Fixed | 20px | Maximum play area |
+| Medium | M | Fixed | 30px | 1.5× bigger entities |
+| Small | S | Fixed | 40px | 2× bigger entities |
+| Tiny | T | Fixed | 50px | 2.5× bigger (default) |
+| Cell0 | B | Dynamic | 16×16 | Fits 16 cols × 16 rows |
+| Cell2 | D | Dynamic | 30×30 | Fits 30 cols × 30 rows |
+| Cell1 | C | Dynamic | 20×20 | Fits 20 cols × 20 rows |
+
+---
+
+## Power-Up Unlock Levels
+
+| Power-Up | Level | Effect |
+|----------|-------|--------|
+| 👻 Ghost | 1 | Phase through walls/enemies. +10 score |
+| 🧲 Magnet | 2 | Pulls all food toward player |
+| 💊 POWERPILL | 3 | Destroy enemies and walls on contact |
+| ⏱️ Slow Down | 4 | Slows all enemy movement |
+| ✚ Band-Aid | 5 | Extra life (max 5) |
+| 🧊 Frozen | 6 | FREEZE enemies for 6 seconds |
+| ☕ Coffee | 7 | 5× SPEED boost for 4 seconds |
+| ☄️ Asteroid | 8 | Triggers a debris storm |
 
 ---
 
@@ -156,14 +179,6 @@ function shakeCanvas(intensity = 10, duration = 500) {
   - Canvas Design (PNG/PDF visual art)
   - Theme Factory (professional theming, color combinations)
 
-### 3. **Claude Skills Library**
-- **Repository**: alirezarezvani/claude-skills
-- **232+ production-ready skills**
-- Relevant categories:
-  - Frontend Design
-  - Canvas Design
-  - Algorithmic Art
-
 ---
 
 ## Shader & Post-Processing
@@ -181,91 +196,43 @@ function shakeCanvas(intensity = 10, duration = 500) {
 
 ---
 
-## Specific Effect Recommendations for Snake Game
+## Specific Effect Recommendations
 
-### Screen Flash Effects (Feature #3)
-**Implementation Options**:
-1. **CSS Overlay**: Semi-transparent div with CSS animation
-2. **Canvas Overlay**: Fill canvas with color at low alpha
-3. **Full Screen Flash**: Flash entire body background
-
-**Color Suggestions**:
+### Screen Flash Effects ✅ IMPLEMENTED
 - Red flash: Death/damage (`rgba(255, 0, 0, 0.3)`)
 - Gold flash: Milestones (`rgba(255, 215, 0, 0.3)`)
 - White flash: Size reset/power-up (`rgba(255, 255, 255, 0.5)`)
 
-### Particle Effects (Feature #4)
-**Recommendations**:
-- Use **tsParticles** for confetti on level up
-- Custom Canvas particles for food collection
-- Screen shake + particles for kills
+### Particle Effects ✅ IMPLEMENTED (Native Canvas)
+- Food collection sparkles
+- Death explosions
+- Kill streak celebrations
 
-### Trail Effects
-**Native Canvas**:
+### Trail Effects ✅ IMPLEMENTED
 - `ctx.globalAlpha = 0.3` for ghost trail
 - `ctx.shadowBlur` for glow effect
-- Clear with `ctx.clearRect()` with low alpha for trails
 
 ---
 
 ## Integration Priorities
 
-### HIGH PRIORITY (Easy wins)
-1. ✅ Screen Shake (native, already implemented)
-2. ✅ Screen Flash (native, implement next)
-3. ✅ jsfxr (tiny, arcade sounds)
-4. ⬜ tsParticles (visual celebrations)
+### COMPLETED ✅
+1. ✅ Screen Shake (native)
+2. ✅ Screen Flash (native)
+3. ✅ Web Audio API sound effects
+4. ✅ Tone.js procedural music (13 tracks)
+5. ✅ Canvas particles for food/death
+6. ✅ Floating text system
+7. ✅ Mobile touch controls
+8. ✅ Achievement system (20 achievements)
+9. ✅ Dynamic grid presets (7 sizes)
+10. ✅ Announcer system (kill streaks)
 
-### MEDIUM PRIORITY
-5. ⬜ Tone.js (background music)
-6. ⬜ Canvas Filters (glow/bloom effects)
-
-### LOW PRIORITY (Complex)
-7. ⬜ WebGL/Shaders (overkill for 2D snake)
-8. ⬜ Cacophony (if 3D audio needed)
-
----
-
-## Quick Start Code Snippets
-
-### tsParticles Confetti
-```javascript
-import { tsParticles } from "@tsparticles/engine";
-import { loadConfettiPreset } from "@tsparticles/preset-confetti";
-
-async function celebrate() {
-  await loadConfettiPreset(tsParticles);
-  await tsParticles.load("tsparticles", {
-    preset: "confetti",
-    particles: {
-      color: { value: ["#ff0000", "#00ff00", "#0000ff"] }
-    }
-  });
-}
-```
-
-### jsfxr Sound
-```javascript
-import { jsfxr } from 'jsfxr';
-
-const sound = jsfxr.generateSFX({
-  waveform: 0, // Square
-  env_attack: 0.1,
-  env_sustain: 0.3,
-  env_punch: 0.5,
-  env_decay: 0.4
-});
-const audio = new Audio(sound);
-audio.play();
-```
-
-### Tone.js Synth
-```javascript
-import * as Tone from 'tone';
-
-const synth = new Tone.PolySynth(Tone.Synth).toDestination();
-synth.triggerAttackRelease(["C4", "E4", "G4"], "8n");
-```
+### FUTURE IDEAS
+- ⬜ tsParticles for confetti celebrations
+- ⬜ jsfxr for additional retro sounds
+- ⬜ WebGL shaders for advanced glow/bloom
+- ⬜ Online multiplayer via WebSockets
 
 ---
 
@@ -274,22 +241,10 @@ synth.triggerAttackRelease(["C4", "E4", "G4"], "8n");
 - **tsParticles**: https://particles.js.org/
 - **Tone.js**: https://tonejs.github.io/
 - **jsfxr**: https://www.npmjs.com/package/jsfxr
-- **Cacophony**: https://cacophony.js.org/
 - **Claude Skills**: https://github.com/alirezarezvani/claude-skills
 - **Godot AI Builder**: https://github.com/HubDev-AI/godot-ai-builder
 
 ---
 
-## Next Steps
-
-1. ✅ Test current announcer system (SET 1 vs SET 2)
-2. ⬜ Implement Screen Flash Effects (Feature #3)
-3. ⬜ Implement Particle Effects for Level Up (Feature #4)
-4. ⬜ Add jsfxr for retro arcade sounds
-5. ⬜ Consider tsParticles for celebrations
-6. ⬜ Experiment with Tone.js for background music
-
----
-
-*Last Updated: 2026-04-21*
+*Last Updated: 2026-04-25*
 *Research by: Claude Code*
