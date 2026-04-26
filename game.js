@@ -5550,18 +5550,41 @@ function updateBossShooting() {
     }
 }
 
-// Food Class with Fruit Graphics
-const FOOD_TYPES = ['cherry', 'strawberry', 'grapes', 'pineapple', 'apple', 'banana', 'orange', 'watermelon'];
+// Food Class with Fruit Graphics (using PNG images)
+const FOOD_TYPES = ['Avo', 'Pear', 'banana', 'berry', 'cherri', 'grapes', 'lemmon', 'peach', 'pineapple', 'strawberry', 'watermellon'];
 const FOOD_SCORES = {
-    cherry:     80,
-    strawberry: 70,
-    grapes:     60,
-    pineapple:  50,
-    apple:      40,
-    banana:     30,
-    orange:     20,
-    watermelon: 10
+    Avo:         80,
+    Pear:        75,
+    banana:      70,
+    berry:       65,
+    cherri:      60,
+    grapes:      55,
+    lemmon:      50,
+    peach:       45,
+    pineapple:   40,
+    strawberry:  35,
+    watermellon: 30
 };
+
+// Fruit image cache
+const fruitImages = {};
+let fruitImagesLoaded = 0;
+const totalFruitImages = FOOD_TYPES.length;
+
+function loadFruitImages() {
+    for (const type of FOOD_TYPES) {
+        const img = new Image();
+        img.onload = () => {
+            fruitImagesLoaded++;
+        };
+        img.onerror = () => {
+            console.warn(`[Fruit] Failed to load image: ${type}.png`);
+            fruitImagesLoaded++;
+        };
+        img.src = `assets/fruits/${type}.png`;
+        fruitImages[type] = img;
+    }
+}
 
 class Food {
     constructor() {
@@ -5634,393 +5657,20 @@ class Food {
         ctx.shadowBlur = this.isBonus ? 30 : 18;
         ctx.shadowColor = this.isBonus ? COLORS.BONUS_FOOD_GLOW : COLORS.FOOD_GLOW;
 
-        // Draw the appropriate fruit
-        switch(this.foodType) {
-            case 'cherry':
-                this.drawCherry(ctx, cx, cy, size);
-                break;
-            case 'strawberry':
-                this.drawStrawberry(ctx, cx, cy, size);
-                break;
-            case 'grapes':
-                this.drawGrapes(ctx, cx, cy, size);
-                break;
-            case 'pineapple':
-                this.drawPineapple(ctx, cx, cy, size);
-                break;
-            case 'apple':
-                this.drawApple(ctx, cx, cy, size);
-                break;
-            case 'banana':
-                this.drawBanana(ctx, cx, cy, size);
-                break;
-            case 'orange':
-                this.drawOrange(ctx, cx, cy, size);
-                break;
-            case 'watermelon':
-                this.drawWatermelon(ctx, cx, cy, size);
-                break;
+        // Draw the fruit image
+        const img = fruitImages[this.foodType];
+        if (img && img.complete && img.naturalWidth > 0) {
+            const imgSize = size * 0.9;
+            ctx.drawImage(img, cx - imgSize / 2, cy - imgSize / 2, imgSize, imgSize);
+        } else {
+            // Fallback: draw a simple circle if image not loaded
+            ctx.fillStyle = this.isBonus ? '#ffd700' : '#ff0040';
+            ctx.beginPath();
+            ctx.arc(cx, cy, size * 0.3, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         ctx.shadowBlur = 0;
-    }
-
-    drawCherry(ctx, cx, cy, size) {
-        const scale = size / 16;
-
-        // Stem (curved)
-        ctx.strokeStyle = '#228b22';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - size * 0.5);
-        ctx.quadraticCurveTo(cx - size * 0.3, cy - size * 0.2, cx - size * 0.4, cy + size * 0.1);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - size * 0.5);
-        ctx.quadraticCurveTo(cx + size * 0.3, cy - size * 0.2, cx + size * 0.4, cy + size * 0.1);
-        ctx.stroke();
-
-        // Left cherry (bright red)
-        ctx.fillStyle = '#ff0040';
-        ctx.beginPath();
-        ctx.arc(cx - size * 0.35, cy + size * 0.15, size * 0.25, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Right cherry (bright red)
-        ctx.beginPath();
-        ctx.arc(cx + size * 0.35, cy + size * 0.15, size * 0.25, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Highlight on left cherry
-        ctx.fillStyle = 'rgba(255, 150, 180, 0.6)';
-        ctx.beginPath();
-        ctx.arc(cx - size * 0.42, cy + size * 0.05, size * 0.1, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Highlight on right cherry
-        ctx.beginPath();
-        ctx.arc(cx + size * 0.28, cy + size * 0.05, size * 0.1, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    drawStrawberry(ctx, cx, cy, size) {
-        const scale = size / 16;
-
-        // Strawberry body (heart-like shape)
-        ctx.fillStyle = '#ff0040';
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - size * 0.45);
-        ctx.bezierCurveTo(
-            cx - size * 0.5, cy - size * 0.3,
-            cx - size * 0.5, cy + size * 0.1,
-            cx, cy + size * 0.45
-        );
-        ctx.bezierCurveTo(
-            cx + size * 0.5, cy + size * 0.1,
-            cx + size * 0.5, cy - size * 0.3,
-            cx, cy - size * 0.45
-        );
-        ctx.fill();
-
-        // Green leaves on top
-        ctx.fillStyle = '#228b22';
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - size * 0.5);
-        ctx.lineTo(cx - size * 0.25, cy - size * 0.25);
-        ctx.lineTo(cx - size * 0.1, cy - size * 0.35);
-        ctx.lineTo(cx, cy - size * 0.2);
-        ctx.lineTo(cx + size * 0.1, cy - size * 0.35);
-        ctx.lineTo(cx + size * 0.25, cy - size * 0.25);
-        ctx.closePath();
-        ctx.fill();
-
-        // Seeds (yellow dots)
-        ctx.fillStyle = '#ffd700';
-        const seedPositions = [
-            [-0.15, -0.1], [0.15, -0.1],
-            [-0.25, 0.05], [0, 0], [0.25, 0.05],
-            [-0.15, 0.2], [0.15, 0.2]
-        ];
-        for (const [sx, sy] of seedPositions) {
-            ctx.beginPath();
-            ctx.arc(cx + sx * size, cy + sy * size, size * 0.05, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Highlight
-        ctx.fillStyle = 'rgba(255, 150, 180, 0.5)';
-        ctx.beginPath();
-        ctx.ellipse(cx - size * 0.15, cy - size * 0.15, size * 0.12, size * 0.08, -0.5, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    drawGrapes(ctx, cx, cy, size) {
-        const scale = size / 16;
-
-        // Stem
-        ctx.strokeStyle = '#228b22';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - size * 0.5);
-        ctx.lineTo(cx, cy - size * 0.35);
-        ctx.stroke();
-
-        // Grape cluster (multiple circles)
-        const grapePositions = [
-            [0, 0.25], [-0.25, 0.15], [0.25, 0.15],
-            [-0.15, 0.4], [0.15, 0.4],
-            [0, 0.05], [-0.3, 0.3], [0.3, 0.3]
-        ];
-
-        // Draw grapes from back to front
-        for (const [gx, gy] of grapePositions) {
-            // Purple grape with gradient
-            const grad = ctx.createRadialGradient(
-                cx + gx * size, cy + gy * size, 0,
-                cx + gx * size, cy + gy * size, size * 0.18
-            );
-            grad.addColorStop(0, '#9d00ff');
-            grad.addColorStop(1, '#5a0080');
-
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(cx + gx * size, cy + gy * size, size * 0.18, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Highlight
-            ctx.fillStyle = 'rgba(200, 100, 255, 0.5)';
-            ctx.beginPath();
-            ctx.arc(cx + gx * size - size * 0.05, cy + gy * size - size * 0.05, size * 0.06, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-
-    drawPineapple(ctx, cx, cy, size) {
-        const scale = size / 16;
-
-        // Pineapple body (oval)
-        const grad = ctx.createLinearGradient(cx - size * 0.3, cy - size * 0.3, cx + size * 0.3, cy + size * 0.3);
-        grad.addColorStop(0, '#ffd700');
-        grad.addColorStop(0.5, '#ffaa00');
-        grad.addColorStop(1, '#cc8800');
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy + size * 0.1, size * 0.35, size * 0.4, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Pineapple crosshatch pattern
-        ctx.strokeStyle = '#b8860b';
-        ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.4;
-
-        // Diagonal lines one way
-        for (let i = -3; i <= 3; i++) {
-            ctx.beginPath();
-            ctx.moveTo(cx + i * size * 0.12 - size * 0.25, cy - size * 0.25);
-            ctx.lineTo(cx + i * size * 0.12 + size * 0.25, cy + size * 0.45);
-            ctx.stroke();
-        }
-
-        // Diagonal lines other way
-        for (let i = -3; i <= 3; i++) {
-            ctx.beginPath();
-            ctx.moveTo(cx + i * size * 0.12 - size * 0.25, cy + size * 0.45);
-            ctx.lineTo(cx + i * size * 0.12 + size * 0.25, cy - size * 0.25);
-            ctx.stroke();
-        }
-
-        ctx.globalAlpha = 1;
-
-        // Green spiky leaves on top
-        ctx.fillStyle = '#228b22';
-        for (let i = -2; i <= 2; i++) {
-            ctx.beginPath();
-            ctx.moveTo(cx + i * size * 0.12, cy - size * 0.25);
-            ctx.quadraticCurveTo(
-                cx + i * size * 0.15, cy - size * 0.5,
-                cx + i * size * 0.08, cy - size * 0.55
-            );
-            ctx.quadraticCurveTo(
-                cx + i * size * 0.05, cy - size * 0.5,
-                cx + i * size * 0.12, cy - size * 0.25
-            );
-            ctx.fill();
-        }
-
-        // Highlight
-        ctx.fillStyle = 'rgba(255, 255, 200, 0.4)';
-        ctx.beginPath();
-        ctx.ellipse(cx - size * 0.12, cy - size * 0.05, size * 0.1, size * 0.15, 0, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    drawApple(ctx, cx, cy, size) {
-        const scale = size / 16;
-
-        // Apple body (heart shape)
-        ctx.fillStyle = '#ff3b30';
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - size * 0.1);
-        ctx.bezierCurveTo(cx - size * 0.5, cy - size * 0.6, cx - size * 0.5, cy + size * 0.2, cx, cy + size * 0.35);
-        ctx.bezierCurveTo(cx + size * 0.5, cy + size * 0.2, cx + size * 0.5, cy - size * 0.6, cx, cy - size * 0.1);
-        ctx.fill();
-
-        // Stem
-        ctx.strokeStyle = '#5d4037';
-        ctx.lineWidth = 2 * scale;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - size * 0.35);
-        ctx.quadraticCurveTo(cx + size * 0.1, cy - size * 0.5, cx + size * 0.15, cy - size * 0.45);
-        ctx.stroke();
-
-        // Leaf
-        ctx.fillStyle = '#4caf50';
-        ctx.beginPath();
-        ctx.ellipse(cx + size * 0.18, cy - size * 0.45, size * 0.12, size * 0.06, Math.PI / 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Highlight
-        ctx.fillStyle = 'rgba(255, 255, 200, 0.4)';
-        ctx.beginPath();
-        ctx.ellipse(cx - size * 0.12, cy - size * 0.1, size * 0.1, size * 0.15, 0, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    drawBanana(ctx, cx, cy, size) {
-        const scale = size / 16;
-
-        // Rotate the banana so it curves nicely
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(-Math.PI / 6);
-        ctx.translate(-cx, -cy);
-
-        // Banana body (smooth crescent shape)
-        ctx.fillStyle = '#ffe135';
-        ctx.beginPath();
-        ctx.moveTo(cx - size * 0.45, cy + size * 0.15);
-        ctx.quadraticCurveTo(cx - size * 0.55, cy - size * 0.35, cx - size * 0.2, cy - size * 0.42);
-        ctx.quadraticCurveTo(cx + size * 0.15, cy - size * 0.42, cx + size * 0.38, cy - size * 0.15);
-        ctx.quadraticCurveTo(cx + size * 0.48, cy + size * 0.05, cx + size * 0.42, cy + size * 0.15);
-        ctx.quadraticCurveTo(cx + size * 0.35, cy + size * 0.28, cx + size * 0.1, cy + size * 0.22);
-        ctx.quadraticCurveTo(cx - size * 0.2, cy + size * 0.18, cx - size * 0.45, cy + size * 0.15);
-        ctx.fill();
-
-        // Inner shadow (bottom edge for depth)
-        ctx.fillStyle = 'rgba(200, 160, 0, 0.35)';
-        ctx.beginPath();
-        ctx.moveTo(cx - size * 0.45, cy + size * 0.15);
-        ctx.quadraticCurveTo(cx - size * 0.2, cy + size * 0.18, cx + size * 0.1, cy + size * 0.22);
-        ctx.quadraticCurveTo(cx + size * 0.35, cy + size * 0.28, cx + size * 0.42, cy + size * 0.15);
-        ctx.quadraticCurveTo(cx + size * 0.35, cy + size * 0.22, cx + size * 0.1, cy + size * 0.18);
-        ctx.quadraticCurveTo(cx - size * 0.2, cy + size * 0.14, cx - size * 0.45, cy + size * 0.15);
-        ctx.fill();
-
-        // Ridge lines (segment edges)
-        ctx.strokeStyle = 'rgba(180, 140, 0, 0.3)';
-        ctx.lineWidth = 1;
-        for (let i = -2; i <= 2; i++) {
-            const rx = cx + i * size * 0.12;
-            ctx.beginPath();
-            ctx.moveTo(rx, cy - size * 0.35);
-            ctx.quadraticCurveTo(rx + size * 0.03, cy, rx, cy + size * 0.18);
-            ctx.stroke();
-        }
-
-        // Stem (top left)
-        ctx.fillStyle = '#6d4c41';
-        ctx.beginPath();
-        ctx.ellipse(cx - size * 0.48, cy - size * 0.1, size * 0.06, size * 0.12, -Math.PI / 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Stem highlight
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-        ctx.beginPath();
-        ctx.ellipse(cx - size * 0.48, cy - size * 0.12, size * 0.03, size * 0.06, -Math.PI / 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Tip (bottom right, small dark spot)
-        ctx.fillStyle = '#4a3728';
-        ctx.beginPath();
-        ctx.ellipse(cx + size * 0.43, cy + size * 0.12, size * 0.03, size * 0.05, Math.PI / 6, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Shiny highlight (top curve)
-        ctx.fillStyle = 'rgba(255, 255, 220, 0.5)';
-        ctx.beginPath();
-        ctx.ellipse(cx - size * 0.05, cy - size * 0.28, size * 0.06, size * 0.22, -Math.PI / 8, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
-    }
-
-    drawOrange(ctx, cx, cy, size) {
-        const scale = size / 16;
-
-        // Orange body
-        ctx.fillStyle = '#ff9800';
-        ctx.beginPath();
-        ctx.arc(cx, cy, size * 0.38, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Texture dots
-        ctx.fillStyle = '#f57c00';
-        for (let i = 0; i < 6; i++) {
-            const angle = (i / 6) * Math.PI * 2;
-            const rx = cx + Math.cos(angle) * size * 0.2;
-            const ry = cy + Math.sin(angle) * size * 0.2;
-            ctx.beginPath();
-            ctx.arc(rx, ry, size * 0.03, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Small leaf on top
-        ctx.fillStyle = '#4caf50';
-        ctx.beginPath();
-        ctx.ellipse(cx, cy - size * 0.38, size * 0.08, size * 0.04, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Highlight
-        ctx.fillStyle = 'rgba(255, 255, 200, 0.4)';
-        ctx.beginPath();
-        ctx.ellipse(cx - size * 0.1, cy - size * 0.1, size * 0.1, size * 0.12, 0, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    drawWatermelon(ctx, cx, cy, size) {
-        const scale = size / 16;
-
-        // Watermelon body (half-circle slice)
-        ctx.fillStyle = '#2e7d32';
-        ctx.beginPath();
-        ctx.arc(cx, cy, size * 0.42, 0, Math.PI, false);
-        ctx.closePath();
-        ctx.fill();
-
-        // Inner pink flesh
-        ctx.fillStyle = '#ff5252';
-        ctx.beginPath();
-        ctx.arc(cx, cy + size * 0.02, size * 0.35, 0, Math.PI, false);
-        ctx.closePath();
-        ctx.fill();
-
-        // Seeds
-        ctx.fillStyle = '#1a1a1a';
-        for (let i = -2; i <= 2; i++) {
-            const sx = cx + i * size * 0.1;
-            const sy = cy - size * 0.05 + Math.abs(i) * size * 0.03;
-            ctx.beginPath();
-            ctx.ellipse(sx, sy, size * 0.025, size * 0.04, 0, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Highlight
-        ctx.fillStyle = 'rgba(255, 255, 200, 0.3)';
-        ctx.beginPath();
-        ctx.ellipse(cx - size * 0.1, cy - size * 0.05, size * 0.08, size * 0.06, 0, 0, Math.PI * 2);
-        ctx.fill();
     }
 
     checkCollision(snake) {
@@ -8367,9 +8017,32 @@ function onFoodEaten() {
     comboMultiplier = newMultiplier;
 }
 
+function loadFruitImages() {
+    return new Promise((resolve) => {
+        let loaded = 0;
+        for (const type of FOOD_TYPES) {
+            const img = new Image();
+            img.onload = () => {
+                loaded++;
+                if (loaded === FOOD_TYPES.length) resolve();
+            };
+            img.onerror = () => {
+                console.warn(`[Fruit] Failed to load image: ${type}.png`);
+                loaded++;
+                if (loaded === FOOD_TYPES.length) resolve();
+            };
+            img.src = `assets/fruits/${type}.png`;
+            fruitImages[type] = img;
+        }
+    });
+}
+
 async function initGame() {
     canvas = document.getElementById('gameCanvas');
     ctx = canvas.getContext('2d');
+
+    // Load fruit images before starting
+    await loadFruitImages();
 
     // Load grid size preference before calculating dimensions
     loadGridSizePreference();
