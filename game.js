@@ -5078,20 +5078,16 @@ class Snake {
                 const headHeight = GRID_SIZE * finalHeadSize;
 
                 if (this.isPlayer && snakeHeadImage && snakeHeadImage.complete) {
-                    // Player head: use rotated image (chin always points in movement direction)
+                    // Player head: draw upright portrait image
                     if (isFrozen) {
                         const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5;
                         ctx.shadowBlur = 20 + (strobe * 25);
                         ctx.shadowColor = `rgba(173, 216, 255, ${0.6 + strobe * 0.4})`;
                     }
 
-                    ctx.translate(centerX, centerY);
-                    let rotation = 0;
-                    if (this.direction === DIRECTIONS.RIGHT) rotation = -Math.PI / 2;
-                    else if (this.direction === DIRECTIONS.LEFT) rotation = Math.PI / 2;
-                    else if (this.direction === DIRECTIONS.UP) rotation = Math.PI;
-                    ctx.rotate(rotation);
-                    ctx.drawImage(snakeHeadImage, -headWidth / 2, -headHeight / 2, headWidth, headHeight);
+                    const x = centerX - headWidth / 2;
+                    const y = centerY - headHeight / 2;
+                    ctx.drawImage(snakeHeadImage, x, y, headWidth, headHeight);
                 } else {
                     // Enemy / fallback: draw cartoon pill head
                     ctx.shadowBlur = 0;
