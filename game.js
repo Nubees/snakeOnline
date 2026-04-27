@@ -5056,7 +5056,8 @@ class Snake {
             shakeY = (Math.random() - 0.5) * shakeIntensity * 2;
         }
 
-        for (let i = 0; i < this.body.length; i++) {
+        // ── PASS 1: Draw body segments + tail (so head renders on top) ──
+        for (let i = 1; i < this.body.length; i++) {
             const segment = this.body[i];
             let centerX = segment.x * GRID_SIZE + GRID_SIZE / 2;
             let centerY = segment.y * GRID_SIZE + GRID_SIZE / 2;
@@ -5067,95 +5068,18 @@ class Snake {
                 centerY += shakeY;
             }
 
-            if (i === 0) {
-                // HEAD - Draw rounded capsule shape or player image
-                ctx.save();
+            // Jelly / rubber wobble for body segments (not tail)
+            if (!this.isBoss && i < this.body.length - 1) {
+                const wobble = Math.sin(Date.now() / 180 + i * 0.7) * 1.2;
+                centerX += wobble;
+                centerY += Math.cos(Date.now() / 220 + i * 0.7) * 1.2;
+            }
 
-                // Frozen head is 1.5x bigger
-                const frozenHeadMult = isFrozen ? 1.5 : 1.0;
-                const finalHeadSize = headSizeMultiplier * frozenHeadMult;
-                const headWidth = GRID_SIZE * finalHeadSize;
-                const headHeight = GRID_SIZE * finalHeadSize;
-
-                if (this.isPlayer && snakeHeadImage && snakeHeadImage.complete) {
-                    // Player head: draw upright portrait image
-                    if (isFrozen) {
-                        const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5;
-                        ctx.shadowBlur = 20 + (strobe * 25);
-                        ctx.shadowColor = `rgba(173, 216, 255, ${0.6 + strobe * 0.4})`;
-                    }
-
-                    const x = centerX - headWidth / 2;
-                    const y = centerY - headHeight / 2;
-                    ctx.drawImage(snakeHeadImage, x, y, headWidth, headHeight);
-                } else {
-                    // Enemy / fallback: draw cartoon pill head
-                    ctx.shadowBlur = 0;
-                    ctx.fillStyle = inSpawnProtection ? visuals.color : snakeColor;
-
-                    if (isFrozen) {
-                        const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5;
-                        ctx.shadowBlur = 20 + (strobe * 25);
-                        ctx.shadowColor = `rgba(173, 216, 255, ${0.6 + strobe * 0.4})`;
-                    }
-
-                    const x = centerX - headWidth / 2;
-                    const y = centerY - headHeight / 2;
-                    const radius = headHeight / 2;
-                    ctx.beginPath();
-                    ctx.roundRect(x, y, headWidth, headHeight, radius);
-                    ctx.fill();
-
-                    // Draw eyes based on direction (scaled for head size)
-                    ctx.fillStyle = '#ffffff';
-                    const eyeRadius = 3 * headSizeMultiplier;
-                    const pupilRadius = 1.5 * headSizeMultiplier;
-
-                    let eye1X, eye1Y, eye2X, eye2Y;
-                    let pupilOffsetX = 0, pupilOffsetY = 0;
-
-                    const eyeOffset = headSizeMultiplier * 5;
-                    if (this.direction === DIRECTIONS.RIGHT) {
-                        eye1X = centerX + eyeOffset; eye1Y = centerY - (eyeOffset * 0.7);
-                        eye2X = centerX + eyeOffset; eye2Y = centerY + (eyeOffset * 0.7);
-                        pupilOffsetX = 2;
-                    } else if (this.direction === DIRECTIONS.LEFT) {
-                        eye1X = centerX - eyeOffset; eye1Y = centerY - (eyeOffset * 0.7);
-                        eye2X = centerX - eyeOffset; eye2Y = centerY + (eyeOffset * 0.7);
-                        pupilOffsetX = -2;
-                    } else if (this.direction === DIRECTIONS.UP) {
-                        eye1X = centerX - (eyeOffset * 0.7); eye1Y = centerY - eyeOffset;
-                        eye2X = centerX + (eyeOffset * 0.7); eye2Y = centerY - eyeOffset;
-                        pupilOffsetY = -2;
-                    } else { // DOWN
-                        eye1X = centerX - (eyeOffset * 0.7); eye1Y = centerY + eyeOffset;
-                        eye2X = centerX + (eyeOffset * 0.7); eye2Y = centerY + eyeOffset;
-                        pupilOffsetY = 2;
-                    }
-
-                    ctx.beginPath();
-                    ctx.arc(eye1X, eye1Y, eyeRadius, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    ctx.beginPath();
-                    ctx.arc(eye2X, eye2Y, eyeRadius, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    ctx.fillStyle = '#000000';
-                    ctx.beginPath();
-                    ctx.arc(eye1X + pupilOffsetX, eye1Y + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    ctx.beginPath();
-                    ctx.arc(eye2X + pupilOffsetX, eye2Y + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-
-                ctx.restore();
-            } else if (i === this.body.length - 1) {
-                // TAIL - Draw pointy/rounded tail (2x for boss, 1.5x when frozen)
+            if (i === this.body.length - 1) {
+                // TAIL - semi-transparent
                 ctx.save();
                 ctx.shadowBlur = 0;
+                ctx.globalAlpha = 0.55;
                 ctx.fillStyle = inSpawnProtection ? visuals.color : snakeColor;
 
                 let bodySize;
@@ -5167,15 +5091,11 @@ class Snake {
                     bodySize = GRID_SIZE - 1;
                 }
 
-                // Get direction from previous segment to this tail segment
                 const prevSegment = this.body[i - 1];
                 let tailDirX = segment.x - prevSegment.x;
                 let tailDirY = segment.y - prevSegment.y;
-
-                // Normalize direction
                 if (tailDirX !== 0) tailDirX = tailDirX > 0 ? 1 : -1;
                 if (tailDirY !== 0) tailDirY = tailDirY > 0 ? 1 : -1;
-                // If no movement direction (shouldn't happen), use current direction
                 if (tailDirX === 0 && tailDirY === 0) {
                     tailDirX = this.direction.x;
                     tailDirY = this.direction.y;
@@ -5185,45 +5105,40 @@ class Snake {
                 const y = centerY - bodySize / 2;
 
                 ctx.beginPath();
-
-                // Draw a tapered rectangle based on tail direction
-                if (tailDirX === 1) { // Tail points RIGHT
+                if (tailDirX === 1) {
                     ctx.moveTo(x, y);
                     ctx.lineTo(x + bodySize * 0.6, y);
-                    ctx.lineTo(x + bodySize, y + bodySize / 2); // Pointy tip
+                    ctx.lineTo(x + bodySize, y + bodySize / 2);
                     ctx.lineTo(x + bodySize * 0.6, y + bodySize);
                     ctx.lineTo(x, y + bodySize);
-                } else if (tailDirX === -1) { // Tail points LEFT
+                } else if (tailDirX === -1) {
                     ctx.moveTo(x + bodySize, y);
                     ctx.lineTo(x + bodySize * 0.4, y);
-                    ctx.lineTo(x, y + bodySize / 2); // Pointy tip
+                    ctx.lineTo(x, y + bodySize / 2);
                     ctx.lineTo(x + bodySize * 0.4, y + bodySize);
                     ctx.lineTo(x + bodySize, y + bodySize);
-                } else if (tailDirY === -1) { // Tail points UP
+                } else if (tailDirY === -1) {
                     ctx.moveTo(x, y + bodySize);
                     ctx.lineTo(x, y + bodySize * 0.4);
-                    ctx.lineTo(x + bodySize / 2, y); // Pointy tip
+                    ctx.lineTo(x + bodySize / 2, y);
                     ctx.lineTo(x + bodySize, y + bodySize * 0.4);
                     ctx.lineTo(x + bodySize, y + bodySize);
-                } else { // Tail points DOWN
+                } else {
                     ctx.moveTo(x, y);
                     ctx.lineTo(x, y + bodySize * 0.6);
-                    ctx.lineTo(x + bodySize / 2, y + bodySize); // Pointy tip
+                    ctx.lineTo(x + bodySize / 2, y + bodySize);
                     ctx.lineTo(x + bodySize, y + bodySize * 0.6);
                     ctx.lineTo(x + bodySize, y);
                 }
-
                 ctx.closePath();
                 ctx.fill();
-
                 ctx.restore();
             } else {
-                // BODY SEGMENTS - Draw square blocks (2x for boss, 1x for others, 1.5x when frozen)
+                // BODY SEGMENTS - square blocks with jelly wobble
                 ctx.save();
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = inSpawnProtection ? visuals.color : snakeColor;
 
-                // Boss body is 2x size, normal snakes are 1x, frozen snakes are 1.5x
                 let bodySize;
                 if (this.isBoss) {
                     bodySize = GRID_SIZE * 2 - 1;
@@ -5235,9 +5150,8 @@ class Snake {
                 const x = centerX - bodySize / 2;
                 const y = centerY - bodySize / 2;
 
-                // Frozen body segments get a strobing light blue glow
                 if (isFrozen) {
-                    const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5; // Fast strobe
+                    const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5;
                     ctx.shadowBlur = 15 + (strobe * 20);
                     ctx.shadowColor = `rgba(173, 216, 255, ${0.5 + strobe * 0.5})`;
                     ctx.strokeStyle = `rgba(173, 216, 255, ${0.3 + strobe * 0.4})`;
@@ -5250,6 +5164,98 @@ class Snake {
 
                 ctx.restore();
             }
+        }
+
+        // ── PASS 2: Draw HEAD on top so it never gets covered by body ──
+        {
+            const segment = this.body[0];
+            let centerX = segment.x * GRID_SIZE + GRID_SIZE / 2;
+            let centerY = segment.y * GRID_SIZE + GRID_SIZE / 2;
+
+            if (isFrozen) {
+                centerX += shakeX;
+                centerY += shakeY;
+            }
+
+            ctx.save();
+
+            const frozenHeadMult = isFrozen ? 1.5 : 1.0;
+            const finalHeadSize = headSizeMultiplier * frozenHeadMult;
+            const headWidth = GRID_SIZE * finalHeadSize;
+            const headHeight = GRID_SIZE * finalHeadSize;
+
+            if (this.isPlayer && snakeHeadImage && snakeHeadImage.complete) {
+                if (isFrozen) {
+                    const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5;
+                    ctx.shadowBlur = 20 + (strobe * 25);
+                    ctx.shadowColor = `rgba(173, 216, 255, ${0.6 + strobe * 0.4})`;
+                }
+
+                const x = centerX - headWidth / 2;
+                const y = centerY - headHeight / 2;
+                ctx.drawImage(snakeHeadImage, x, y, headWidth, headHeight);
+            } else {
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = inSpawnProtection ? visuals.color : snakeColor;
+
+                if (isFrozen) {
+                    const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5;
+                    ctx.shadowBlur = 20 + (strobe * 25);
+                    ctx.shadowColor = `rgba(173, 216, 255, ${0.6 + strobe * 0.4})`;
+                }
+
+                const x = centerX - headWidth / 2;
+                const y = centerY - headHeight / 2;
+                const radius = headHeight / 2;
+                ctx.beginPath();
+                ctx.roundRect(x, y, headWidth, headHeight, radius);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                const eyeRadius = 3 * headSizeMultiplier;
+                const pupilRadius = 1.5 * headSizeMultiplier;
+
+                let eye1X, eye1Y, eye2X, eye2Y;
+                let pupilOffsetX = 0, pupilOffsetY = 0;
+
+                const eyeOffset = headSizeMultiplier * 5;
+                if (this.direction === DIRECTIONS.RIGHT) {
+                    eye1X = centerX + eyeOffset; eye1Y = centerY - (eyeOffset * 0.7);
+                    eye2X = centerX + eyeOffset; eye2Y = centerY + (eyeOffset * 0.7);
+                    pupilOffsetX = 2;
+                } else if (this.direction === DIRECTIONS.LEFT) {
+                    eye1X = centerX - eyeOffset; eye1Y = centerY - (eyeOffset * 0.7);
+                    eye2X = centerX - eyeOffset; eye2Y = centerY + (eyeOffset * 0.7);
+                    pupilOffsetX = -2;
+                } else if (this.direction === DIRECTIONS.UP) {
+                    eye1X = centerX - (eyeOffset * 0.7); eye1Y = centerY - eyeOffset;
+                    eye2X = centerX + (eyeOffset * 0.7); eye2Y = centerY - eyeOffset;
+                    pupilOffsetY = -2;
+                } else {
+                    eye1X = centerX - (eyeOffset * 0.7); eye1Y = centerY + eyeOffset;
+                    eye2X = centerX + (eyeOffset * 0.7); eye2Y = centerY + eyeOffset;
+                    pupilOffsetY = 2;
+                }
+
+                ctx.beginPath();
+                ctx.arc(eye1X, eye1Y, eyeRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(eye2X, eye2Y, eyeRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#000000';
+                ctx.beginPath();
+                ctx.arc(eye1X + pupilOffsetX, eye1Y + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(eye2X + pupilOffsetX, eye2Y + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
         }
 
         // FROZEN EFFECT: Draw ice crystals and blue glow on frozen snakes
