@@ -4849,6 +4849,10 @@ class Snake {
 
         // Coffee Bean speed boost state
         this.coffeeBoostUntil = 0; // Timestamp when coffee boost ends
+
+        // Tail sway animation state
+        this.tailSwayOffset = 0;
+        this.tailSwayVelocity = 0;
     }
 
     isFrozen() {
@@ -4936,6 +4940,26 @@ class Snake {
         } else {
             this.body.pop();
         }
+
+        // Tail sway physics: spring-like motion with momentum
+        const len = this.body.length;
+        const swayForce = len * 0.015; // Longer tail = more forceful sway
+        const damping = 0.92 - (len * 0.002); // Longer tail = less damping (swings longer)
+
+        // Add "kick" when turning
+        if (this.prevDirection) {
+            const dx = this.direction.x - this.prevDirection.x;
+            const dy = this.direction.y - this.prevDirection.y;
+            if (dx !== 0 || dy !== 0) {
+                this.tailSwayVelocity += (dx !== 0 ? dx : dy) * swayForce * 2.5;
+            }
+        }
+        this.prevDirection = { ...this.direction };
+
+        // Spring physics
+        this.tailSwayVelocity -= this.tailSwayOffset * 0.08;
+        this.tailSwayVelocity *= Math.max(0.75, damping);
+        this.tailSwayOffset += this.tailSwayVelocity;
     }
 
     grow(amount = 1) {
@@ -5076,14 +5100,17 @@ class Snake {
             }
 
             if (i === this.body.length - 1) {
-                // TAIL - semi-transparent with flexible wave
-                // Tail waves perpendicular to movement direction
+                // TAIL - semi-transparent with flexible rubber sway
                 if (!this.isBoss) {
-                    const wave = Math.sin(Date.now() / 140 + this.body.length * 0.5) * 2.2;
+                    // Physics-based tail sway (momentum from turns + continuous wave)
+                    const lenFactor = Math.min(this.body.length / 8, 2.5); // Longer = more bend
+                    const sway = this.tailSwayOffset * lenFactor;
+                    const idleWave = Math.sin(Date.now() / 160 + this.body.length * 0.4) * 1.5;
+
                     if (this.direction.x !== 0) {
-                        centerY += wave;
+                        centerY += sway + idleWave;
                     } else {
-                        centerX += wave;
+                        centerX += sway + idleWave;
                     }
                 }
 
