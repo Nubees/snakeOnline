@@ -5068,81 +5068,92 @@ class Snake {
             }
 
             if (i === 0) {
-                // HEAD - Draw rounded capsule shape
+                // HEAD - Draw rounded capsule shape or player image
                 ctx.save();
-
-                // Set color (no glow for cartoon style)
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = inSpawnProtection ? visuals.color : snakeColor;
 
                 // Frozen head is 1.5x bigger
                 const frozenHeadMult = isFrozen ? 1.5 : 1.0;
                 const finalHeadSize = headSizeMultiplier * frozenHeadMult;
-
-                // Draw rounded rectangle (pill shape) for head
                 const headWidth = GRID_SIZE * finalHeadSize;
                 const headHeight = GRID_SIZE * finalHeadSize;
-                const x = centerX - headWidth / 2;
-                const y = centerY - headHeight / 2;
-                const radius = headHeight / 2;
 
-                // Frozen head gets strobing light blue glow
-                if (isFrozen) {
-                    const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5;
-                    ctx.shadowBlur = 20 + (strobe * 25);
-                    ctx.shadowColor = `rgba(173, 216, 255, ${0.6 + strobe * 0.4})`;
+                if (this.isPlayer && snakeHeadImage && snakeHeadImage.complete) {
+                    // Player head: use rotated image (chin always points in movement direction)
+                    if (isFrozen) {
+                        const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5;
+                        ctx.shadowBlur = 20 + (strobe * 25);
+                        ctx.shadowColor = `rgba(173, 216, 255, ${0.6 + strobe * 0.4})`;
+                    }
+
+                    ctx.translate(centerX, centerY);
+                    let rotation = 0;
+                    if (this.direction === DIRECTIONS.RIGHT) rotation = -Math.PI / 2;
+                    else if (this.direction === DIRECTIONS.LEFT) rotation = Math.PI / 2;
+                    else if (this.direction === DIRECTIONS.UP) rotation = Math.PI;
+                    ctx.rotate(rotation);
+                    ctx.drawImage(snakeHeadImage, -headWidth / 2, -headHeight / 2, headWidth, headHeight);
+                } else {
+                    // Enemy / fallback: draw cartoon pill head
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = inSpawnProtection ? visuals.color : snakeColor;
+
+                    if (isFrozen) {
+                        const strobe = Math.sin(Date.now() / 80) * 0.5 + 0.5;
+                        ctx.shadowBlur = 20 + (strobe * 25);
+                        ctx.shadowColor = `rgba(173, 216, 255, ${0.6 + strobe * 0.4})`;
+                    }
+
+                    const x = centerX - headWidth / 2;
+                    const y = centerY - headHeight / 2;
+                    const radius = headHeight / 2;
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, headWidth, headHeight, radius);
+                    ctx.fill();
+
+                    // Draw eyes based on direction (scaled for head size)
+                    ctx.fillStyle = '#ffffff';
+                    const eyeRadius = 3 * headSizeMultiplier;
+                    const pupilRadius = 1.5 * headSizeMultiplier;
+
+                    let eye1X, eye1Y, eye2X, eye2Y;
+                    let pupilOffsetX = 0, pupilOffsetY = 0;
+
+                    const eyeOffset = headSizeMultiplier * 5;
+                    if (this.direction === DIRECTIONS.RIGHT) {
+                        eye1X = centerX + eyeOffset; eye1Y = centerY - (eyeOffset * 0.7);
+                        eye2X = centerX + eyeOffset; eye2Y = centerY + (eyeOffset * 0.7);
+                        pupilOffsetX = 2;
+                    } else if (this.direction === DIRECTIONS.LEFT) {
+                        eye1X = centerX - eyeOffset; eye1Y = centerY - (eyeOffset * 0.7);
+                        eye2X = centerX - eyeOffset; eye2Y = centerY + (eyeOffset * 0.7);
+                        pupilOffsetX = -2;
+                    } else if (this.direction === DIRECTIONS.UP) {
+                        eye1X = centerX - (eyeOffset * 0.7); eye1Y = centerY - eyeOffset;
+                        eye2X = centerX + (eyeOffset * 0.7); eye2Y = centerY - eyeOffset;
+                        pupilOffsetY = -2;
+                    } else { // DOWN
+                        eye1X = centerX - (eyeOffset * 0.7); eye1Y = centerY + eyeOffset;
+                        eye2X = centerX + (eyeOffset * 0.7); eye2Y = centerY + eyeOffset;
+                        pupilOffsetY = 2;
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(eye1X, eye1Y, eyeRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(eye2X, eye2Y, eyeRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#000000';
+                    ctx.beginPath();
+                    ctx.arc(eye1X + pupilOffsetX, eye1Y + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(eye2X + pupilOffsetX, eye2Y + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                    ctx.fill();
                 }
-
-                ctx.beginPath();
-                ctx.roundRect(x, y, headWidth, headHeight, radius);
-                ctx.fill();
-
-                // Draw eyes based on direction (scaled for head size)
-                ctx.fillStyle = '#ffffff';
-                const eyeRadius = 3 * headSizeMultiplier;
-                const pupilRadius = 1.5 * headSizeMultiplier;
-
-                let eye1X, eye1Y, eye2X, eye2Y;
-                let pupilOffsetX = 0, pupilOffsetY = 0;
-
-                // Position eyes based on movement direction (scaled for head size)
-                const eyeOffset = headSizeMultiplier * 5;
-                if (this.direction === DIRECTIONS.RIGHT) {
-                    eye1X = centerX + eyeOffset; eye1Y = centerY - (eyeOffset * 0.7);
-                    eye2X = centerX + eyeOffset; eye2Y = centerY + (eyeOffset * 0.7);
-                    pupilOffsetX = 2;
-                } else if (this.direction === DIRECTIONS.LEFT) {
-                    eye1X = centerX - eyeOffset; eye1Y = centerY - (eyeOffset * 0.7);
-                    eye2X = centerX - eyeOffset; eye2Y = centerY + (eyeOffset * 0.7);
-                    pupilOffsetX = -2;
-                } else if (this.direction === DIRECTIONS.UP) {
-                    eye1X = centerX - (eyeOffset * 0.7); eye1Y = centerY - eyeOffset;
-                    eye2X = centerX + (eyeOffset * 0.7); eye2Y = centerY - eyeOffset;
-                    pupilOffsetY = -2;
-                } else { // DOWN
-                    eye1X = centerX - (eyeOffset * 0.7); eye1Y = centerY + eyeOffset;
-                    eye2X = centerX + (eyeOffset * 0.7); eye2Y = centerY + eyeOffset;
-                    pupilOffsetY = 2;
-                }
-
-                // Draw white eye circles
-                ctx.beginPath();
-                ctx.arc(eye1X, eye1Y, eyeRadius, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.arc(eye2X, eye2Y, eyeRadius, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Draw black pupils
-                ctx.fillStyle = '#000000';
-                ctx.beginPath();
-                ctx.arc(eye1X + pupilOffsetX, eye1Y + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.arc(eye2X + pupilOffsetX, eye2Y + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
-                ctx.fill();
 
                 ctx.restore();
             } else if (i === this.body.length - 1) {
@@ -5570,6 +5581,9 @@ const FOOD_SCORES = {
 const fruitImages = {};
 let fruitImagesLoaded = 0;
 const totalFruitImages = FOOD_TYPES.length;
+
+// Player snake head image
+let snakeHeadImage = null;
 
 function loadFruitImages() {
     for (const type of FOOD_TYPES) {
@@ -8037,12 +8051,30 @@ function loadFruitImages() {
     });
 }
 
+function loadSnakeHeadImage() {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            snakeHeadImage = img;
+            resolve();
+        };
+        img.onerror = () => {
+            console.warn('[Snake] Failed to load player head image');
+            resolve();
+        };
+        img.src = 'assets/player/snakehead.png';
+    });
+}
+
 async function initGame() {
     canvas = document.getElementById('gameCanvas');
     ctx = canvas.getContext('2d');
 
     // Load fruit images before starting
     await loadFruitImages();
+
+    // Load player snake head image
+    await loadSnakeHeadImage();
 
     // Load grid size preference before calculating dimensions
     loadGridSizePreference();
