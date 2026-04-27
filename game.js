@@ -5076,7 +5076,17 @@ class Snake {
             }
 
             if (i === this.body.length - 1) {
-                // TAIL - semi-transparent
+                // TAIL - semi-transparent with flexible wave
+                // Tail waves perpendicular to movement direction
+                if (!this.isBoss) {
+                    const wave = Math.sin(Date.now() / 140 + this.body.length * 0.5) * 2.2;
+                    if (this.direction.x !== 0) {
+                        centerY += wave;
+                    } else {
+                        centerX += wave;
+                    }
+                }
+
                 ctx.save();
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 0.55;
