@@ -4853,6 +4853,9 @@ class Snake {
         // Tail sway animation state
         this.tailSwayOffset = 0;
         this.tailSwayVelocity = 0;
+
+        // Direction history for each segment (for natural body curve)
+        this.segmentDirections = [];
     }
 
     isFrozen() {
@@ -4941,25 +4944,13 @@ class Snake {
             this.body.pop();
         }
 
-        // Tail sway physics: spring-like motion with momentum
-        const len = this.body.length;
-        const swayForce = len * 0.015; // Longer tail = more forceful sway
-        const damping = 0.92 - (len * 0.002); // Longer tail = less damping (swings longer)
-
-        // Add "kick" when turning
-        if (this.prevDirection) {
-            const dx = this.direction.x - this.prevDirection.x;
-            const dy = this.direction.y - this.prevDirection.y;
-            if (dx !== 0 || dy !== 0) {
-                this.tailSwayVelocity += (dx !== 0 ? dx : dy) * swayForce * 2.5;
-            }
+        // Record direction history for each segment
+        // This allows body to follow the same path as the head with delay
+        if (!this.segmentDirections) this.segmentDirections = [];
+        this.segmentDirections.unshift({ ...this.direction });
+        if (this.segmentDirections.length > this.body.length) {
+            this.segmentDirections.pop();
         }
-        this.prevDirection = { ...this.direction };
-
-        // Spring physics
-        this.tailSwayVelocity -= this.tailSwayOffset * 0.08;
-        this.tailSwayVelocity *= Math.max(0.75, damping);
-        this.tailSwayOffset += this.tailSwayVelocity;
     }
 
     grow(amount = 1) {
@@ -5092,27 +5083,26 @@ class Snake {
                 centerY += shakeY;
             }
 
-            // Jelly / rubber wobble for body segments (not tail)
-            if (!this.isBoss && i < this.body.length - 1) {
-                const wobble = Math.sin(Date.now() / 180 + i * 0.7) * 1.2;
-                centerX += wobble;
-                centerY += Math.cos(Date.now() / 220 + i * 0.7) * 1.2;
+            // Natural snake body curve: each segment lags behind the head's turn
+            if (!this.isBoss && this.segmentDirections && i < this.segmentDirections.length) {
+                const segDir = this.segmentDirections[i];
+                // Calculate visual offset: segment trails slightly in its own direction
+                // This creates an S-curve when the head turns
+                const lagAmount = 2.8; // pixels of overshoot
+                centerX += segDir.x * lagAmount * (i / this.body.length);
+                centerY += segDir.y * lagAmount * (i / this.body.length);
+
+                // Also add slight perpendicular drift for living feel
+                const perpX = -segDir.y; // perpendicular to movement
+                const perpY = segDir.x;
+                const wave = Math.sin(Date.now() / 200 + i * 0.5) * 1.0;
+                centerX += perpX * wave;
+                centerY += perpY * wave;
             }
 
             if (i === this.body.length - 1) {
-                // TAIL - semi-transparent with flexible rubber sway
-                if (!this.isBoss) {
-                    // Physics-based tail sway (momentum from turns + continuous wave)
-                    const lenFactor = Math.min(this.body.length / 8, 2.5); // Longer = more bend
-                    const sway = this.tailSwayOffset * lenFactor;
-                    const idleWave = Math.sin(Date.now() / 160 + this.body.length * 0.4) * 1.5;
-
-                    if (this.direction.x !== 0) {
-                        centerY += sway + idleWave;
-                    } else {
-                        centerX += sway + idleWave;
-                    }
-                }
+                // TAIL - semi-transparent, most flexible point
+                // (sway already applied above, just lower opacity here)
 
                 ctx.save();
                 ctx.shadowBlur = 0;
